@@ -1,1 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Estado de Pacientes</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Estado de Pacientes</h1>
 
+  <div class="formulario">
+    <input type="text" id="sede" placeholder="Sede" />
+    <input type="text" id="apellidos" placeholder="Apellidos" />
+    <input type="text" id="nombres" placeholder="Nombres" />
+    <input type="text" id="estudios" placeholder="Estudios (separados por coma)" />
+    <button onclick="agregarPaciente()">Agregar Paciente</button>
+  </div>
+
+  <div class="filtro">
+    <label for="filtroFecha">Filtrar por fecha:</label>
+    <input type="date" id="filtroFecha" onchange="filtrarPorFecha()" />
+  </div>
+
+  <div id="contador">Pacientes en espera: 0</div>
+
+  <div id="listaPacientes"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
