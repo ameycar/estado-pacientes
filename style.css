@@ -1,1 +1,37 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
 
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+.formulario input {
+  margin: 5px;
+  padding: 8px;
+}
+
+button {
+  padding: 8px 12px;
+  margin-left: 5px;
+}
+
+.filtro {
+  margin: 20px 0;
+}
+
+.paciente {
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 10px;
+  border-left: 10px solid;
+  background-color: white;
+}
+
+.rojo { border-color: red; }
+.naranja { border-color: orange; }
+.verde { border-color: green; }
+.azul { border-color: blue; }
