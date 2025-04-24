@@ -13,4 +13,41 @@
     <label for="sede">Sede:</label>
     <input type="text" id="sede" required>
 
-    <label for
+    <label for="apellidos">Apellidos:</label>
+    <input type="text" id="apellidos" required>
+
+    <label for="nombres">Nombres:</label>
+    <input type="text" id="nombres" required>
+
+    <label for="estudios">Estudios:</label>
+    <select id="estudios" multiple required>
+      <option value="Eco ramal">Eco ramal</option>
+      <option value="Eco abdomen completo">Eco abdomen completo</option>
+      <option value="Eco renal">Eco renal</option>
+      <option value="Eco mamaria">Eco mamaria</option>
+    </select>
+
+    <button type="submit">Registrar</button>
+  </form>
+
+  <div id="contador" style="margin-top: 20px;"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Sede</th>
+        <th>Apellidos</th>
+        <th>Nombres</th>
+        <th>Estudios</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-pacientes"></tbody>
+  </table>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
