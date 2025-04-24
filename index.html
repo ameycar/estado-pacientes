@@ -9,25 +9,44 @@
 <body>
   <h1>Estado de Pacientes</h1>
 
-  <div class="formulario">
-    <input type="text" id="sede" placeholder="Sede" />
-    <input type="text" id="apellidos" placeholder="Apellidos" />
-    <input type="text" id="nombres" placeholder="Nombres" />
-    <input type="text" id="estudios" placeholder="Estudios (separados por coma)" />
-    <button onclick="agregarPaciente()">Agregar Paciente</button>
-  </div>
+  <form id="formulario">
+    <label for="sede">Sede:</label>
+    <input type="text" id="sede" required>
 
-  <div class="filtro">
-    <label for="filtroFecha">Filtrar por fecha:</label>
-    <input type="date" id="filtroFecha" onchange="filtrarPorFecha()" />
-  </div>
+    <label for="apellidos">Apellidos:</label>
+    <input type="text" id="apellidos" required>
 
-  <div id="contador">Pacientes en espera: 0</div>
+    <label for="nombres">Nombres:</label>
+    <input type="text" id="nombres" required>
 
-  <div id="listaPacientes"></div>
+    <label for="estudios">Estudios:</label>
+    <select id="estudios" multiple required>
+      <option value="Eco ramal">Eco ramal</option>
+      <option value="Eco abdomen completo">Eco abdomen completo</option>
+      <option value="Eco renal">Eco renal</option>
+      <option value="Eco mamaria">Eco mamaria</option>
+    </select>
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
+    <button type="submit">Registrar</button>
+  </form>
+
+  <div id="contador"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Sede</th>
+        <th>Apellidos</th>
+        <th>Nombres</th>
+        <th>Estudios</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-pacientes"></tbody>
+  </table>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
