@@ -19,23 +19,13 @@
     <label for="nombres">Nombres:</label>
     <input type="text" id="nombres" required>
 
-    <label for="estudios">Estudios:</label>
-    <select id="estudios" multiple required>
-      <option value="Eco Tv">Eco Tv</option>
-      <option value="Eco abdomen C">Eco abdomen C</option>
-      <option value="Eco renal">Eco renal</option>
-      <option value="Eco mamaria">Eco mamaria</option>
-      <option value="Eco PB">Eco PB</option>
-      <option value="Eco doppler">Eco doppler</option>
-      <option value="Eco abdomen S">Eco abdomen S</option>
-      <option value="Eco abdomen I">Eco abdomen I</option>
-      <option value="Eco pelvica">Eco pelvica</option>
-      <option value="Eco obstetrica">Eco obstetrica</option>
-      <option value="Eco genetica">Eco genetica</option>
-      <option value="Eco 4d">Eco 4d</option>
-      <option value="Eco 5d">Eco 5d</option>
-      <option value="Eco 6d">Eco 6d</option>
-    </select>
+    <label>Estudios:</label>
+    <div id="estudios-checkboxes">
+      <label><input type="checkbox" name="estudios" value="Eco ramal"> Eco ramal</label><br>
+      <label><input type="checkbox" name="estudios" value="Eco abdomen completo"> Eco abdomen completo</label><br>
+      <label><input type="checkbox" name="estudios" value="Eco renal"> Eco renal</label><br>
+      <label><input type="checkbox" name="estudios" value="Eco mamaria"> Eco mamaria</label>
+    </div>
 
     <button type="submit">Registrar</button>
   </form>
@@ -50,7 +40,6 @@
         <th>Nombres</th>
         <th>Estudios</th>
         <th>Estado</th>
-        <th>Última Modificación</th>
         <th>Acción</th>
       </tr>
     </thead>
