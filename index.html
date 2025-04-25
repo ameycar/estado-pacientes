@@ -10,20 +10,29 @@
   <h1>Estado de Pacientes</h1>
 
   <form id="formulario">
-    <label for="sede">Sede:</label>
-    <input type="text" id="sede" required>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="sede">Sede:</label>
+        <input type="text" id="sede" required>
+      </div>
+      <div class="form-group">
+        <label for="apellidos">Apellidos:</label>
+        <input type="text" id="apellidos" required>
+      </div>
+    </div>
 
-    <label for="apellidos">Apellidos:</label>
-    <input type="text" id="apellidos" required>
-
-    <label for="nombres">Nombres:</label>
-    <input type="text" id="nombres" required>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nombres">Nombres:</label>
+        <input type="text" id="nombres" required>
+      </div>
+    </div>
 
     <label>Estudios:</label>
     <div id="estudios-checkboxes">
-      <label><input type="checkbox" name="estudios" value="Eco ramal"> Eco ramal</label><br>
-      <label><input type="checkbox" name="estudios" value="Eco abdomen completo"> Eco abdomen completo</label><br>
-      <label><input type="checkbox" name="estudios" value="Eco renal"> Eco renal</label><br>
+      <label><input type="checkbox" name="estudios" value="Eco ramal"> Eco ramal</label>
+      <label><input type="checkbox" name="estudios" value="Eco abdomen completo"> Eco abdomen completo</label>
+      <label><input type="checkbox" name="estudios" value="Eco renal"> Eco renal</label>
       <label><input type="checkbox" name="estudios" value="Eco mamaria"> Eco mamaria</label>
     </div>
 
