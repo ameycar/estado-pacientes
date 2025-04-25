@@ -11,22 +11,19 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
 
+const db = firebase.database();
 const tabla = document.getElementById("tabla-pacientes");
 const contador = document.getElementById("contador");
 
 // Registrar pacientes
 document.getElementById("formulario").addEventListener("submit", function(e) {
   e.preventDefault();
-
   const sede = document.getElementById("sede").value;
   const apellidos = document.getElementById("apellidos").value;
   const nombres = document.getElementById("nombres").value;
-  const estudios = Array.from(document.getElementById("estudios").selectedOptions).map(opt => opt.value);
+  const estudios = Array.from(document.querySelectorAll('input[name="estudios"]:checked')).map(cb => cb.value);
   const fecha = new Date().toISOString().split("T")[0];
-  const hora = new Date().toLocaleTimeString();
-  const timestamp = Date.now();
 
   db.ref("pacientes").push({
     sede,
@@ -34,9 +31,7 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
     nombres,
     estudios,
     estado: "En espera",
-    fechaRegistro: `${fecha} ${hora}`,
-    ultimaModificacion: `${fecha} ${hora}`,
-    timestamp
+    fecha
   });
 
   this.reset();
@@ -45,37 +40,44 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
 // Mostrar pacientes
 db.ref("pacientes").on("value", (snapshot) => {
   tabla.innerHTML = "";
-  let pacientes = [];
   let enEspera = 0;
+
+  // Obtener todos los pacientes y ordenarlos por estado
+  const ordenEstado = { "Programado": 0, "En espera": 1, "En atención": 2, "Atendido": 3 };
+  const pacientes = [];
 
   snapshot.forEach(child => {
     const data = child.val();
     const id = child.key;
-    if (data.estado === "En espera") enEspera++;
-
     pacientes.push({ id, ...data });
   });
 
-  // Orden personalizado: En espera -> En atención -> Programado -> Atendido
-  const ordenEstados = { "En espera": 1, "En atención": 2, "Programado": 3, "Atendido": 4 };
-  pacientes.sort((a, b) => {
-    const ordenEstado = ordenEstados[a.estado] - ordenEstados[b.estado];
-    if (ordenEstado !== 0) return ordenEstado;
-    return b.timestamp - a.timestamp; // más nuevo primero
-  });
+  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
 
-  pacientes.forEach(p => {
+  pacientes.forEach(data => {
+    const { id, sede, apellidos, nombres, estudios, estado } = data;
+
+    if (estado === "En espera") enEspera++;
+
     const fila = document.createElement("tr");
-    fila.style.backgroundColor = obtenerColorEstado(p.estado);
+
+    // Colores por estado
+    let color = "#fff";
+    if (estado === "En espera") color = "#ffdddd";
+    else if (estado === "En atención") color = "#fff7cc";
+    else if (estado === "Atendido") color = "#ddffdd";
+    else if (estado === "Programado") color = "#ddeeff";
+
+    fila.style.backgroundColor = color;
+
     fila.innerHTML = `
-      <td>${p.sede}</td>
-      <td>${p.apellidos}</td>
-      <td>${p.nombres}</td>
-      <td>${(p.estudios || []).join(", ")}</td>
-      <td>${p.estado}</td>
-      <td>${p.ultimaModificacion || ""}</td>
+      <td>${sede}</td>
+      <td>${apellidos}</td>
+      <td>${nombres}</td>
+      <td>${(estudios || []).join(", ")}</td>
+      <td>${estado}</td>
       <td>
-        <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
+        <select onchange="cambiarEstado('${id}', this.value, '${nombres} ${apellidos}')">
           <option disabled selected>Cambiar estado</option>
           <option value="Programado">Programado</option>
           <option value="En espera">En espera</option>
@@ -95,22 +97,6 @@ function cambiarEstado(id, nuevoEstado, nombreCompleto) {
   const confirmar = confirm(`¿Deseas cambiar el estado de ${nombreCompleto} a "${nuevoEstado}"?`);
   if (!confirmar) return;
 
-  const fecha = new Date().toISOString().split("T")[0];
-  const hora = new Date().toLocaleTimeString();
-
-  db.ref("pacientes/" + id).update({
-    estado: nuevoEstado,
-    ultimaModificacion: `${fecha} ${hora}`
-  });
-}
-
-// Color según estado
-function obtenerColorEstado(estado) {
-  switch (estado) {
-    case "En espera": return "#f8d7da";     // rojo claro
-    case "En atención": return "#fff3cd";   // amarillo claro
-    case "Atendido": return "#d4edda";      // verde claro
-    case "Programado": return "#d1ecf1";    // azul claro
-    default: return "white";
-  }
+  const horaCambio = new Date().toLocaleString();
+  db.ref("pacientes/" + id).update({ estado: nuevoEstado, horaCambio });
 }
