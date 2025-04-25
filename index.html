@@ -28,12 +28,14 @@
       </div>
     </div>
 
-    <label>Estudios:</label>
-    <div id="estudios-checkboxes">
-      <label><input type="checkbox" name="estudios" value="Eco ramal"> Eco ramal</label>
-      <label><input type="checkbox" name="estudios" value="Eco abdomen completo"> Eco abdomen completo</label>
-      <label><input type="checkbox" name="estudios" value="Eco renal"> Eco renal</label>
-      <label><input type="checkbox" name="estudios" value="Eco mamaria"> Eco mamaria</label>
+    <div class="form-group">
+      <label for="estudios">Estudios:</label>
+      <select id="estudios" multiple required>
+        <option value="Eco ramal">Eco ramal</option>
+        <option value="Eco abdomen completo">Eco abdomen completo</option>
+        <option value="Eco renal">Eco renal</option>
+        <option value="Eco mamaria">Eco mamaria</option>
+      </select>
     </div>
 
     <button type="submit">Registrar</button>
