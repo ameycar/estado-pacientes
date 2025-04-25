@@ -1,13 +1,12 @@
-// Configuración de Firebase
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
   databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
   projectId: "estado-pacientes",
-  storageBucket: "estado-pacientes.firebasestorage.app",
+  storageBucket: "estado-pacientes.appspot.com",
   messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-  measurementId: "G-C9STJV4J6K"
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -18,11 +17,14 @@ const contador = document.getElementById("contador");
 // Registrar pacientes
 document.getElementById("formulario").addEventListener("submit", function(e) {
   e.preventDefault();
-  const sede = document.getElementById("sede").value;
-  const apellidos = document.getElementById("apellidos").value;
-  const nombres = document.getElementById("nombres").value;
-  const estudios = Array.from(document.getElementById("estudios").selectedOptions).map(opt => opt.value);
-  const fecha = new Date().toISOString().split("T")[0];
+  const sede = document.getElementById("sede").value.trim();
+  const apellidos = document.getElementById("apellidos").value.trim();
+  const nombres = document.getElementById("nombres").value.trim();
+  const estudioSelect = document.getElementById("estudios");
+  const estudios = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString();
 
   db.ref("pacientes").push({
     sede,
@@ -31,7 +33,7 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
     estudios,
     estado: "En espera",
     fecha,
-    modificado: fecha + " " + new Date().toLocaleTimeString()
+    modificado: `${fecha} ${hora}`
   });
 
   this.reset();
@@ -42,18 +44,18 @@ db.ref("pacientes").on("value", (snapshot) => {
   tabla.innerHTML = "";
   let enEspera = 0;
 
-  const estadosOrden = {
+  const colores = {
+    "En espera": "#f8d7da",
+    "En atención": "#fff3cd",
+    "Programado": "#cfe2ff",
+    "Atendido": "#d4edda"
+  };
+
+  const ordenEstado = {
     "En espera": 1,
     "En atención": 2,
     "Programado": 3,
     "Atendido": 4
-  };
-
-  const colores = {
-    "En espera": "#f8d7da",     // rojo claro
-    "En atención": "#fff3cd",   // amarillo
-    "Programado": "#cfe2ff",    // azul
-    "Atendido": "#d4edda"       // verde
   };
 
   const pacientes = [];
@@ -62,45 +64,46 @@ db.ref("pacientes").on("value", (snapshot) => {
     pacientes.push({ id: child.key, ...child.val() });
   });
 
-  pacientes
-    .sort((a, b) => estadosOrden[a.estado] - estadosOrden[b.estado])
-    .forEach(data => {
-      const { id, sede, apellidos, nombres, estudios, estado, modificado } = data;
+  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
 
-      if (estado === "En espera") enEspera++;
+  pacientes.forEach(p => {
+    if (p.estado === "En espera") enEspera++;
 
-      const fila = document.createElement("tr");
-      fila.style.backgroundColor = colores[estado] || "white";
-      fila.innerHTML = `
-        <td>${sede}</td>
-        <td>${apellidos}</td>
-        <td>${nombres}</td>
-        <td>${(estudios || []).join(", ")}</td>
-        <td>${estado}<br><small>${modificado || ""}</small></td>
-        <td>
-          <select onchange="cambiarEstado('${id}', this.value, '${nombres} ${apellidos}')">
-            <option disabled selected>Cambiar estado</option>
-            <option value="Programado">Programado</option>
-            <option value="En espera">En espera</option>
-            <option value="En atención">En atención</option>
-            <option value="Atendido">Atendido</option>
-          </select>
-        </td>
-      `;
-      tabla.appendChild(fila);
-    });
+    const fila = document.createElement("tr");
+    fila.style.backgroundColor = colores[p.estado] || "#fff";
+
+    fila.innerHTML = `
+      <td>${p.sede || ""}</td>
+      <td>${p.apellidos || ""}</td>
+      <td>${p.nombres || ""}</td>
+      <td>${(p.estudios || []).join(", ")}</td>
+      <td>
+        ${p.estado}<br><small>${p.modificado || ""}</small>
+      </td>
+      <td>
+        <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
+          <option disabled selected>Cambiar estado</option>
+          <option value="Programado">Programado</option>
+          <option value="En espera">En espera</option>
+          <option value="En atención">En atención</option>
+          <option value="Atendido">Atendido</option>
+        </select>
+      </td>
+    `;
+    tabla.appendChild(fila);
+  });
 
   contador.innerText = `Pacientes en espera: ${enEspera}`;
 });
 
-// Cambiar estado con confirmación
+// Cambiar estado
 function cambiarEstado(id, nuevoEstado, nombreCompleto) {
   const confirmar = confirm(`¿Deseas cambiar el estado de ${nombreCompleto} a "${nuevoEstado}"?`);
   if (!confirmar) return;
 
-  const fechaHora = new Date();
-  const fecha = fechaHora.toISOString().split("T")[0];
-  const hora = fechaHora.toLocaleTimeString();
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString();
 
   db.ref("pacientes/" + id).update({
     estado: nuevoEstado,
