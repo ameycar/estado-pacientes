@@ -40,18 +40,13 @@
       <option value="Eco vias urinarias">Eco vias urinarias</option>
     </select>
 
-    <select id="cantidad-eco-pb" style="display: none;">
-      <option value="1">Eco pb (1)</option>
-      <option value="2">Eco pb (2)</option>
-      <option value="3">Eco pb (3)</option>
-      <option value="4">Eco pb (4)</option>
-      <option value="5">Eco pb (5)</option>
-      <option value="6">Eco pb (6)</option>
-      <option value="7">Eco pb (7)</option>
-      <option value="8">Eco pb (8)</option>
-      <option value="9">Eco pb (9)</option>
-      <option value="10">Eco pb (10)</option>
-    </select>
+    <div id="cantidad-container" style="display: none;">
+      <label for="cantidad">Cantidad Eco pb:</label>
+      <select id="cantidad">
+        <option disabled selected>Selecciona cantidad</option>
+        ${[...Array(10)].map((_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+      </select>
+    </div>
 
     <button type="submit">Registrar</button>
   </form>
