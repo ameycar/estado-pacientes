@@ -14,72 +14,49 @@ const db = firebase.database();
 const tabla = document.getElementById("tabla-pacientes");
 const contador = document.getElementById("contador");
 
-// Mostrar selector de cantidad para "Eco pb"
-const estudioSelect = document.getElementById("estudios");
-const formulario = document.getElementById("formulario");
+// Mostrar u ocultar cantidad de Eco PB
+const estudiosSelect = document.getElementById("estudios");
+const ecoPbCantidadContainer = document.getElementById("eco-pb-cantidad-container");
 
-const cantidadDiv = document.createElement("div");
-cantidadDiv.id = "cantidad-div";
-cantidadDiv.style.display = "none";
-
-const labelCantidad = document.createElement("label");
-labelCantidad.textContent = "Cantidad de Eco pb:";
-
-const cantidadSelect = document.createElement("select");
-cantidadSelect.id = "cantidad-eco-pb";
-for (let i = 1; i <= 10; i++) {
-  const option = document.createElement("option");
-  option.value = i;
-  option.textContent = i;
-  cantidadSelect.appendChild(option);
-}
-
-cantidadDiv.appendChild(labelCantidad);
-cantidadDiv.appendChild(cantidadSelect);
-formulario.insertBefore(cantidadDiv, formulario.querySelector('button'));
-
-estudioSelect.addEventListener("change", function() {
-  const seleccionados = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
-  if (seleccionados.includes("Eco pb")) {
-    cantidadDiv.style.display = "block";
-  } else {
-    cantidadDiv.style.display = "none";
-  }
+estudiosSelect.addEventListener("change", () => {
+  const seleccionadoEcoPb = Array.from(estudiosSelect.selectedOptions).some(opt => opt.value === "Eco pb");
+  ecoPbCantidadContainer.style.display = seleccionadoEcoPb ? "block" : "none";
 });
 
 // Registrar pacientes
-formulario.addEventListener("submit", function(e) {
+document.getElementById("formulario").addEventListener("submit", function(e) {
   e.preventDefault();
   const sede = document.getElementById("sede").value.trim();
   const apellidos = document.getElementById("apellidos").value.trim();
   const nombres = document.getElementById("nombres").value.trim();
-  const estudiosSeleccionados = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
-  const cantidadEcoPb = parseInt(document.getElementById("cantidad-eco-pb").value) || 1;
+  const estudiosSeleccionados = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
+  let estudiosFinal = [];
+
+  estudiosSeleccionados.forEach(estudio => {
+    if (estudio === "Eco pb") {
+      const cantidad = parseInt(document.getElementById("eco-pb-cantidad").value);
+      estudiosFinal.push(`Eco pb (${cantidad})`);
+    } else {
+      estudiosFinal.push(estudio);
+    }
+  });
+
   const ahora = new Date();
   const fecha = ahora.toISOString().split("T")[0];
   const hora = ahora.toLocaleTimeString();
-
-  const estudiosFinales = estudiosSeleccionados.map(est => {
-    if (est === "Eco pb") {
-      return `Eco pb (${cantidadEcoPb})`;
-    } else {
-      return est;
-    }
-  });
 
   db.ref("pacientes").push({
     sede,
     apellidos,
     nombres,
-    estudios: estudiosFinales,
-    cantidad: estudiosSeleccionados.length - (estudiosSeleccionados.includes("Eco pb") ? 1 : 0) + (estudiosSeleccionados.includes("Eco pb") ? cantidadEcoPb : 0),
+    estudios: estudiosFinal,
     estado: "En espera",
     fecha,
     modificado: `${fecha} ${hora}`
   });
 
   this.reset();
-  cantidadDiv.style.display = "none";
+  ecoPbCantidadContainer.style.display = "none"; // Ocultar cantidad eco pb después de registrar
 });
 
 // Mostrar pacientes
@@ -112,6 +89,13 @@ db.ref("pacientes").on("value", (snapshot) => {
   pacientes.forEach(p => {
     if (p.estado === "En espera") enEspera++;
 
+    // Calcular la cantidad total
+    let totalCantidad = 0;
+    p.estudios.forEach(e => {
+      const match = e.match(/\((\d+)\)$/);
+      totalCantidad += match ? parseInt(match[1]) : 1;
+    });
+
     const fila = document.createElement("tr");
     fila.style.backgroundColor = colores[p.estado] || "#fff";
 
@@ -120,7 +104,7 @@ db.ref("pacientes").on("value", (snapshot) => {
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
       <td>${(p.estudios || []).join(", ")}</td>
-      <td>${p.cantidad || 0}</td>
+      <td>${totalCantidad}</td>
       <td>
         ${p.estado}<br><small>${p.modificado || ""}</small>
       </td>
@@ -132,7 +116,9 @@ db.ref("pacientes").on("value", (snapshot) => {
           <option value="En atención">En atención</option>
           <option value="Atendido">Atendido</option>
         </select>
-        <button onclick="eliminarPaciente('${p.id}', '${p.nombres} ${p.apellidos}')" style="background: none; border: none; cursor: pointer; color: red; font-size: 18px;">🗑️</button>
+        <button onclick="eliminarPaciente('${p.id}', '${p.nombres} ${p.apellidos}')" style="background:none;border:none;cursor:pointer;">
+          🗑️
+        </button>
       </td>
     `;
     tabla.appendChild(fila);
