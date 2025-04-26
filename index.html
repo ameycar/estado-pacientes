@@ -2,90 +2,85 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Estado de Pacientes</title>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-  <!-- Tu estilo -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Estado de Pacientes</h1>
+  <h1>Estado de Pacientes</h1>
 
-<!-- Formulario para registrar pacientes -->
-<form id="formulario">
-  <label for="sede">Sede:</label>
-  <input type="text" id="sede" required>
-
-  <label for="apellidos">Apellidos:</label>
-  <input type="text" id="apellidos" required>
-
-  <label for="nombres">Nombres:</label>
-  <input type="text" id="nombres" required>
-
-  <label for="estudios">Estudios:</label>
-  <select id="estudios" multiple required>
-    <option value="Eco abd">Eco abd</option>
-    <option value="Eco obst">Eco obst</option>
-    <option value="Eco pelv">Eco pelv</option>
-    <option value="Eco transv">Eco transv</option>
-    <option value="Eco renal">Eco renal</option>
-    <option value="Eco prost">Eco prost</option>
-    <option value="Eco test">Eco test</option>
-    <option value="Eco tiroides">Eco tiroides</option>
-    <option value="Eco mama">Eco mama</option>
-    <option value="Eco partes blandas">Eco partes blandas</option>
-    <option value="Eco doppler">Eco doppler</option>
-    <option value="Eco Pb">Eco Pb</option>
-    <!-- Aquí todos tus estudios -->
-  </select>
-
-  <!-- Selector de cantidad Eco Pb (solo aparece si escogen Eco Pb) -->
-  <div id="cantidad-eco-pb" style="display:none; margin-top:10px;">
-    <label for="cantidad">Cantidad Eco Pb:</label>
-    <select id="cantidad">
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="7">7</option>
-      <option value="8">8</option>
-      <option value="9">9</option>
-      <option value="10">10</option>
+  <form id="formulario">
+    <select id="sede" required>
+      <option value="">Selecciona sede</option>
+      <option value="Vitarte 1">Vitarte 1</option>
+      <option value="Vitarte 5">Vitarte 5</option>
+      <option value="Vitarte 7">Vitarte 7</option>
     </select>
-  </div>
+    <input type="text" id="apellidos" placeholder="Apellidos" required>
+    <input type="text" id="nombres" placeholder="Nombres" required>
+    <select id="estudios" multiple required>
+      <option value="Eco abdomen total">Eco abdomen total</option>
+      <option value="Eco abdomen superior">Eco abdomen superior</option>
+      <option value="Eco partes blandas">Eco partes blandas</option>
+      <option value="Eco tiroides">Eco tiroides</option>
+      <option value="Eco mama">Eco mama</option>
+      <option value="Eco próstata">Eco próstata</option>
+      <option value="Eco testicular">Eco testicular</option>
+      <option value="Eco renal">Eco renal</option>
+      <option value="Eco vesical">Eco vesical</option>
+      <option value="Eco obstétrica">Eco obstétrica</option>
+      <option value="Eco transvaginal">Eco transvaginal</option>
+      <option value="Eco pélvica">Eco pélvica</option>
+      <option value="Eco muslo">Eco muslo</option>
+      <option value="Eco brazo">Eco brazo</option>
+      <option value="Eco pierna">Eco pierna</option>
+      <option value="Eco cadera">Eco cadera</option>
+      <option value="Eco rodilla">Eco rodilla</option>
+      <option value="Eco tobillo">Eco tobillo</option>
+      <option value="Eco hombro">Eco hombro</option>
+      <option value="Eco codo">Eco codo</option>
+      <option value="Eco cuello">Eco cuello</option>
+      <option value="Eco pb">Eco pb</option>
+    </select>
 
-  <button type="submit">Registrar</button>
-</form>
+    <div id="eco-pb-cantidad-container" style="display:none; margin-top:5px;">
+      <label for="eco-pb-cantidad">Cantidad de Eco PB:</label>
+      <select id="eco-pb-cantidad">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
 
-<!-- Tabla de pacientes -->
-<table>
-  <thead>
-    <tr>
-      <th>Sede</th>
-      <th>Apellidos</th>
-      <th>Nombres</th>
-      <th>Estudios</th>
-      <th>Cant</th>
-      <th>Estado</th>
-      <th>Acción</th>
-    </tr>
-  </thead>
-  <tbody id="tabla-pacientes">
-    <!-- Se cargan los pacientes -->
-  </tbody>
-</table>
+    <button type="submit">Registrar</button>
+  </form>
 
-<!-- Contador de pacientes en espera -->
-<div id="contador"></div>
+  <h2 id="contador">Pacientes en espera: 0</h2>
 
-<!-- Tu script principal -->
-<script src="app.js"></script>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Sede</th>
+        <th>Apellidos</th>
+        <th>Nombres</th>
+        <th>Estudios</th>
+        <th>Cant</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-pacientes"></tbody>
+  </table>
+
+  <script src="script.js"></script>
 
 </body>
 </html>
