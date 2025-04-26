@@ -1,4 +1,4 @@
-// Configuración de Firebase
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -6,104 +6,129 @@ const firebaseConfig = {
   projectId: "estado-pacientes",
   storageBucket: "estado-pacientes.appspot.com",
   messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-  measurementId: "G-C9STJV4J6K"
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
 };
 
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const db = firebase.database();
+const tabla = document.getElementById("tabla-pacientes");
+const contador = document.getElementById("contador");
+const cantidadEcoPbDiv = document.getElementById("cantidad-eco-pb");
+const cantidadEcoPbSelect = document.getElementById("cantidad-eco-pb");
 
-// Función para agregar paciente
-document.getElementById('formulario').addEventListener('submit', function(e) {
+// Mostrar la selección de cantidad para "Eco pb"
+document.getElementById("estudios").addEventListener("change", function() {
+  const selectedOptions = Array.from(this.selectedOptions).map(opt => opt.value);
+  
+  if (selectedOptions.includes("Eco pb")) {
+    cantidadEcoPbDiv.style.display = "block";
+  } else {
+    cantidadEcoPbDiv.style.display = "none";
+  }
+});
+
+// Registrar pacientes
+document.getElementById("formulario").addEventListener("submit", function(e) {
   e.preventDefault();
-
-  const sede = document.getElementById('sede').value.trim();
-  const apellidos = document.getElementById('apellidos').value.trim();
-  const nombres = document.getElementById('nombres').value.trim();
-  const estudiosSelect = document.getElementById('estudios');
-  const estudiosSeleccionados = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
-
-  if (estudiosSeleccionados.length === 0) {
-    alert('Debe seleccionar al menos un estudio.');
-    return;
+  
+  const sede = document.getElementById("sede").value.trim();
+  const apellidos = document.getElementById("apellidos").value.trim();
+  const nombres = document.getElementById("nombres").value.trim();
+  const estudioSelect = document.getElementById("estudios");
+  const estudios = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
+  
+  // Verificar si se seleccionó "Eco pb" y agregar la cantidad
+  if (estudios.includes("Eco pb")) {
+    const cantidadEcoPb = cantidadEcoPbSelect.value || 1;  // Valor por defecto 1 si no se selecciona
+    const index = estudios.indexOf("Eco pb");
+    estudios[index] = `Eco pb (${cantidadEcoPb})`;  // Modificar el estudio con la cantidad
   }
 
-  let cantidad = estudiosSeleccionados.length;
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString();
 
-  // Si incluye "Eco pb", considerar la cantidad especial
-  if (estudiosSeleccionados.includes("Eco pb")) {
-    const cantidadEcoPb = document.getElementById('cantidad-eco-pb')?.value || 1;
-    cantidad = estudiosSeleccionados.length - 1 + parseInt(cantidadEcoPb);
-  }
-
-  const fechaHora = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
-
-  const nuevoPaciente = {
+  db.ref("pacientes").push({
     sede,
     apellidos,
     nombres,
-    estudios: estudiosSeleccionados.join(', '),
-    cantidad,
-    estado: 'Programado',
-    fechaHora
-  };
+    estudios,
+    estado: "En espera",
+    fecha,
+    modificado: `${fecha} ${hora}`
+  });
 
-  database.ref('pacientes').push(nuevoPaciente);
-
-  document.getElementById('formulario').reset();
+  this.reset();
 });
 
-// Función para cargar pacientes
-function cargarPacientes() {
-  const tabla = document.getElementById('tabla-pacientes');
-  tabla.innerHTML = '';
+// Mostrar pacientes
+db.ref("pacientes").on("value", (snapshot) => {
+  tabla.innerHTML = "";
+  let enEspera = 0;
 
-  database.ref('pacientes').on('value', (snapshot) => {
-    tabla.innerHTML = '';
-    let enEspera = 0;
+  const colores = {
+    "En espera": "#f8d7da",
+    "En atención": "#fff3cd",
+    "Programado": "#cfe2ff",
+    "Atendido": "#d4edda"
+  };
 
-    snapshot.forEach((childSnapshot) => {
-      const paciente = childSnapshot.val();
-      const key = childSnapshot.key;
+  const ordenEstado = {
+    "En espera": 1,
+    "En atención": 2,
+    "Programado": 3,
+    "Atendido": 4
+  };
 
-      if (paciente.estado === 'En espera') enEspera++;
+  const pacientes = [];
 
-      const tr = document.createElement('tr');
-
-      tr.innerHTML = `
-        <td>${paciente.sede}</td>
-        <td>${paciente.apellidos}</td>
-        <td>${paciente.nombres}</td>
-        <td>${paciente.estudios}</td>
-        <td>${paciente.cantidad}</td>
-        <td>${paciente.estado}</td>
-        <td>
-          <select onchange="cambiarEstado('${key}', this.value)">
-            <option disabled selected>Cambiar</option>
-            <option value="En espera">En espera</option>
-            <option value="En atención">En atención</option>
-            <option value="Atendido">Atendido</option>
-          </select>
-        </td>
-      `;
-
-      tabla.appendChild(tr);
-    });
-
-    document.getElementById('contador').innerText = `Pacientes en espera: ${enEspera}`;
+  snapshot.forEach(child => {
+    pacientes.push({ id: child.key, ...child.val() });
   });
-}
 
-// Función para cambiar estado
-function cambiarEstado(key, nuevoEstado) {
-  const fechaModificacion = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
 
-  database.ref('pacientes/' + key).update({
+  pacientes.forEach(p => {
+    if (p.estado === "En espera") enEspera++;
+
+    const fila = document.createElement("tr");
+    fila.style.backgroundColor = colores[p.estado] || "#fff";
+
+    fila.innerHTML = `
+      <td>${p.sede || ""}</td>
+      <td>${p.apellidos || ""}</td>
+      <td>${p.nombres || ""}</td>
+      <td>${(p.estudios || []).join(", ")}</td>
+      <td>
+        ${p.estado}<br><small>${p.modificado || ""}</small>
+      </td>
+      <td>
+        <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
+          <option disabled selected>Cambiar estado</option>
+          <option value="Programado">Programado</option>
+          <option value="En espera">En espera</option>
+          <option value="En atención">En atención</option>
+          <option value="Atendido">Atendido</option>
+        </select>
+      </td>
+    `;
+    tabla.appendChild(fila);
+  });
+
+  contador.innerText = `Pacientes en espera: ${enEspera}`;
+});
+
+// Cambiar estado
+function cambiarEstado(id, nuevoEstado, nombreCompleto) {
+  const confirmar = confirm(`¿Deseas cambiar el estado de ${nombreCompleto} a "${nuevoEstado}"?`);
+  if (!confirmar) return;
+
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString();
+
+  db.ref("pacientes/" + id).update({
     estado: nuevoEstado,
-    fechaHora: fechaModificacion
+    modificado: `${fecha} ${hora}`
   });
 }
-
-// Cargar pacientes al iniciar
-cargarPacientes();
