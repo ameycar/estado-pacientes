@@ -21,16 +21,36 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
   const apellidos = document.getElementById("apellidos").value.trim();
   const nombres = document.getElementById("nombres").value.trim();
   const estudioSelect = document.getElementById("estudios");
-  const estudios = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
+  const estudiosSeleccionados = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
   const ahora = new Date();
   const fecha = ahora.toISOString().split("T")[0];
   const hora = ahora.toLocaleTimeString();
+
+  // Procesar estudios
+  let ecoPbCount = 0;
+  const otrosEstudios = [];
+
+  estudiosSeleccionados.forEach(estudio => {
+    if (estudio === "Eco pb") {
+      ecoPbCount++;
+    } else {
+      otrosEstudios.push(estudio);
+    }
+  });
+
+  if (ecoPbCount > 0) {
+    otrosEstudios.unshift(`Eco pb (${ecoPbCount})`);
+  }
+
+  const estudiosFormateados = otrosEstudios.join(", ");
+  const cantidadTotal = estudiosSeleccionados.length;
 
   db.ref("pacientes").push({
     sede,
     apellidos,
     nombres,
-    estudios,
+    estudios: estudiosFormateados,
+    cantidad: cantidadTotal,
     estado: "En espera",
     fecha,
     modificado: `${fecha} ${hora}`
@@ -69,8 +89,6 @@ db.ref("pacientes").on("value", (snapshot) => {
   pacientes.forEach(p => {
     if (p.estado === "En espera") enEspera++;
 
-    const cantidad = p.estudios.length;  // Contar todos los estudios seleccionados
-
     const fila = document.createElement("tr");
     fila.style.backgroundColor = colores[p.estado] || "#fff";
 
@@ -78,8 +96,8 @@ db.ref("pacientes").on("value", (snapshot) => {
       <td>${p.sede || ""}</td>
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
-      <td>${(p.estudios || []).join(", ")}</td>
-      <td>${cantidad}</td>  <!-- Aquí se muestra la cantidad total -->
+      <td>${p.estudios || ""}</td>
+      <td>${p.cantidad || ""}</td>
       <td>${p.estado}<br><small>${p.modificado || ""}</small></td>
       <td>
         <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
