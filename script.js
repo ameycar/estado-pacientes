@@ -14,13 +14,14 @@ const db = firebase.database();
 const tabla = document.getElementById("tabla-pacientes");
 const contador = document.getElementById("contador");
 
-// Mostrar u ocultar cantidad de Eco PB
+// Mostrar/ocultar cantidad eco pb
 const estudiosSelect = document.getElementById("estudios");
-const ecoPbCantidadContainer = document.getElementById("eco-pb-cantidad-container");
+const cantidadDiv = document.getElementById("cantidad-eco-pb");
+const cantidadPb = document.getElementById("cantidadPb");
 
 estudiosSelect.addEventListener("change", () => {
-  const seleccionadoEcoPb = Array.from(estudiosSelect.selectedOptions).some(opt => opt.value === "Eco pb");
-  ecoPbCantidadContainer.style.display = seleccionadoEcoPb ? "block" : "none";
+  const selected = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
+  cantidadDiv.style.display = selected.includes("Eco pb") ? "block" : "none";
 });
 
 // Registrar pacientes
@@ -29,17 +30,13 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
   const sede = document.getElementById("sede").value.trim();
   const apellidos = document.getElementById("apellidos").value.trim();
   const nombres = document.getElementById("nombres").value.trim();
-  const estudiosSeleccionados = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
-  let estudiosFinal = [];
+  let estudios = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
 
-  estudiosSeleccionados.forEach(estudio => {
-    if (estudio === "Eco pb") {
-      const cantidad = parseInt(document.getElementById("eco-pb-cantidad").value);
-      estudiosFinal.push(`Eco pb (${cantidad})`);
-    } else {
-      estudiosFinal.push(estudio);
-    }
-  });
+  // Modificar Eco pb si existe
+  if (estudios.includes("Eco pb")) {
+    const cant = parseInt(cantidadPb.value);
+    estudios = estudios.map(e => e === "Eco pb" ? `Eco pb (${cant})` : e);
+  }
 
   const ahora = new Date();
   const fecha = ahora.toISOString().split("T")[0];
@@ -49,14 +46,14 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
     sede,
     apellidos,
     nombres,
-    estudios: estudiosFinal,
+    estudios,
     estado: "En espera",
     fecha,
     modificado: `${fecha} ${hora}`
   });
 
   this.reset();
-  ecoPbCantidadContainer.style.display = "none"; // Ocultar cantidad eco pb después de registrar
+  cantidadDiv.style.display = "none";
 });
 
 // Mostrar pacientes
@@ -89,11 +86,14 @@ db.ref("pacientes").on("value", (snapshot) => {
   pacientes.forEach(p => {
     if (p.estado === "En espera") enEspera++;
 
-    // Calcular la cantidad total
-    let totalCantidad = 0;
-    p.estudios.forEach(e => {
-      const match = e.match(/\((\d+)\)$/);
-      totalCantidad += match ? parseInt(match[1]) : 1;
+    let cantidadTotal = 0;
+    (p.estudios || []).forEach(estudio => {
+      const match = estudio.match(/\((\d+)\)/);
+      if (match) {
+        cantidadTotal += parseInt(match[1]);
+      } else {
+        cantidadTotal += 1;
+      }
     });
 
     const fila = document.createElement("tr");
@@ -104,10 +104,8 @@ db.ref("pacientes").on("value", (snapshot) => {
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
       <td>${(p.estudios || []).join(", ")}</td>
-      <td>${totalCantidad}</td>
-      <td>
-        ${p.estado}<br><small>${p.modificado || ""}</small>
-      </td>
+      <td>${cantidadTotal}</td>
+      <td>${p.estado}<br><small>${p.modificado || ""}</small></td>
       <td>
         <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
           <option disabled selected>Cambiar estado</option>
@@ -116,7 +114,8 @@ db.ref("pacientes").on("value", (snapshot) => {
           <option value="En atención">En atención</option>
           <option value="Atendido">Atendido</option>
         </select>
-        <button onclick="eliminarPaciente('${p.id}', '${p.nombres} ${p.apellidos}')" style="background:none;border:none;cursor:pointer;">
+        <br>
+        <button onclick="eliminarPaciente('${p.id}', '${p.nombres} ${p.apellidos}')" style="background: none; border: none; cursor: pointer;">
           🗑️
         </button>
       </td>
