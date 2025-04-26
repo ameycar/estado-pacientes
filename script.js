@@ -14,14 +14,18 @@ const db = firebase.database();
 const tabla = document.getElementById("tabla-pacientes");
 const contador = document.getElementById("contador");
 
-// Mostrar/ocultar cantidad eco pb
+// Mostrar o no el selector de cantidad Eco pb
 const estudiosSelect = document.getElementById("estudios");
-const cantidadDiv = document.getElementById("cantidad-eco-pb");
-const cantidadPb = document.getElementById("cantidadPb");
+const cantidadEcoPbSelect = document.getElementById("cantidad-eco-pb");
 
 estudiosSelect.addEventListener("change", () => {
-  const selected = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
-  cantidadDiv.style.display = selected.includes("Eco pb") ? "block" : "none";
+  const seleccionados = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
+  if (seleccionados.includes("Eco pb")) {
+    cantidadEcoPbSelect.style.display = "inline";
+  } else {
+    cantidadEcoPbSelect.style.display = "none";
+    cantidadEcoPbSelect.value = "";
+  }
 });
 
 // Registrar pacientes
@@ -32,10 +36,13 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
   const nombres = document.getElementById("nombres").value.trim();
   let estudios = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
 
-  // Modificar Eco pb si existe
-  if (estudios.includes("Eco pb")) {
-    const cant = parseInt(cantidadPb.value);
-    estudios = estudios.map(e => e === "Eco pb" ? `Eco pb (${cant})` : e);
+  // Si Eco pb seleccionado, reemplazarlo por cantidad elegida
+  if (estudios.includes("Eco pb") && cantidadEcoPbSelect.value) {
+    const cantidad = parseInt(cantidadEcoPbSelect.value);
+    estudios = estudios.filter(e => e !== "Eco pb");
+    for (let i = 0; i < cantidad; i++) {
+      estudios.push("Eco pb");
+    }
   }
 
   const ahora = new Date();
@@ -53,7 +60,7 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
   });
 
   this.reset();
-  cantidadDiv.style.display = "none";
+  cantidadEcoPbSelect.style.display = "none";
 });
 
 // Mostrar pacientes
@@ -86,15 +93,7 @@ db.ref("pacientes").on("value", (snapshot) => {
   pacientes.forEach(p => {
     if (p.estado === "En espera") enEspera++;
 
-    let cantidadTotal = 0;
-    (p.estudios || []).forEach(estudio => {
-      const match = estudio.match(/\((\d+)\)/);
-      if (match) {
-        cantidadTotal += parseInt(match[1]);
-      } else {
-        cantidadTotal += 1;
-      }
-    });
+    const cantidad = p.estudios.length;  // Contar todos los estudios
 
     const fila = document.createElement("tr");
     fila.style.backgroundColor = colores[p.estado] || "#fff";
@@ -104,7 +103,7 @@ db.ref("pacientes").on("value", (snapshot) => {
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
       <td>${(p.estudios || []).join(", ")}</td>
-      <td>${cantidadTotal}</td>
+      <td>${cantidad}</td>
       <td>${p.estado}<br><small>${p.modificado || ""}</small></td>
       <td>
         <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
@@ -114,10 +113,7 @@ db.ref("pacientes").on("value", (snapshot) => {
           <option value="En atención">En atención</option>
           <option value="Atendido">Atendido</option>
         </select>
-        <br>
-        <button onclick="eliminarPaciente('${p.id}', '${p.nombres} ${p.apellidos}')" style="background: none; border: none; cursor: pointer;">
-          🗑️
-        </button>
+        <button onclick="eliminarPaciente('${p.id}', '${p.nombres} ${p.apellidos}')" style="margin-top:5px;">🗑️</button>
       </td>
     `;
     tabla.appendChild(fila);
