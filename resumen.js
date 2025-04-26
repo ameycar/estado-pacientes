@@ -11,12 +11,11 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const tabla = document.getElementById("tabla-pacientes");
-const contador = document.getElementById("contador");
+const tablaResumen = document.getElementById("tabla-resumen");
 
+// Mostrar pacientes en resumen
 db.ref("pacientes").on("value", (snapshot) => {
-  tabla.innerHTML = "";
-  let enEspera = 0;
+  tablaResumen.innerHTML = "";
 
   const colores = {
     "En espera": "#f8d7da",
@@ -41,7 +40,12 @@ db.ref("pacientes").on("value", (snapshot) => {
   pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
 
   pacientes.forEach(p => {
-    if (p.estado === "En espera") enEspera++;
+    // Calcular cantidad de estudios
+    let totalCantidad = 0;
+    p.estudios.forEach(e => {
+      const match = e.match(/\((\d+)\)$/);
+      totalCantidad += match ? parseInt(match[1]) : 1;
+    });
 
     const fila = document.createElement("tr");
     fila.style.backgroundColor = colores[p.estado] || "#fff";
@@ -51,13 +55,9 @@ db.ref("pacientes").on("value", (snapshot) => {
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
       <td>${(p.estudios || []).join(", ")}</td>
-      <td>
-        ${p.estado}<br><small>${p.modificado || ""}</small>
-      </td>
-      <td>-</td>
+      <td>${totalCantidad}</td>
+      <td>${p.estado}</td>
     `;
-    tabla.appendChild(fila);
+    tablaResumen.appendChild(fila);
   });
-
-  contador.innerText = `Pacientes en espera: ${enEspera}`;
 });
