@@ -26,9 +26,9 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
   const fecha = ahora.toISOString().split("T")[0];
   const hora = ahora.toLocaleTimeString();
 
-  // Procesar estudios
+  // Procesar estudios correctamente
   let ecoPbCount = 0;
-  const otrosEstudios = [];
+  let otrosEstudios = [];
 
   estudiosSeleccionados.forEach(estudio => {
     if (estudio === "Eco pb") {
