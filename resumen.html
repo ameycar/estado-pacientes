@@ -3,19 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <title>Resumen de Pacientes</title>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-    th { background-color: #f2f2f2; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    td, th {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
   </style>
 </head>
 <body>
 
-<h2>Resumen de Pacientes</h2>
-<table>
+<h1>Resumen de Pacientes</h1>
+
+<table id="tabla-resumen">
   <thead>
     <tr>
       <th>Sede</th>
@@ -26,9 +33,16 @@
       <th>Estado</th>
     </tr>
   </thead>
-  <tbody id="tabla-resumen"></tbody>
+  <tbody>
+    <!-- Aquí se cargarán los pacientes -->
+  </tbody>
 </table>
 
+<!-- AGREGAR ESTO: SDK de Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<!-- Tu script de resumen aquí -->
 <script>
 // Configuración Firebase
 const firebaseConfig = {
@@ -43,8 +57,9 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const tablaResumen = document.getElementById("tabla-resumen");
+const tablaResumen = document.getElementById("tabla-resumen").querySelector("tbody");
 
+// Mostrar pacientes
 db.ref("pacientes").on("value", (snapshot) => {
   tablaResumen.innerHTML = "";
 
@@ -78,9 +93,9 @@ db.ref("pacientes").on("value", (snapshot) => {
       <td>${p.sede || ""}</td>
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
-      <td>${p.estudios || ""}</td>
-      <td>${p.cantidad || ""}</td>
-      <td>${p.estado}</td>
+      <td>${(p.estudios || []).join(", ")}</td>
+      <td>${p.cantidad || 0}</td>
+      <td>${p.estado || ""}</td>
     `;
     tablaResumen.appendChild(fila);
   });
