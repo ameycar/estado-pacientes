@@ -13,37 +13,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const tabla = document.getElementById("tabla-pacientes");
 const contador = document.getElementById("contador");
-const cantidadEcoPbDiv = document.getElementById("cantidad-eco-pb");
-const cantidadEcoPbSelect = document.getElementById("cantidad-eco-pb");
-
-// Mostrar la selección de cantidad para "Eco pb"
-document.getElementById("estudios").addEventListener("change", function() {
-  const selectedOptions = Array.from(this.selectedOptions).map(opt => opt.value);
-  
-  if (selectedOptions.includes("Eco pb")) {
-    cantidadEcoPbDiv.style.display = "block";
-  } else {
-    cantidadEcoPbDiv.style.display = "none";
-  }
-});
 
 // Registrar pacientes
 document.getElementById("formulario").addEventListener("submit", function(e) {
   e.preventDefault();
-  
   const sede = document.getElementById("sede").value.trim();
   const apellidos = document.getElementById("apellidos").value.trim();
   const nombres = document.getElementById("nombres").value.trim();
   const estudioSelect = document.getElementById("estudios");
   const estudios = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
-  
-  // Verificar si se seleccionó "Eco pb" y agregar la cantidad
-  if (estudios.includes("Eco pb")) {
-    const cantidadEcoPb = cantidadEcoPbSelect.value || 1;  // Valor por defecto 1 si no se selecciona
-    const index = estudios.indexOf("Eco pb");
-    estudios[index] = `Eco pb (${cantidadEcoPb})`;  // Modificar el estudio con la cantidad
-  }
-
   const ahora = new Date();
   const fecha = ahora.toISOString().split("T")[0];
   const hora = ahora.toLocaleTimeString();
@@ -91,27 +69,18 @@ db.ref("pacientes").on("value", (snapshot) => {
   pacientes.forEach(p => {
     if (p.estado === "En espera") enEspera++;
 
+    const cantidad = p.estudios.length;  // Contar todos los estudios seleccionados
+
     const fila = document.createElement("tr");
     fila.style.backgroundColor = colores[p.estado] || "#fff";
-
-    // Mostrar la cantidad de estudios, si es "Eco pb" lo muestra con el número de veces
-    const cantidad = p.estudios.reduce((acc, estudio) => {
-      if (estudio.includes("Eco pb")) {
-        const cantidadEco = estudio.match(/\((\d+)\)/);
-        return acc + (cantidadEco ? parseInt(cantidadEco[1]) : 1);
-      }
-      return acc;
-    }, 0);
 
     fila.innerHTML = `
       <td>${p.sede || ""}</td>
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
       <td>${(p.estudios || []).join(", ")}</td>
-      <td>${cantidad}</td>
-      <td>
-        ${p.estado}<br><small>${p.modificado || ""}</small>
-      </td>
+      <td>${cantidad}</td>  <!-- Aquí se muestra la cantidad total -->
+      <td>${p.estado}<br><small>${p.modificado || ""}</small></td>
       <td>
         <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
           <option disabled selected>Cambiar estado</option>
