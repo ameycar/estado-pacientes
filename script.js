@@ -94,11 +94,21 @@ db.ref("pacientes").on("value", (snapshot) => {
     const fila = document.createElement("tr");
     fila.style.backgroundColor = colores[p.estado] || "#fff";
 
+    // Mostrar la cantidad de estudios, si es "Eco pb" lo muestra con el número de veces
+    const cantidad = p.estudios.reduce((acc, estudio) => {
+      if (estudio.includes("Eco pb")) {
+        const cantidadEco = estudio.match(/\((\d+)\)/);
+        return acc + (cantidadEco ? parseInt(cantidadEco[1]) : 1);
+      }
+      return acc;
+    }, 0);
+
     fila.innerHTML = `
       <td>${p.sede || ""}</td>
       <td>${p.apellidos || ""}</td>
       <td>${p.nombres || ""}</td>
       <td>${(p.estudios || []).join(", ")}</td>
+      <td>${cantidad}</td>
       <td>
         ${p.estado}<br><small>${p.modificado || ""}</small>
       </td>
