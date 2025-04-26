@@ -1,109 +1,109 @@
-// Configura tu Firebase
-var firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  databaseURL: "TU_DATABASE_URL",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID",
-  appId: "TU_APP_ID"
+// Configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
+  authDomain: "estado-pacientes.firebaseapp.com",
+  databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
+  projectId: "estado-pacientes",
+  storageBucket: "estado-pacientes.appspot.com",
+  messagingSenderId: "515522648971",
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
+  measurementId: "G-C9STJV4J6K"
 };
+
+// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-var database = firebase.database();
-
-// Detectar cambios en selección de estudios
-const estudiosSelect = document.getElementById('estudios');
-const cantidadEcoPbDiv = document.getElementById('cantidad-eco-pb');
-estudiosSelect.addEventListener('change', function() {
-  const opcionesSeleccionadas = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
-  if (opcionesSeleccionadas.includes('Eco pb')) {
-    cantidadEcoPbDiv.style.display = 'block';
-  } else {
-    cantidadEcoPbDiv.style.display = 'none';
-  }
-});
-
-// Capturar el formulario
+// Función para agregar paciente
 document.getElementById('formulario').addEventListener('submit', function(e) {
   e.preventDefault();
 
-  var sede = document.getElementById('sede').value.trim();
-  var apellidos = document.getElementById('apellidos').value.trim();
-  var nombres = document.getElementById('nombres').value.trim();
-  var estudios = Array.from(document.getElementById('estudios').selectedOptions).map(option => option.value);
-  var cantidadPb = parseInt(document.getElementById('cantidadPb').value) || 1;
-  var fechaHora = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+  const sede = document.getElementById('sede').value.trim();
+  const apellidos = document.getElementById('apellidos').value.trim();
+  const nombres = document.getElementById('nombres').value.trim();
+  const estudiosSelect = document.getElementById('estudios');
+  const estudiosSeleccionados = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
 
-  var cantidadTotal = estudios.length;
-  if (estudios.includes('Eco pb')) {
-    cantidadTotal += (cantidadPb - 1); // ya cuenta 1, sumamos el resto
+  if (estudiosSeleccionados.length === 0) {
+    alert('Debe seleccionar al menos un estudio.');
+    return;
   }
 
-  var paciente = {
-    sede: sede,
-    apellidos: apellidos,
-    nombres: nombres,
-    estudios: estudios.join(', '),
-    cantidad: cantidadTotal,
+  let cantidad = estudiosSeleccionados.length;
+
+  // Si incluye "Eco pb", considerar la cantidad especial
+  if (estudiosSeleccionados.includes("Eco pb")) {
+    const cantidadEcoPb = document.getElementById('cantidad-eco-pb')?.value || 1;
+    cantidad = estudiosSeleccionados.length - 1 + parseInt(cantidadEcoPb);
+  }
+
+  const fechaHora = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+
+  const nuevoPaciente = {
+    sede,
+    apellidos,
+    nombres,
+    estudios: estudiosSeleccionados.join(', '),
+    cantidad,
     estado: 'Programado',
-    fechaHora: fechaHora
+    fechaHora
   };
 
-  var nuevoPacienteKey = database.ref().child('pacientes').push().key;
-  var updates = {};
-  updates['/pacientes/' + nuevoPacienteKey] = paciente;
-  database.ref().update(updates);
+  database.ref('pacientes').push(nuevoPaciente);
 
   document.getElementById('formulario').reset();
-  cantidadEcoPbDiv.style.display = 'none';
 });
 
-// Mostrar los pacientes
-database.ref('pacientes').on('value', function(snapshot) {
-  var tabla = document.getElementById('tabla-pacientes');
+// Función para cargar pacientes
+function cargarPacientes() {
+  const tabla = document.getElementById('tabla-pacientes');
   tabla.innerHTML = '';
-  var contadorEnEspera = 0;
 
-  snapshot.forEach(function(childSnapshot) {
-    var paciente = childSnapshot.val();
-    var fila = document.createElement('tr');
+  database.ref('pacientes').on('value', (snapshot) => {
+    tabla.innerHTML = '';
+    let enEspera = 0;
 
-    fila.innerHTML = `
-      <td>${paciente.sede}</td>
-      <td>${paciente.apellidos}</td>
-      <td>${paciente.nombres}</td>
-      <td>${paciente.estudios}</td>
-      <td>${paciente.cantidad || 1}</td>
-      <td>${paciente.estado}</td>
-      <td><button onclick="cambiarEstado('${childSnapshot.key}')">Cambiar Estado</button></td>
-    `;
+    snapshot.forEach((childSnapshot) => {
+      const paciente = childSnapshot.val();
+      const key = childSnapshot.key;
 
-    tabla.appendChild(fila);
+      if (paciente.estado === 'En espera') enEspera++;
 
-    if (paciente.estado === 'En espera') {
-      contadorEnEspera++;
-    }
-  });
+      const tr = document.createElement('tr');
 
-  document.getElementById('contador').innerText = `Pacientes en espera: ${contadorEnEspera}`;
-});
+      tr.innerHTML = `
+        <td>${paciente.sede}</td>
+        <td>${paciente.apellidos}</td>
+        <td>${paciente.nombres}</td>
+        <td>${paciente.estudios}</td>
+        <td>${paciente.cantidad}</td>
+        <td>${paciente.estado}</td>
+        <td>
+          <select onchange="cambiarEstado('${key}', this.value)">
+            <option disabled selected>Cambiar</option>
+            <option value="En espera">En espera</option>
+            <option value="En atención">En atención</option>
+            <option value="Atendido">Atendido</option>
+          </select>
+        </td>
+      `;
 
-// Cambiar estado de paciente
-function cambiarEstado(key) {
-  var pacienteRef = database.ref('pacientes/' + key);
-  pacienteRef.once('value').then(function(snapshot) {
-    var paciente = snapshot.val();
-    var nuevoEstado = '';
-    if (paciente.estado === 'Programado') {
-      nuevoEstado = 'En espera';
-    } else if (paciente.estado === 'En espera') {
-      nuevoEstado = 'En atención';
-    } else if (paciente.estado === 'En atención') {
-      nuevoEstado = 'Atendido';
-    } else {
-      nuevoEstado = 'Programado';
-    }
-    pacienteRef.update({ estado: nuevoEstado });
+      tabla.appendChild(tr);
+    });
+
+    document.getElementById('contador').innerText = `Pacientes en espera: ${enEspera}`;
   });
 }
+
+// Función para cambiar estado
+function cambiarEstado(key, nuevoEstado) {
+  const fechaModificacion = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+
+  database.ref('pacientes/' + key).update({
+    estado: nuevoEstado,
+    fechaHora: fechaModificacion
+  });
+}
+
+// Cargar pacientes al iniciar
+cargarPacientes();
