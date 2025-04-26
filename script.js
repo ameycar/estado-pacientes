@@ -1,46 +1,141 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-  background-color: #f2f2f2;
+// Configuración Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
+  authDomain: "estado-pacientes.firebaseapp.com",
+  databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
+  projectId: "estado-pacientes",
+  storageBucket: "estado-pacientes.appspot.com",
+  messagingSenderId: "515522648971",
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const tabla = document.getElementById("tabla-pacientes");
+const contador = document.getElementById("contador");
+const estudiosSelect = document.getElementById("estudios");
+const cantidadContainer = document.getElementById("cantidad-container");
+const cantidadSelect = document.getElementById("cantidad");
+
+// Mostrar campo cantidad cuando seleccionan "Eco pb"
+estudiosSelect.addEventListener("change", () => {
+  const selected = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
+  cantidadContainer.style.display = selected.includes("Eco pb") ? "block" : "none";
+});
+
+// Registrar pacientes
+document.getElementById("formulario").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const sede = document.getElementById("sede").value.trim();
+  const apellidos = document.getElementById("apellidos").value.trim();
+  const nombres = document.getElementById("nombres").value.trim();
+  const estudios = Array.from(estudiosSelect.selectedOptions).map(opt => opt.value);
+  const cantidadEcoPb = cantidadSelect.value;
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString();
+
+  let estudiosFinal = [...estudios];
+  if (estudios.includes("Eco pb") && cantidadEcoPb && cantidadEcoPb !== "Selecciona cantidad") {
+    estudiosFinal = estudiosFinal.filter(e => e !== "Eco pb");
+    for (let i = 1; i <= parseInt(cantidadEcoPb); i++) {
+      estudiosFinal.push(`Eco pb ${i}`);
+    }
+  }
+
+  db.ref("pacientes").push({
+    sede,
+    apellidos,
+    nombres,
+    estudios: estudiosFinal,
+    estado: "En espera",
+    fecha,
+    modificado: `${fecha} ${hora}`
+  });
+
+  this.reset();
+  cantidadContainer.style.display = "none";
+});
+
+// Mostrar pacientes
+db.ref("pacientes").on("value", (snapshot) => {
+  tabla.innerHTML = "";
+  let enEspera = 0;
+
+  const colores = {
+    "En espera": "#f8d7da",
+    "En atención": "#fff3cd",
+    "Programado": "#cfe2ff",
+    "Atendido": "#d4edda"
+  };
+
+  const ordenEstado = {
+    "En espera": 1,
+    "En atención": 2,
+    "Programado": 3,
+    "Atendido": 4
+  };
+
+  const pacientes = [];
+
+  snapshot.forEach(child => {
+    pacientes.push({ id: child.key, ...child.val() });
+  });
+
+  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
+
+  pacientes.forEach(p => {
+    if (p.estado === "En espera") enEspera++;
+
+    const cantidad = p.estudios.length;
+
+    const fila = document.createElement("tr");
+    fila.style.backgroundColor = colores[p.estado] || "#fff";
+
+    fila.innerHTML = `
+      <td>${p.sede || ""}</td>
+      <td>${p.apellidos || ""}</td>
+      <td>${p.nombres || ""}</td>
+      <td>${(p.estudios || []).join(", ")}</td>
+      <td>${cantidad}</td>
+      <td>${p.estado}<br><small>${p.modificado || ""}</small></td>
+      <td>
+        <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
+          <option disabled selected>Cambiar estado</option>
+          <option value="Programado">Programado</option>
+          <option value="En espera">En espera</option>
+          <option value="En atención">En atención</option>
+          <option value="Atendido">Atendido</option>
+        </select>
+        <br>
+        <button onclick="eliminarPaciente('${p.id}', '${p.apellidos} ${p.nombres}')" style="background:red;margin-top:5px;">🗑️</button>
+      </td>
+    `;
+    tabla.appendChild(fila);
+  });
+
+  contador.innerText = `Pacientes en espera: ${enEspera}`;
+});
+
+// Cambiar estado
+function cambiarEstado(id, nuevoEstado, nombreCompleto) {
+  const confirmar = confirm(`¿Deseas cambiar el estado de ${nombreCompleto} a "${nuevoEstado}"?`);
+  if (!confirmar) return;
+
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString();
+
+  db.ref("pacientes/" + id).update({
+    estado: nuevoEstado,
+    modificado: `${fecha} ${hora}`
+  });
 }
 
-h1 {
-  text-align: center;
-}
+// Eliminar paciente
+function eliminarPaciente(id, nombreCompleto) {
+  const confirmar = confirm(`¿Deseas eliminar al paciente ${nombreCompleto}?`);
+  if (!confirmar) return;
 
-form {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-input, select, button {
-  display: block;
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 8px;
-  border-radius: 4px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: white;
-}
-
-th, td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: center;
-}
-
-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-}
-
-button:hover {
-  background-color: #0056b3;
+  db.ref("pacientes/" + id).remove();
 }
