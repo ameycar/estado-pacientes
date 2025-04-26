@@ -2,105 +2,29 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Resumen de Pacientes</title>
-  <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    td, th {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resumen Pacientes</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Resumen de Pacientes</h1>
+  <h1>Resumen de Pacientes</h1>
 
-<table id="tabla-resumen">
-  <thead>
-    <tr>
-      <th>Sede</th>
-      <th>Apellidos</th>
-      <th>Nombres</th>
-      <th>Estudios</th>
-      <th>Cant</th>
-      <th>Estado</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Aquí se cargarán los pacientes -->
-  </tbody>
-</table>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Sede</th>
+        <th>Apellidos</th>
+        <th>Nombres</th>
+        <th>Estudios</th>
+        <th>Cant</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-resumen"></tbody>
+  </table>
 
-<!-- AGREGAR ESTO: SDK de Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-<!-- Tu script de resumen aquí -->
-<script>
-// Configuración Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-  authDomain: "estado-pacientes.firebaseapp.com",
-  databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
-  projectId: "estado-pacientes",
-  storageBucket: "estado-pacientes.appspot.com",
-  messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const tablaResumen = document.getElementById("tabla-resumen").querySelector("tbody");
-
-// Mostrar pacientes
-db.ref("pacientes").on("value", (snapshot) => {
-  tablaResumen.innerHTML = "";
-
-  const colores = {
-    "En espera": "#f8d7da",
-    "En atención": "#fff3cd",
-    "Programado": "#cfe2ff",
-    "Atendido": "#d4edda"
-  };
-
-  const ordenEstado = {
-    "En espera": 1,
-    "En atención": 2,
-    "Programado": 3,
-    "Atendido": 4
-  };
-
-  const pacientes = [];
-
-  snapshot.forEach(child => {
-    pacientes.push({ id: child.key, ...child.val() });
-  });
-
-  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
-
-  pacientes.forEach(p => {
-    const fila = document.createElement("tr");
-    fila.style.backgroundColor = colores[p.estado] || "#fff";
-
-    fila.innerHTML = `
-      <td>${p.sede || ""}</td>
-      <td>${p.apellidos || ""}</td>
-      <td>${p.nombres || ""}</td>
-      <td>${(p.estudios || []).join(", ")}</td>
-      <td>${p.cantidad || 0}</td>
-      <td>${p.estado || ""}</td>
-    `;
-    tablaResumen.appendChild(fila);
-  });
-});
-</script>
+  <script src="script-resumen.js"></script>
 
 </body>
 </html>
