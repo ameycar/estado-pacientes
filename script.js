@@ -1,4 +1,4 @@
-// Configuración Firebase
+// Configurar Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -6,117 +6,141 @@ const firebaseConfig = {
   projectId: "estado-pacientes",
   storageBucket: "estado-pacientes.appspot.com",
   messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
+  measurementId: "G-C9STJV4J6K"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const tabla = document.getElementById("tabla-pacientes");
-const contador = document.getElementById("contador");
 
-// Registrar pacientes
-document.getElementById("formulario").addEventListener("submit", function(e) {
+const formulario = document.getElementById('formulario');
+const tablaPacientes = document.getElementById('tabla-pacientes');
+const contador = document.getElementById('contador');
+const estudiosSelect = document.getElementById('estudios');
+const cantidadEcoPbDiv = document.getElementById('cantidad-eco-pb');
+const ecoPbCantidad = document.getElementById('ecoPbCantidad');
+const filtroSede = document.getElementById('filtroSede');
+const filtroFecha = document.getElementById('filtroFecha');
+
+estudiosSelect.addEventListener('change', () => {
+  const seleccionados = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
+  cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
+});
+
+formulario.addEventListener('submit', e => {
   e.preventDefault();
-  const sede = document.getElementById("sede").value.trim();
-  const apellidos = document.getElementById("apellidos").value.trim();
-  const nombres = document.getElementById("nombres").value.trim();
-  const estudioSelect = document.getElementById("estudios");
-  const estudios = Array.from(estudioSelect.selectedOptions).map(opt => opt.value);
-  const ahora = new Date();
-  const fecha = ahora.toISOString().split("T")[0];
-  const hora = ahora.toLocaleTimeString();
+  const sede = document.getElementById('sede').value.trim();
+  const apellidos = document.getElementById('apellidos').value.trim();
+  const nombres = document.getElementById('nombres').value.trim();
+  let estudios = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
+  let cant = estudios.length;
+  const estado = 'En espera';
+  const fechaModificacion = new Date().toLocaleString();
 
-  db.ref("pacientes").push({
+  if (estudios.includes('Eco pb')) {
+    const ecoCantidad = parseInt(ecoPbCantidad.value);
+    cant = estudios.length - 1 + ecoCantidad;
+  }
+
+  const nuevoPaciente = {
     sede,
     apellidos,
     nombres,
-    estudios,
-    estado: "En espera",
-    fecha,
-    modificado: `${fecha} ${hora}`
-  });
+    estudios: estudios.join(', '),
+    cant,
+    estado,
+    fechaModificacion
+  };
 
-  this.reset(); // Limpiar el formulario después de agregar
+  db.ref('pacientes').push(nuevoPaciente);
+  formulario.reset();
+  cantidadEcoPbDiv.style.display = 'none';
 });
 
-// Mostrar pacientes
-db.ref("pacientes").on("value", (snapshot) => {
-  tabla.innerHTML = "";
-  let enEspera = 0;
+function cargarPacientes() {
+  db.ref('pacientes').on('value', snapshot => {
+    tablaPacientes.innerHTML = '';
+    let pacientes = [];
+    snapshot.forEach(childSnapshot => {
+      const paciente = childSnapshot.val();
+      paciente.key = childSnapshot.key;
+      pacientes.push(paciente);
+    });
 
-  const colores = {
-    "En espera": "#f8d7da",
-    "En atención": "#fff3cd",
-    "Programado": "#cfe2ff",
-    "Atendido": "#d4edda"
-  };
+    aplicarFiltros(pacientes);
+  });
+}
 
-  const ordenEstado = {
-    "En espera": 1,
-    "En atención": 2,
-    "Programado": 3,
-    "Atendido": 4
-  };
+function aplicarFiltros(pacientes) {
+  const sedeFiltro = filtroSede.value.trim().toLowerCase();
+  const fechaFiltro = filtroFecha.value;
 
-  const pacientes = [];
+  if (sedeFiltro) {
+    pacientes = pacientes.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
+  }
 
-  snapshot.forEach(child => {
-    pacientes.push({ id: child.key, ...child.val() });
+  if (fechaFiltro) {
+    pacientes = pacientes.filter(p => p.fechaModificacion.startsWith(fechaFiltro));
+  }
+
+  mostrarPacientes(pacientes);
+}
+
+function mostrarPacientes(pacientes) {
+  pacientes.sort((a, b) => {
+    const estados = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4 };
+    return estados[a.estado] - estados[b.estado];
   });
 
-  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
+  let enEspera = 0;
+  tablaPacientes.innerHTML = '';
 
   pacientes.forEach(p => {
-    if (p.estado === "En espera") enEspera++;
-
-    const cantidad = p.estudios.length;  // Contar todos los estudios seleccionados
-
-    const fila = document.createElement("tr");
-    fila.style.backgroundColor = colores[p.estado] || "#fff";
-
-    fila.innerHTML = `
-      <td>${p.sede || ""}</td>
-      <td>${p.apellidos || ""}</td>
-      <td>${p.nombres || ""}</td>
-      <td>${(p.estudios || []).join(", ")}</td>
-      <td>${cantidad}</td>
-      <td>${p.estado}<br><small>${p.modificado || ""}</small></td>
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.sede}</td>
+      <td>${p.apellidos}</td>
+      <td>${p.nombres}</td>
+      <td>${p.estudios}</td>
+      <td>${p.cant}</td>
       <td>
-        <select onchange="cambiarEstado('${p.id}', this.value, '${p.nombres} ${p.apellidos}')">
-          <option disabled selected>Cambiar estado</option>
-          <option value="Programado">Programado</option>
-          <option value="En espera">En espera</option>
-          <option value="En atención">En atención</option>
-          <option value="Atendido">Atendido</option>
+        <select onchange="cambiarEstado('${p.key}', this.value)">
+          <option ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
+          <option ${p.estado === 'En atención' ? 'selected' : ''}>En atención</option>
+          <option ${p.estado === 'Programado' ? 'selected' : ''}>Programado</option>
+          <option ${p.estado === 'Atendido' ? 'selected' : ''}>Atendido</option>
         </select>
-        <button onclick="eliminarPaciente('${p.id}')">🗑️</button>
+        <div style="font-size:10px;">${p.fechaModificacion}</div>
       </td>
+      <td><button onclick="eliminarPaciente('${p.key}')">🗑️</button></td>
     `;
-    tabla.appendChild(fila);
+
+    tr.style.backgroundColor =
+      p.estado === 'En espera' ? '#ffe5e5' :
+      p.estado === 'En atención' ? '#fff5cc' :
+      p.estado === 'Programado' ? '#cce5ff' :
+      '#d5f5d5';
+
+    tablaPacientes.appendChild(tr);
+
+    if (p.estado === 'En espera') {
+      enEspera++;
+    }
   });
 
-  contador.innerText = `Pacientes en espera: ${enEspera}`;
-});
-
-// Cambiar estado
-function cambiarEstado(id, nuevoEstado, nombreCompleto) {
-  const confirmar = confirm(`¿Deseas cambiar el estado de ${nombreCompleto} a "${nuevoEstado}"?`);
-  if (!confirmar) return;
-
-  const ahora = new Date();
-  const fecha = ahora.toISOString().split("T")[0];
-  const hora = ahora.toLocaleTimeString();
-
-  db.ref("pacientes/" + id).update({
-    estado: nuevoEstado,
-    modificado: `${fecha} ${hora}`
-  });
+  contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
-// Eliminar paciente
-function eliminarPaciente(id) {
-  const confirmar = confirm("¿Estás seguro de eliminar este paciente?");
-  if (!confirmar) return;
-
-  db.ref("pacientes/" + id).remove();
+function cambiarEstado(key, nuevoEstado) {
+  const fechaModificacion = new Date().toLocaleString();
+  db.ref('pacientes/' + key).update({ estado: nuevoEstado, fechaModificacion });
 }
+
+function eliminarPaciente(key) {
+  db.ref('pacientes/' + key).remove();
+}
+
+filtroSede.addEventListener('input', cargarPacientes);
+filtroFecha.addEventListener('input', cargarPacientes);
+
+cargarPacientes();
