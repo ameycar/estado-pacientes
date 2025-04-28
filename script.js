@@ -1,4 +1,4 @@
-// Configuración de Firebase
+// Configuración Firebase
 var firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -11,117 +11,77 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 
-// Mostrar/ocultar selector de cantidad
-document.getElementById('estudios').addEventListener('change', function() {
-  let selected = Array.from(this.selectedOptions).map(option => option.value);
-  document.getElementById('cantidadEcoPb').style.display = selected.includes('Eco pb') ? 'block' : 'none';
-});
+const formulario = document.getElementById("formulario");
+const tablaPacientes = document.getElementById("tabla-pacientes");
+const contador = document.getElementById("contador");
 
-// Agregar paciente
-document.getElementById('formulario').addEventListener('submit', function(e) {
+function limpiarFormulario() {
+  formulario.reset();
+}
+
+function mostrarPacientes() {
+  database.ref("pacientes").once("value", function(snapshot) {
+    tablaPacientes.innerHTML = '';
+    let countEnEspera = 0;
+    snapshot.forEach(function(childSnapshot) {
+      const data = childSnapshot.val();
+      const tr = document.createElement("tr");
+      
+      // Colores según el estado
+      let estadoColor;
+      if (data.estado === 'En espera') estadoColor = '#ffcc00'; // Amarillo
+      else if (data.estado === 'En atención') estadoColor = '#ff9900'; // Naranja
+      else if (data.estado === 'Atendido') estadoColor = '#66cc66'; // Verde
+      else estadoColor = '#9999ff'; // Azul
+
+      tr.innerHTML = `
+        <td>${data.sede}</td>
+        <td>${data.apellidos}</td>
+        <td>${data.nombres}</td>
+        <td>${data.estudios.join(', ')}</td>
+        <td>${data.cantidad}</td>
+        <td style="background-color:${estadoColor};">${data.estado}</td>
+        <td>${data.fechaModificacion}</td>
+      `;
+      tablaPacientes.appendChild(tr);
+      
+      if (data.estado === 'En espera') countEnEspera++;
+    });
+
+    // Actualizar contador
+    contador.innerHTML = `Pacientes en espera: ${countEnEspera}`;
+  });
+}
+
+// Registrar paciente
+formulario.addEventListener('submit', function(e) {
   e.preventDefault();
-  const sede = document.getElementById('sede').value.trim();
-  const apellidos = document.getElementById('apellidos').value.trim();
-  const nombres = document.getElementById('nombres').value.trim();
-  const estudios = Array.from(document.getElementById('estudios').selectedOptions).map(option => option.value);
-  let cantidad = 1;
 
-  if (estudios.includes('Eco pb')) {
-    cantidad = parseInt(document.getElementById('cantidad').value);
-  }
+  const sede = document.getElementById("sede").value;
+  const apellidos = document.getElementById("apellidos").value;
+  const nombres = document.getElementById("nombres").value;
+  const estudios = Array.from(document.getElementById("estudios").selectedOptions).map(option => option.value);
+  const cantidad = estudios.includes("Eco pb") ? estudios.filter(e => e === "Eco pb").length : 0;
+  const estado = "En espera";
+  const fechaModificacion = new Date().toLocaleString();
 
-  const nuevoPaciente = {
-    sede,
-    apellidos,
-    nombres,
-    estudios,
-    cantidad,
-    estado: 'En espera',
-    fechaModificacion: new Date().toLocaleString()
+  // Subir a Firebase
+  const pacienteData = {
+    sede: sede,
+    apellidos: apellidos,
+    nombres: nombres,
+    estudios: estudios,
+    cantidad: cantidad,
+    estado: estado,
+    fechaModificacion: fechaModificacion
   };
 
-  database.ref('pacientes').push(nuevoPaciente);
-  document.getElementById('formulario').reset();
-  document.getElementById('cantidadEcoPb').style.display = 'none';
-});
-
-// Mostrar pacientes
-const tablaPacientes = document.getElementById('tabla-pacientes');
-const contadorPacientes = document.getElementById('contador');
-
-firebase.database().ref('pacientes').on('value', function(snapshot) {
-  tablaPacientes.innerHTML = '';
-  let contador = 0;
-
-  const pacientes = [];
-  snapshot.forEach(function(childSnapshot) {
-    pacientes.push({...childSnapshot.val(), key: childSnapshot.key});
-  });
-
-  // Ordenar: en espera primero
-  pacientes.sort((a, b) => {
-    const ordenEstado = { "En espera": 1, "En atención": 2, "Programado": 3, "Atendido": 4 };
-    return (ordenEstado[a.estado] || 99) - (ordenEstado[b.estado] || 99);
-  });
-
-  pacientes.forEach(function(data) {
-    const tr = document.createElement('tr');
-    tr.style.backgroundColor = getColorEstado(data.estado);
-
-    tr.innerHTML = `
-      <td>${data.sede}</td>
-      <td>${data.apellidos}</td>
-      <td>${data.nombres}</td>
-      <td>${data.estudios.join(', ')}</td>
-      <td>${data.cantidad}</td>
-      <td>
-        <select data-id="${data.key}" class="estado-select">
-          <option ${data.estado === 'En espera' ? 'selected' : ''}>En espera</option>
-          <option ${data.estado === 'En atención' ? 'selected' : ''}>En atención</option>
-          <option ${data.estado === 'Programado' ? 'selected' : ''}>Programado</option>
-          <option ${data.estado === 'Atendido' ? 'selected' : ''}>Atendido</option>
-        </select>
-      </td>
-      <td>${data.fechaModificacion}</td>
-      <td><button data-id="${data.key}" class="eliminar">Eliminar</button></td>
-    `;
-    tablaPacientes.appendChild(tr);
-
-    if (data.estado === 'En espera') {
-      contador++;
-    }
-  });
-
-  contadorPacientes.textContent = `Pacientes en espera: ${contador}`;
-});
-
-// Cambiar estado
-tablaPacientes.addEventListener('change', function(e) {
-  if (e.target.classList.contains('estado-select')) {
-    const id = e.target.getAttribute('data-id');
-    const nuevoEstado = e.target.value;
-    database.ref('pacientes/' + id).update({
-      estado: nuevoEstado,
-      fechaModificacion: new Date().toLocaleString()
+  database.ref('pacientes').push(pacienteData)
+    .then(() => {
+      limpiarFormulario();
+      mostrarPacientes();
     });
-  }
 });
 
-// Eliminar paciente
-tablaPacientes.addEventListener('click', function(e) {
-  if (e.target.classList.contains('eliminar')) {
-    const id = e.target.getAttribute('data-id');
-    database.ref('pacientes/' + id).remove();
-  }
-});
-
-// Colores por estado
-function getColorEstado(estado) {
-  switch (estado) {
-    case 'En espera': return '#ffe0e0';
-    case 'En atención': return '#fff5cc';
-    case 'Programado': return '#d6f5d6';
-    case 'Atendido': return '#d9d9d9';
-    default: return '#ffffff';
-  }
-}
+// Cargar pacientes al iniciar
+mostrarPacientes();
