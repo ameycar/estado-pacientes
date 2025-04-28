@@ -2,29 +2,43 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Resumen Pacientes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resumen de Pacientes</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <h1>Resumen de Pacientes</h1>
 
-  <table border="1">
+  <div class="filtros">
+    <label for="filtroSede">Filtrar por Sede:</label>
+    <input type="text" id="filtroSede" placeholder="Ingrese sede...">
+
+    <label for="filtroFecha">Filtrar por Fecha (AAAA-MM-DD):</label>
+    <input type="date" id="filtroFecha">
+    
+    <button id="btnFiltrar">Filtrar</button>
+    <button id="btnLimpiarFiltros">Limpiar Filtros</button>
+  </div>
+
+  <table>
     <thead>
       <tr>
         <th>Sede</th>
         <th>Apellidos</th>
         <th>Nombres</th>
         <th>Estudios</th>
-        <th>Cant</th>
+        <th>Cantidad</th>
         <th>Estado</th>
+        <th>Fecha Registro</th>
+        <th>Última Modificación</th>
       </tr>
     </thead>
-    <tbody id="tabla-resumen"></tbody>
+    <tbody id="tablaResumen"></tbody>
   </table>
 
-  <script src="script-resumen.js"></script>
-
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="resumen.js"></script>
 </body>
 </html>
