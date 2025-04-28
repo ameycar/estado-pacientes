@@ -9,9 +9,6 @@
 <body>
   <h1>Estado de Pacientes</h1>
 
-  <!-- Filtro y contador -->
-  <div id="contador" style="margin-top: 20px;"></div>
-
   <form id="formulario">
     <label for="sede">Sede:</label>
     <input type="text" id="sede" required>
@@ -46,6 +43,8 @@
     <button type="submit">Registrar</button>
   </form>
 
+  <div id="contador" style="margin-top: 20px;"></div>
+
   <table>
     <thead>
       <tr>
@@ -55,7 +54,7 @@
         <th>Estudios</th>
         <th>Cant</th>
         <th>Estado</th>
-        <th>Fecha Modificación</th>
+        <th>Acción</th>
       </tr>
     </thead>
     <tbody id="tabla-pacientes"></tbody>
