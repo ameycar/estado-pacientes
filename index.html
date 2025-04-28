@@ -40,24 +40,26 @@
       <option value="Eco vias urinarias">Eco vias urinarias</option>
     </select>
 
-    <label for="cantidad-eco-pb" id="label-cantidad" style="display:none;">Cantidad Eco PB:</label>
-    <select id="cantidad-eco-pb" style="display:none;">
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="7">7</option>
-      <option value="8">8</option>
-      <option value="9">9</option>
-      <option value="10">10</option>
-    </select>
+    <div id="cantidadEcoPb" style="display:none;">
+      <label for="cantidad">Cantidad Eco PB:</label>
+      <select id="cantidad">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
 
     <button type="submit">Registrar</button>
   </form>
 
-  <div id="contador" style="margin-top: 20px;"></div>
+  <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
 
   <table>
     <thead>
@@ -68,6 +70,7 @@
         <th>Estudios</th>
         <th>Cant</th>
         <th>Estado</th>
+        <th>Última Modificación</th>
         <th>Acción</th>
       </tr>
     </thead>
