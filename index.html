@@ -40,10 +40,34 @@
       <option value="Eco vias urinarias">Eco vias urinarias</option>
     </select>
 
+    <div id="cantidad-eco-pb" style="display:none;">
+      <label for="ecoPbCantidad">Cantidad Eco pb:</label>
+      <select id="ecoPbCantidad">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+
     <button type="submit">Registrar</button>
   </form>
 
-  <div id="contador" style="margin-top: 20px;"></div>
+  <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
+
+  <div id="filtros" style="margin-top: 20px;">
+    <label for="filtroSede">Filtrar por sede:</label>
+    <input type="text" id="filtroSede" placeholder="Sede...">
+
+    <label for="filtroFecha">Filtrar por fecha:</label>
+    <input type="date" id="filtroFecha">
+  </div>
 
   <table>
     <thead>
