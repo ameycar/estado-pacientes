@@ -1,46 +1,55 @@
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
-  background-color: #f2f2f2;
+  background-color: #f9f9f9;
 }
 
 h1 {
   text-align: center;
+  color: #333;
 }
 
 form {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
   margin-bottom: 20px;
 }
 
 input, select, button {
-  display: block;
-  width: 100%;
-  margin-bottom: 10px;
   padding: 8px;
-  border-radius: 4px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
+  margin-top: 20px;
 }
 
 th, td {
   padding: 10px;
-  border: 1px solid #ccc;
   text-align: center;
+  border-bottom: 1px solid #ddd;
 }
 
-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
+th {
+  background-color: #f2f2f2;
 }
 
-button:hover {
-  background-color: #0056b3;
+#contador {
+  font-weight: bold;
+  text-align: center;
 }
