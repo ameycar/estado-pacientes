@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Resumen de Pacientes</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <h1>Resumen de Pacientes</h1>
 
-  <div class="filtros">
-    <label for="filtroSede">Filtrar por Sede:</label>
-    <input type="text" id="filtroSede" placeholder="Ingrese sede...">
+  <div style="margin-bottom: 20px;">
+    <label for="filtro-sede">Filtrar por sede:</label>
+    <select id="filtro-sede">
+      <option value="">Todas</option>
+      <option value="Vitarte 1">Vitarte 1</option>
+      <option value="Vitarte 5">Vitarte 5</option>
+      <option value="Vitarte 7">Vitarte 7</option>
+    </select>
 
-    <label for="filtroFecha">Filtrar por Fecha (AAAA-MM-DD):</label>
-    <input type="date" id="filtroFecha">
-    
-    <button id="btnFiltrar">Filtrar</button>
-    <button id="btnLimpiarFiltros">Limpiar Filtros</button>
+    <label for="filtro-fecha">Filtrar por fecha:</label>
+    <input type="date" id="filtro-fecha">
+
+    <button id="limpiar-filtros">Limpiar filtros</button>
   </div>
 
   <table>
@@ -28,13 +31,13 @@
         <th>Apellidos</th>
         <th>Nombres</th>
         <th>Estudios</th>
-        <th>Cantidad</th>
+        <th>Cant</th>
         <th>Estado</th>
         <th>Fecha Registro</th>
-        <th>Última Modificación</th>
+        <th>Fecha Modificación</th>
       </tr>
     </thead>
-    <tbody id="tablaResumen"></tbody>
+    <tbody id="tabla-resumen"></tbody>
   </table>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
