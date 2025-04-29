@@ -1,5 +1,5 @@
-// Configura Firebase versión 8
-var firebaseConfig = {
+// Configuración de Firebase (misma versión estable 2025 mejorada)
+const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
   databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
@@ -10,95 +10,119 @@ var firebaseConfig = {
   measurementId: "G-C9STJV4J6K"
 };
 
+// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-const db = firebase.database();
-const tablaResumen = document.getElementById("tabla-resumen");
-const filtroSede = document.getElementById("filtro-sede");
-const filtroFecha = document.getElementById("filtro-fecha");
-const limpiarFiltrosBtn = document.getElementById("limpiar-filtros");
+const tablaResumen = document.getElementById('tabla-resumen');
+const filtroSede = document.getElementById('filtro-sede');
+const filtroFecha = document.getElementById('filtro-fecha');
 
-function mostrarPacientes(snapshot) {
-  tablaResumen.innerHTML = "";
+// Cargar pacientes en tiempo real
+database.ref('pacientes').on('value', (snapshot) => {
+  const data = snapshot.val();
+  tablaResumen.innerHTML = '';
+  const sedes = new Set();
 
-  snapshot.forEach((childSnapshot) => {
-    const paciente = childSnapshot.val();
-    const id = childSnapshot.key;
+  if (data) {
+    Object.keys(data).forEach((key) => {
+      const paciente = data[key];
 
-    if (filtroActivo(paciente)) {
-      const fila = document.createElement("tr");
+      // Filtro por sede
+      if (filtroSede.value && paciente.sede !== filtroSede.value) {
+        return;
+      }
+
+      // Filtro por fecha
+      if (filtroFecha.value) {
+        const fechaPaciente = paciente.fechaModificacion ? paciente.fechaModificacion.split(' ')[0] : '';
+        if (fechaPaciente !== filtroFecha.value) {
+          return;
+        }
+      }
+
+      // Agregar sede única al filtro
+      sedes.add(paciente.sede);
+
+      const fila = document.createElement('tr');
+      fila.style.backgroundColor = obtenerColorEstado(paciente.estado);
 
       fila.innerHTML = `
-        <td>${paciente.sede || ""}</td>
-        <td>${paciente.apellidos || ""}</td>
-        <td>${paciente.nombres || ""}</td>
-        <td>${(paciente.estudios || []).join(", ")}</td>
-        <td>${paciente.cant || "1"}</td>
-        <td style="background-color: ${colorEstado(paciente.estado)};">${paciente.estado || "En espera"}</td>
-        <td>${paciente.fechaRegistro || ""}</td>
-        <td>${paciente.fechaModificacion || ""}</td>
+        <td>${paciente.sede}</td>
+        <td>${paciente.apellidos}</td>
+        <td>${paciente.nombres}</td>
+        <td>${paciente.estudios}</td>
+        <td>${paciente.cant}</td>
+        <td>${paciente.estado}</td>
+        <td>${paciente.fechaModificacion || '-'}</td>
       `;
 
       tablaResumen.appendChild(fila);
+    });
+  }
+
+  // Actualizar las opciones de sede
+  actualizarFiltroSede(Array.from(sedes));
+});
+
+// Función para colorear según estado
+function obtenerColorEstado(estado) {
+  switch (estado) {
+    case 'En espera':
+      return '#ffe4e1'; // Rosadito claro
+    case 'En atención':
+      return '#fffacc'; // Amarillo claro
+    case 'Atendido':
+      return '#d4edda'; // Verde muy suave
+    case 'Programado':
+      return '#cce5ff'; // Azul suave
+    default:
+      return 'white';
+  }
+}
+
+// Actualizar select de sede
+function actualizarFiltroSede(sedes) {
+  filtroSede.innerHTML = '<option value="">Todas</option>';
+  sedes.forEach((sede) => {
+    const option = document.createElement('option');
+    option.value = sede;
+    option.textContent = sede;
+    filtroSede.appendChild(option);
+  });
+}
+
+// Refrescar al cambiar filtros
+filtroSede.addEventListener('change', () => {
+  database.ref('pacientes').once('value', (snapshot) => {
+    const data = snapshot.val();
+    tablaResumen.innerHTML = '';
+    if (data) {
+      Object.keys(data).forEach((key) => {
+        const paciente = data[key];
+        if (filtroSede.value && paciente.sede !== filtroSede.value) return;
+        if (filtroFecha.value) {
+          const fechaPaciente = paciente.fechaModificacion ? paciente.fechaModificacion.split(' ')[0] : '';
+          if (fechaPaciente !== filtroFecha.value) return;
+        }
+
+        const fila = document.createElement('tr');
+        fila.style.backgroundColor = obtenerColorEstado(paciente.estado);
+        fila.innerHTML = `
+          <td>${paciente.sede}</td>
+          <td>${paciente.apellidos}</td>
+          <td>${paciente.nombres}</td>
+          <td>${paciente.estudios}</td>
+          <td>${paciente.cant}</td>
+          <td>${paciente.estado}</td>
+          <td>${paciente.fechaModificacion || '-'}</td>
+        `;
+        tablaResumen.appendChild(fila);
+      });
     }
   });
-}
-
-function filtroActivo(paciente) {
-  const sedeFiltro = filtroSede.value;
-  const fechaFiltro = filtroFecha.value;
-
-  let pasaSede = true;
-  let pasaFecha = true;
-
-  if (sedeFiltro && paciente.sede !== sedeFiltro) {
-    pasaSede = false;
-  }
-
-  if (fechaFiltro && paciente.fechaRegistro) {
-    pasaFecha = paciente.fechaRegistro.startsWith(fechaFiltro);
-  }
-
-  return pasaSede && pasaFecha;
-}
-
-function colorEstado(estado) {
-  switch (estado) {
-    case "En espera":
-      return "#FFD6D6"; // Rojo pastel
-    case "En atención":
-      return "#FFF5CC"; // Amarillo pastel
-    case "Atendido":
-      return "#D6FFD6"; // Verde pastel
-    case "Programado":
-      return "#CCE5FF"; // Azul pastel
-    default:
-      return "#FFFFFF";
-  }
-}
-
-// Actualización en tiempo real
-db.ref("pacientes").on("value", (snapshot) => {
-  mostrarPacientes(snapshot);
 });
 
-// Filtros
-filtroSede.addEventListener("change", () => {
-  db.ref("pacientes").once("value", (snapshot) => {
-    mostrarPacientes(snapshot);
-  });
-});
-
-filtroFecha.addEventListener("change", () => {
-  db.ref("pacientes").once("value", (snapshot) => {
-    mostrarPacientes(snapshot);
-  });
-});
-
-limpiarFiltrosBtn.addEventListener("click", () => {
-  filtroSede.value = "";
-  filtroFecha.value = "";
-  db.ref("pacientes").once("value", (snapshot) => {
-    mostrarPacientes(snapshot);
-  });
+filtroFecha.addEventListener('change', () => {
+  filtroSede.dispatchEvent(new Event('change'));
 });
