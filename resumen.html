@@ -1,27 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resumen de Pacientes</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Resumen de Pacientes</h1>
 
-  <div style="margin-bottom: 20px;">
+  <div id="filtros">
     <label for="filtro-sede">Filtrar por sede:</label>
     <select id="filtro-sede">
       <option value="">Todas</option>
-      <option value="Vitarte 1">Vitarte 1</option>
-      <option value="Vitarte 5">Vitarte 5</option>
-      <option value="Vitarte 7">Vitarte 7</option>
     </select>
 
     <label for="filtro-fecha">Filtrar por fecha:</label>
     <input type="date" id="filtro-fecha">
-
-    <button id="limpiar-filtros">Limpiar filtros</button>
   </div>
 
   <table>
@@ -33,8 +28,7 @@
         <th>Estudios</th>
         <th>Cant</th>
         <th>Estado</th>
-        <th>Fecha Registro</th>
-        <th>Fecha Modificación</th>
+        <th>Última Modificación</th>
       </tr>
     </thead>
     <tbody id="tabla-resumen"></tbody>
