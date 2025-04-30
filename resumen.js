@@ -1,4 +1,3 @@
-// Configuración de Firebase (misma versión estable 2025 mejorada)
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -10,119 +9,78 @@ const firebaseConfig = {
   measurementId: "G-C9STJV4J6K"
 };
 
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const db = firebase.database();
 
-const tablaResumen = document.getElementById('tabla-resumen');
-const filtroSede = document.getElementById('filtro-sede');
-const filtroFecha = document.getElementById('filtro-fecha');
+const tablaResumen = document.getElementById("tablaResumen");
+const filtroFecha = document.getElementById("filtroFecha");
+const filtroSede = document.getElementById("filtroSede");
 
-// Cargar pacientes en tiempo real
-database.ref('pacientes').on('value', (snapshot) => {
-  const data = snapshot.val();
-  tablaResumen.innerHTML = '';
-  const sedes = new Set();
+function cargarPacientes() {
+  db.ref("pacientes").on("value", (snapshot) => {
+    const pacientes = snapshot.val();
+    tablaResumen.innerHTML = "";
 
-  if (data) {
-    Object.keys(data).forEach((key) => {
-      const paciente = data[key];
+    if (!pacientes) return;
 
-      // Filtro por sede
-      if (filtroSede.value && paciente.sede !== filtroSede.value) {
-        return;
-      }
+    // Convertir a array para ordenar
+    const lista = Object.entries(pacientes).map(([id, data]) => ({
+      id,
+      ...data
+    }));
 
-      // Filtro por fecha
-      if (filtroFecha.value) {
-        const fechaPaciente = paciente.fechaModificacion ? paciente.fechaModificacion.split(' ')[0] : '';
-        if (fechaPaciente !== filtroFecha.value) {
-          return;
-        }
-      }
+    // Orden por estado: En espera -> En atención -> Programado -> Atendido
+    const ordenEstado = {
+      "En espera": 1,
+      "En atención": 2,
+      "Programado": 3,
+      "Atendido": 4
+    };
 
-      // Agregar sede única al filtro
-      sedes.add(paciente.sede);
-
-      const fila = document.createElement('tr');
-      fila.style.backgroundColor = obtenerColorEstado(paciente.estado);
-
-      fila.innerHTML = `
-        <td>${paciente.sede}</td>
-        <td>${paciente.apellidos}</td>
-        <td>${paciente.nombres}</td>
-        <td>${paciente.estudios}</td>
-        <td>${paciente.cant}</td>
-        <td>${paciente.estado}</td>
-        <td>${paciente.fechaModificacion || '-'}</td>
-      `;
-
-      tablaResumen.appendChild(fila);
+    lista.sort((a, b) => {
+      return (ordenEstado[a.estado] || 5) - (ordenEstado[b.estado] || 5);
     });
-  }
 
-  // Actualizar las opciones de sede
-  actualizarFiltroSede(Array.from(sedes));
-});
+    lista.forEach((pac) => {
+      const coincideFecha =
+        !filtroFecha.value || (pac.fecha && pac.fecha.startsWith(filtroFecha.value));
+      const coincideSede =
+        !filtroSede.value || (pac.sede && pac.sede.toLowerCase() === filtroSede.value.toLowerCase());
 
-// Función para colorear según estado
-function obtenerColorEstado(estado) {
-  switch (estado) {
-    case 'En espera':
-      return '#ffe4e1'; // Rosadito claro
-    case 'En atención':
-      return '#fffacc'; // Amarillo claro
-    case 'Atendido':
-      return '#d4edda'; // Verde muy suave
-    case 'Programado':
-      return '#cce5ff'; // Azul suave
-    default:
-      return 'white';
-  }
-}
-
-// Actualizar select de sede
-function actualizarFiltroSede(sedes) {
-  filtroSede.innerHTML = '<option value="">Todas</option>';
-  sedes.forEach((sede) => {
-    const option = document.createElement('option');
-    option.value = sede;
-    option.textContent = sede;
-    filtroSede.appendChild(option);
-  });
-}
-
-// Refrescar al cambiar filtros
-filtroSede.addEventListener('change', () => {
-  database.ref('pacientes').once('value', (snapshot) => {
-    const data = snapshot.val();
-    tablaResumen.innerHTML = '';
-    if (data) {
-      Object.keys(data).forEach((key) => {
-        const paciente = data[key];
-        if (filtroSede.value && paciente.sede !== filtroSede.value) return;
-        if (filtroFecha.value) {
-          const fechaPaciente = paciente.fechaModificacion ? paciente.fechaModificacion.split(' ')[0] : '';
-          if (fechaPaciente !== filtroFecha.value) return;
-        }
-
-        const fila = document.createElement('tr');
-        fila.style.backgroundColor = obtenerColorEstado(paciente.estado);
-        fila.innerHTML = `
-          <td>${paciente.sede}</td>
-          <td>${paciente.apellidos}</td>
-          <td>${paciente.nombres}</td>
-          <td>${paciente.estudios}</td>
-          <td>${paciente.cant}</td>
-          <td>${paciente.estado}</td>
-          <td>${paciente.fechaModificacion || '-'}</td>
+      if (coincideFecha && coincideSede) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${pac.fecha || ""}</td>
+          <td>${pac.sede}</td>
+          <td>${pac.apellidos}</td>
+          <td>${pac.nombres}</td>
+          <td>${pac.estudios?.join(", ") || ""}</td>
+          <td>${pac.cantidad || ""}</td>
+          <td style="background-color: ${colorEstado(pac.estado)}">${pac.estado}</td>
+          <td>${pac.modificado || ""}</td>
         `;
-        tablaResumen.appendChild(fila);
-      });
-    }
+        tablaResumen.appendChild(tr);
+      }
+    });
   });
-});
+}
 
-filtroFecha.addEventListener('change', () => {
-  filtroSede.dispatchEvent(new Event('change'));
-});
+function colorEstado(estado) {
+  switch (estado) {
+    case "Programado":
+      return "#ADD8E6"; // Azul pastel
+    case "En espera":
+      return "#FFCCCC"; // Rojo pastel
+    case "En atención":
+      return "#FFF5BA"; // Amarillo pastel
+    case "Atendido":
+      return "#C6F6C6"; // Verde pastel
+    default:
+      return "#f0f0f0";
+  }
+}
+
+filtroFecha.addEventListener("input", cargarPacientes);
+filtroSede.addEventListener("change", cargarPacientes);
+
+cargarPacientes();
