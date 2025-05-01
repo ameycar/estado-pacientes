@@ -1,89 +1,95 @@
 const db = firebase.database();
 const pacientesRef = db.ref("pacientes");
 
-let pacientes = [];
-let paginaActual = 1;
-const pacientesPorPagina = 50;
+const tablaResumen = document.getElementById("tablaResumen");
+const paginacionDiv = document.getElementById("paginacion");
 
-function cargarPacientes() {
+let pacientes = [];
+let pacientesPorPagina = 50;
+let paginaActual = 1;
+
+function obtenerPacientes() {
   pacientesRef.on("value", (snapshot) => {
     pacientes = [];
-    snapshot.forEach((childSnapshot) => {
-      const paciente = childSnapshot.val();
-      paciente.id = childSnapshot.key;
-      pacientes.push(paciente);
+    snapshot.forEach((child) => {
+      pacientes.push({ id: child.key, ...child.val() });
     });
 
-    // Ordenar por fecha de modificación descendente
-    pacientes.sort((a, b) => {
-      const fechaA = new Date(a.fechaModificacion || a.fechaRegistro || 0);
-      const fechaB = new Date(b.fechaModificacion || b.fechaRegistro || 0);
-      return fechaB - fechaA;
-    });
-
-    mostrarPagina(paginaActual);
-    crearPaginacion();
+    mostrarPacientesPaginados();
   });
 }
 
-function mostrarPagina(numeroPagina) {
-  const inicio = (numeroPagina - 1) * pacientesPorPagina;
+function ordenarPacientes(pacientesArray) {
+  const ordenEstado = {
+    "En espera": 1,
+    "En atención": 2,
+    "Programado": 3,
+    "Atendido": 4,
+  };
+
+  return pacientesArray.sort((a, b) => {
+    const estadoA = ordenEstado[a.estado] || 5;
+    const estadoB = ordenEstado[b.estado] || 5;
+
+    if (estadoA !== estadoB) {
+      return estadoA - estadoB;
+    }
+
+    const fechaA = new Date(a.fechaModificacion || a.fecha || "2000-01-01");
+    const fechaB = new Date(b.fechaModificacion || b.fecha || "2000-01-01");
+
+    return fechaB - fechaA;
+  });
+}
+
+function mostrarPacientesPaginados() {
+  const pacientesOrdenados = ordenarPacientes(pacientes);
+  const totalPaginas = Math.ceil(pacientesOrdenados.length / pacientesPorPagina);
+
+  const inicio = (paginaActual - 1) * pacientesPorPagina;
   const fin = inicio + pacientesPorPagina;
-  const pacientesPagina = pacientes.slice(inicio, fin);
+  const pacientesPagina = pacientesOrdenados.slice(inicio, fin);
 
-  const tbody = document.getElementById("tablaResumen");
-  tbody.innerHTML = "";
-
-  pacientesPagina.forEach((p) => {
+  tablaResumen.innerHTML = "";
+  pacientesPagina.forEach((pac) => {
     const fila = document.createElement("tr");
+
+    let clase = "";
+    if (pac.estado === "En espera") clase = "color-en-espera";
+    else if (pac.estado === "En atención") clase = "color-en-atencion";
+    else if (pac.estado === "Atendido") clase = "color-atendido";
+    else if (pac.estado === "Programado") clase = "color-programado";
+
+    fila.className = clase;
+
     fila.innerHTML = `
-      <td>${p.sede}</td>
-      <td>${p.apellidos}</td>
-      <td>${p.nombres}</td>
-      <td>${(Array.isArray(p.estudios) ? p.estudios.join(", ") : p.estudios) || ""}</td>
-      <td>${p.cantidad || 1}</td>
-      <td>${p.estado}</td>
-      <td>${p.fechaModificacion || p.fechaRegistro || ""}</td>
+      <td>${pac.sede || ""}</td>
+      <td>${pac.apellidos || ""}</td>
+      <td>${pac.nombres || ""}</td>
+      <td>${pac.estudios ? pac.estudios.join(", ") : ""}</td>
+      <td>${pac.cantidad || ""}</td>
+      <td>${pac.estado || ""}</td>
+      <td>${pac.fechaModificacion || pac.fecha || ""}</td>
     `;
-    fila.classList.add(getColorFila(p.estado));
-    tbody.appendChild(fila);
+    tablaResumen.appendChild(fila);
   });
+
+  mostrarPaginacion(totalPaginas);
 }
 
-function crearPaginacion() {
-  const totalPaginas = Math.ceil(pacientes.length / pacientesPorPagina);
-  const paginacion = document.getElementById("paginacion");
-  paginacion.innerHTML = "";
+function mostrarPaginacion(totalPaginas) {
+  paginacionDiv.innerHTML = "";
 
   for (let i = 1; i <= totalPaginas; i++) {
-    const boton = document.createElement("button");
-    boton.textContent = i;
-    boton.classList.add("btn-pagina");
-    if (i === paginaActual) boton.classList.add("activo");
-    boton.onclick = () => {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.className = "btn-pagina" + (i === paginaActual ? " activo" : "");
+    btn.onclick = () => {
       paginaActual = i;
-      mostrarPagina(paginaActual);
-      crearPaginacion();
+      mostrarPacientesPaginados();
     };
-    paginacion.appendChild(boton);
+    paginacionDiv.appendChild(btn);
   }
 }
 
-function getColorFila(estado) {
-  switch (estado) {
-    case "En espera":
-      return "color-en-espera";
-    case "En atención":
-      return "color-en-atencion";
-    case "Atendido":
-      return "color-atendido";
-    case "Programado":
-      return "color-programado";
-    default:
-      return "";
-  }
-}
-
-window.onload = () => {
-  cargarPacientes();
-};
+obtenerPacientes();
