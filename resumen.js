@@ -1,86 +1,89 @@
-const firebaseConfig = {
-  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-  authDomain: "estado-pacientes.firebaseapp.com",
-  databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
-  projectId: "estado-pacientes",
-  storageBucket: "estado-pacientes.appspot.com",
-  messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-  measurementId: "G-C9STJV4J6K"
-};
-
-firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const pacientesRef = db.ref("pacientes");
 
-const tablaResumen = document.getElementById("tablaResumen");
-const filtroFecha = document.getElementById("filtroFecha");
-const filtroSede = document.getElementById("filtroSede");
+let pacientes = [];
+let paginaActual = 1;
+const pacientesPorPagina = 50;
 
 function cargarPacientes() {
-  db.ref("pacientes").on("value", (snapshot) => {
-    const pacientes = snapshot.val();
-    tablaResumen.innerHTML = "";
-
-    if (!pacientes) return;
-
-    // Convertir a array para ordenar
-    const lista = Object.entries(pacientes).map(([id, data]) => ({
-      id,
-      ...data
-    }));
-
-    // Orden por estado: En espera -> En atención -> Programado -> Atendido
-    const ordenEstado = {
-      "En espera": 1,
-      "En atención": 2,
-      "Programado": 3,
-      "Atendido": 4
-    };
-
-    lista.sort((a, b) => {
-      return (ordenEstado[a.estado] || 5) - (ordenEstado[b.estado] || 5);
+  pacientesRef.on("value", (snapshot) => {
+    pacientes = [];
+    snapshot.forEach((childSnapshot) => {
+      const paciente = childSnapshot.val();
+      paciente.id = childSnapshot.key;
+      pacientes.push(paciente);
     });
 
-    lista.forEach((pac) => {
-      const coincideFecha =
-        !filtroFecha.value || (pac.fecha && pac.fecha.startsWith(filtroFecha.value));
-      const coincideSede =
-        !filtroSede.value || (pac.sede && pac.sede.toLowerCase() === filtroSede.value.toLowerCase());
-
-      if (coincideFecha && coincideSede) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${pac.fecha || ""}</td>
-          <td>${pac.sede}</td>
-          <td>${pac.apellidos}</td>
-          <td>${pac.nombres}</td>
-          <td>${pac.estudios?.join(", ") || ""}</td>
-          <td>${pac.cantidad || ""}</td>
-          <td style="background-color: ${colorEstado(pac.estado)}">${pac.estado}</td>
-          <td>${pac.modificado || ""}</td>
-        `;
-        tablaResumen.appendChild(tr);
-      }
+    // Ordenar por fecha de modificación descendente
+    pacientes.sort((a, b) => {
+      const fechaA = new Date(a.fechaModificacion || a.fechaRegistro || 0);
+      const fechaB = new Date(b.fechaModificacion || b.fechaRegistro || 0);
+      return fechaB - fechaA;
     });
+
+    mostrarPagina(paginaActual);
+    crearPaginacion();
   });
 }
 
-function colorEstado(estado) {
-  switch (estado) {
-    case "Programado":
-      return "#ADD8E6"; // Azul pastel
-    case "En espera":
-      return "#FFCCCC"; // Rojo pastel
-    case "En atención":
-      return "#FFF5BA"; // Amarillo pastel
-    case "Atendido":
-      return "#C6F6C6"; // Verde pastel
-    default:
-      return "#f0f0f0";
+function mostrarPagina(numeroPagina) {
+  const inicio = (numeroPagina - 1) * pacientesPorPagina;
+  const fin = inicio + pacientesPorPagina;
+  const pacientesPagina = pacientes.slice(inicio, fin);
+
+  const tbody = document.getElementById("tablaResumen");
+  tbody.innerHTML = "";
+
+  pacientesPagina.forEach((p) => {
+    const fila = document.createElement("tr");
+    fila.innerHTML = `
+      <td>${p.sede}</td>
+      <td>${p.apellidos}</td>
+      <td>${p.nombres}</td>
+      <td>${(Array.isArray(p.estudios) ? p.estudios.join(", ") : p.estudios) || ""}</td>
+      <td>${p.cantidad || 1}</td>
+      <td>${p.estado}</td>
+      <td>${p.fechaModificacion || p.fechaRegistro || ""}</td>
+    `;
+    fila.classList.add(getColorFila(p.estado));
+    tbody.appendChild(fila);
+  });
+}
+
+function crearPaginacion() {
+  const totalPaginas = Math.ceil(pacientes.length / pacientesPorPagina);
+  const paginacion = document.getElementById("paginacion");
+  paginacion.innerHTML = "";
+
+  for (let i = 1; i <= totalPaginas; i++) {
+    const boton = document.createElement("button");
+    boton.textContent = i;
+    boton.classList.add("btn-pagina");
+    if (i === paginaActual) boton.classList.add("activo");
+    boton.onclick = () => {
+      paginaActual = i;
+      mostrarPagina(paginaActual);
+      crearPaginacion();
+    };
+    paginacion.appendChild(boton);
   }
 }
 
-filtroFecha.addEventListener("input", cargarPacientes);
-filtroSede.addEventListener("change", cargarPacientes);
+function getColorFila(estado) {
+  switch (estado) {
+    case "En espera":
+      return "color-en-espera";
+    case "En atención":
+      return "color-en-atencion";
+    case "Atendido":
+      return "color-atendido";
+    case "Programado":
+      return "color-programado";
+    default:
+      return "";
+  }
+}
 
-cargarPacientes();
+window.onload = () => {
+  cargarPacientes();
+};
