@@ -4,40 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Resumen de Pacientes</title>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    .paginacion {
-      margin-top: 20px;
-      text-align: center;
-    }
-    .btn-pagina {
-      margin: 2px;
-      padding: 6px 10px;
-      border: none;
-      background-color: #ddd;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .btn-pagina.activo {
-      background-color: #007bff;
-      color: white;
-    }
-    .color-en-espera {
-      background-color: #ffe5e5;
-    }
-    .color-en-atencion {
-      background-color: #fff9e6;
-    }
-    .color-atendido {
-      background-color: #e6f4ea;
-    }
-    .color-programado {
-      background-color: #e6eaff;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Resumen de Pacientes</h1>
+  <h1>Resumen de Estado de Pacientes</h1>
+  <div id="contador" style="margin-bottom: 20px;"></div>
 
   <table>
     <thead>
@@ -46,33 +17,14 @@
         <th>Apellidos</th>
         <th>Nombres</th>
         <th>Estudios</th>
-        <th>Cant</th>
         <th>Estado</th>
-        <th>Fecha</th>
       </tr>
     </thead>
-    <tbody id="tablaResumen"></tbody>
+    <tbody id="tabla-pacientes"></tbody>
   </table>
 
-  <div id="paginacion" class="paginacion"></div>
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-      authDomain: "estado-pacientes.firebaseapp.com",
-      databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
-      projectId: "estado-pacientes",
-      storageBucket: "estado-pacientes.appspot.com",
-      messagingSenderId: "515522648971",
-      appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
-    };
-    firebase.initializeApp(firebaseConfig);
-  </script>
-
   <script src="resumen.js"></script>
 </body>
 </html>
