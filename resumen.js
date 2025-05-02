@@ -49,11 +49,7 @@ function aplicarFiltros() {
     filtrados = filtrados.filter(p => p.fechaModificacion?.startsWith(fechaFiltro));
   }
 
-  mostrarPacientesPaginados(filtrados);
-}
-
-function mostrarPacientesPaginados(pacientes) {
-  // Ordenar por estado personalizado y luego por fechaModificacion (más reciente primero)
+  // Ordenar por estado primero, luego por fecha de modificación descendente
   const ordenEstado = {
     'En espera': 1,
     'En atención': 2,
@@ -61,21 +57,26 @@ function mostrarPacientesPaginados(pacientes) {
     'Atendido': 4
   };
 
-  pacientes.sort((a, b) => {
+  filtrados.sort((a, b) => {
     const estadoA = ordenEstado[a.estado] || 99;
     const estadoB = ordenEstado[b.estado] || 99;
 
     if (estadoA !== estadoB) {
       return estadoA - estadoB;
-    } else {
-      const fechaA = new Date(a.fechaModificacion || '2000-01-01T00:00:00');
-      const fechaB = new Date(b.fechaModificacion || '2000-01-01T00:00:00');
-      return fechaB - fechaA; // más reciente primero
     }
+
+    const fechaA = new Date(a.fechaModificacion || '2000-01-01T00:00:00');
+    const fechaB = new Date(b.fechaModificacion || '2000-01-01T00:00:00');
+
+    return fechaB - fechaA; // Más reciente primero
   });
 
+  mostrarPacientesPaginados(filtrados);
+}
+
+function mostrarPacientesPaginados(pacientes) {
   const totalPaginas = Math.ceil(pacientes.length / pacientesPorPagina);
-  if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+  if (paginaActual > totalPaginas) paginaActual = 1;
 
   const inicio = (paginaActual - 1) * pacientesPorPagina;
   const fin = inicio + pacientesPorPagina;
