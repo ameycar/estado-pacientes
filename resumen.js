@@ -46,21 +46,31 @@ function aplicarFiltros() {
   }
 
   if (fechaFiltro) {
-    filtrados = filtrados.filter(p => p.fechaModificacion.startsWith(fechaFiltro));
+    filtrados = filtrados.filter(p => p.fechaModificacion?.startsWith(fechaFiltro));
   }
 
   mostrarPacientesPaginados(filtrados);
 }
 
 function mostrarPacientesPaginados(pacientes) {
-  // Ordenar: por estado y fecha
-  const estados = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4 };
+  // Ordenar por estado personalizado y luego por fechaModificacion (más reciente primero)
+  const ordenEstado = {
+    'En espera': 1,
+    'En atención': 2,
+    'Programado': 3,
+    'Atendido': 4
+  };
 
   pacientes.sort((a, b) => {
-    if (estados[a.estado] !== estados[b.estado]) {
-      return estados[a.estado] - estados[b.estado];
+    const estadoA = ordenEstado[a.estado] || 99;
+    const estadoB = ordenEstado[b.estado] || 99;
+
+    if (estadoA !== estadoB) {
+      return estadoA - estadoB;
     } else {
-      return new Date(b.fechaModificacion) - new Date(a.fechaModificacion);
+      const fechaA = new Date(a.fechaModificacion || '2000-01-01T00:00:00');
+      const fechaB = new Date(b.fechaModificacion || '2000-01-01T00:00:00');
+      return fechaB - fechaA; // más reciente primero
     }
   });
 
@@ -82,7 +92,7 @@ function mostrarPacientesPaginados(pacientes) {
       <td>${p.estudios}</td>
       <td>${p.cant}</td>
       <td>${p.estado}</td>
-      <td style="font-size: 12px;">${p.fechaModificacion}</td>
+      <td style="font-size: 12px;">${p.fechaModificacion || ''}</td>
     `;
 
     tr.style.backgroundColor =
