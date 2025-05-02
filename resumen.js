@@ -1,4 +1,4 @@
-// Configuración de Firebase
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -46,10 +46,10 @@ function aplicarFiltros() {
   }
 
   if (fechaFiltro) {
-    filtrados = filtrados.filter(p => p.fechaModificacion?.startsWith(fechaFiltro));
+    filtrados = filtrados.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
   }
 
-  // Ordenar por estado primero, luego por fecha de modificación descendente
+  // Orden personalizado
   const ordenEstado = {
     'En espera': 1,
     'En atención': 2,
@@ -61,9 +61,7 @@ function aplicarFiltros() {
     const estadoA = ordenEstado[a.estado] || 99;
     const estadoB = ordenEstado[b.estado] || 99;
 
-    if (estadoA !== estadoB) {
-      return estadoA - estadoB;
-    }
+    if (estadoA !== estadoB) return estadoA - estadoB;
 
     const fechaA = new Date(a.fechaModificacion || '2000-01-01T00:00:00');
     const fechaB = new Date(b.fechaModificacion || '2000-01-01T00:00:00');
@@ -71,6 +69,8 @@ function aplicarFiltros() {
     return fechaB - fechaA; // Más reciente primero
   });
 
+  // Reiniciar a la primera página al aplicar filtros
+  paginaActual = 1;
   mostrarPacientesPaginados(filtrados);
 }
 
@@ -82,7 +82,6 @@ function mostrarPacientesPaginados(pacientes) {
   const fin = inicio + pacientesPorPagina;
   const pacientesPagina = pacientes.slice(inicio, fin);
 
-  // Renderizar tabla
   tablaResumen.innerHTML = '';
   pacientesPagina.forEach(p => {
     const tr = document.createElement('tr');
@@ -95,7 +94,6 @@ function mostrarPacientesPaginados(pacientes) {
       <td>${p.estado}</td>
       <td style="font-size: 12px;">${p.fechaModificacion || ''}</td>
     `;
-
     tr.style.backgroundColor =
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
@@ -110,7 +108,6 @@ function mostrarPacientesPaginados(pacientes) {
 
 function renderizarPaginacion(totalPaginas) {
   paginacionDiv.innerHTML = '';
-
   if (totalPaginas <= 1) return;
 
   for (let i = 1; i <= totalPaginas; i++) {
@@ -120,7 +117,7 @@ function renderizarPaginacion(totalPaginas) {
     btn.disabled = i === paginaActual;
     btn.addEventListener('click', () => {
       paginaActual = i;
-      aplicarFiltros();
+      aplicarFiltros(); // Reaplica filtros para mantener consistencia
     });
     paginacionDiv.appendChild(btn);
   }
