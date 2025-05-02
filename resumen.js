@@ -1,67 +1,96 @@
-// Configuración Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-  authDomain: "estado-pacientes.firebaseapp.com",
-  databaseURL: "
-
-https://estado-pacientes-default-rtdb.firebaseio.com
-
-",
-  projectId: "estado-pacientes",
-  storageBucket: "estado-pacientes.appspot.com",
-  messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
-};
-
-firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const tabla = document.getElementById("tabla-pacientes");
-const contador = document.getElementById("contador");
+const tbody = document.querySelector("#tablaPacientes tbody");
+const filtroSede = document.getElementById("filtroSede");
+const paginacionDiv = document.getElementById("paginacion");
 
-db.ref("pacientes").on("value", (snapshot) => {
-  tabla.innerHTML = "";
-  let enEspera = 0;
+let pacientes = [];
+let pacientesFiltrados = [];
+let pacientesPorPagina = 50;
+let paginaActual = 1;
 
-  const colores = {
-    "En espera": "#f8d7da",
-    "En atención": "#fff3cd",
-    "Programado": "#cfe2ff",
-    "Atendido": "#d4edda"
-  };
+function cargarPacientes() {
+  db.ref("pacientes").on("value", (snapshot) => {
+    pacientes = [];
 
-  const ordenEstado = {
-    "En espera": 1,
-    "En atención": 2,
-    "Programado": 3,
-    "Atendido": 4
-  };
+    snapshot.forEach((child) => {
+      const pac = child.val();
+      pac.id = child.key;
+      pacientes.push(pac);
+    });
 
-  const pacientes = [];
+    // Ordenar por estado y fecha (los más recientes primero)
+    pacientes.sort((a, b) => {
+      const estados = { "En espera": 1, "En atención": 2, "Programado": 3, "Atendido": 4 };
+      if (estados[a.estado] !== estados[b.estado]) {
+        return estados[a.estado] - estados[b.estado];
+      }
+      return (b.fechaModificacion || "").localeCompare(a.fechaModificacion || "");
+    });
 
-  snapshot.forEach(child => {
-    pacientes.push({ id: child.key, ...child.val() });
+    aplicarFiltroYPaginar();
   });
+}
 
-  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
+function aplicarFiltroYPaginar() {
+  const sedeSeleccionada = filtroSede.value;
+  pacientesFiltrados = sedeSeleccionada
+    ? pacientes.filter((p) => p.sede === sedeSeleccionada)
+    : pacientes;
 
-  pacientes.forEach(p => {
-    if (p.estado === "En espera") enEspera++;
+  mostrarPagina(paginaActual);
+  mostrarPaginacion();
+}
 
+function mostrarPagina(pagina) {
+  tbody.innerHTML = "";
+  const inicio = (pagina - 1) * pacientesPorPagina;
+  const fin = inicio + pacientesPorPagina;
+
+  pacientesFiltrados.slice(inicio, fin).forEach((p) => {
     const fila = document.createElement("tr");
-    fila.style.backgroundColor = colores[p.estado] || "#fff";
 
     fila.innerHTML = `
-      <td>${p.sede || ""}</td>
-      <td>${p.apellidos || ""}</td>
-      <td>${p.nombres || ""}</td>
-      <td>${(p.estudios || []).join(", ")}</td>
-      <td>
-        ${p.estado}<br><small>${p.modificado || ""}</small>
-      </td>
-      <td>-</td>
+      <td>${p.sede}</td>
+      <td>${p.apellidos}</td>
+      <td>${p.nombres}</td>
+      <td>${p.estudios ? p.estudios.join(", ") : ""}</td>
+      <td>${p.cant || ""}</td>
+      <td style="background-color: ${colorEstado(p.estado)}">${p.estado}</td>
+      <td>${p.fechaModificacion || ""}</td>
     `;
-    tabla.appendChild(fila);
+    tbody.appendChild(fila);
   });
+}
 
-  contador.innerText = `Pacientes en espera: ${enEspera}`;
+function mostrarPaginacion() {
+  const totalPaginas = Math.ceil(pacientesFiltrados.length / pacientesPorPagina);
+  paginacionDiv.innerHTML = "";
+
+  for (let i = 1; i <= totalPaginas; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.disabled = i === paginaActual;
+    btn.onclick = () => {
+      paginaActual = i;
+      mostrarPagina(paginaActual);
+    };
+    paginacionDiv.appendChild(btn);
+  }
+}
+
+function colorEstado(estado) {
+  switch (estado) {
+    case "En espera": return "#ffcccc";      // rojo pastel
+    case "En atención": return "#fff5ba";    // amarillo claro
+    case "Programado": return "#cce5ff";     // celeste
+    case "Atendido": return "#ccffcc";       // verde claro
+    default: return "#f0f0f0";
+  }
+}
+
+filtroSede.addEventListener("change", () => {
+  paginaActual = 1;
+  aplicarFiltroYPaginar();
 });
+
+cargarPacientes();
