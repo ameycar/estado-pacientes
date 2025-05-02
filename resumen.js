@@ -21,6 +21,7 @@ const paginacionDiv = document.getElementById('paginacion');
 let pacientesOriginal = [];
 let paginaActual = 1;
 const pacientesPorPagina = 50;
+let pacientesFiltrados = [];
 
 function cargarPacientes() {
   db.ref('pacientes').on('value', snapshot => {
@@ -31,22 +32,22 @@ function cargarPacientes() {
       pacientesOriginal.push(paciente);
     });
 
-    aplicarFiltros();
+    aplicarFiltros(true); // Se reinicia a página 1 al cargar
   });
 }
 
-function aplicarFiltros() {
+function aplicarFiltros(reiniciarPagina = false) {
   const sedeFiltro = filtroSede.value.trim().toLowerCase();
   const fechaFiltro = filtroFecha.value;
 
-  let filtrados = pacientesOriginal;
+  pacientesFiltrados = pacientesOriginal;
 
   if (sedeFiltro) {
-    filtrados = filtrados.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
+    pacientesFiltrados = pacientesFiltrados.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
   }
 
   if (fechaFiltro) {
-    filtrados = filtrados.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
+    pacientesFiltrados = pacientesFiltrados.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
   }
 
   // Orden personalizado
@@ -57,7 +58,7 @@ function aplicarFiltros() {
     'Atendido': 4
   };
 
-  filtrados.sort((a, b) => {
+  pacientesFiltrados.sort((a, b) => {
     const estadoA = ordenEstado[a.estado] || 99;
     const estadoB = ordenEstado[b.estado] || 99;
 
@@ -66,21 +67,20 @@ function aplicarFiltros() {
     const fechaA = new Date(a.fechaModificacion || '2000-01-01T00:00:00');
     const fechaB = new Date(b.fechaModificacion || '2000-01-01T00:00:00');
 
-    return fechaB - fechaA; // Más reciente primero
+    return fechaB - fechaA;
   });
 
-  // Reiniciar a la primera página al aplicar filtros
-  paginaActual = 1;
-  mostrarPacientesPaginados(filtrados);
+  if (reiniciarPagina) paginaActual = 1;
+  mostrarPacientesPaginados();
 }
 
-function mostrarPacientesPaginados(pacientes) {
-  const totalPaginas = Math.ceil(pacientes.length / pacientesPorPagina);
+function mostrarPacientesPaginados() {
+  const totalPaginas = Math.ceil(pacientesFiltrados.length / pacientesPorPagina);
   if (paginaActual > totalPaginas) paginaActual = 1;
 
   const inicio = (paginaActual - 1) * pacientesPorPagina;
   const fin = inicio + pacientesPorPagina;
-  const pacientesPagina = pacientes.slice(inicio, fin);
+  const pacientesPagina = pacientesFiltrados.slice(inicio, fin);
 
   tablaResumen.innerHTML = '';
   pacientesPagina.forEach(p => {
@@ -117,13 +117,13 @@ function renderizarPaginacion(totalPaginas) {
     btn.disabled = i === paginaActual;
     btn.addEventListener('click', () => {
       paginaActual = i;
-      aplicarFiltros(); // Reaplica filtros para mantener consistencia
+      mostrarPacientesPaginados(); // Ya no reaplica filtros
     });
     paginacionDiv.appendChild(btn);
   }
 }
 
-filtroSede.addEventListener('input', aplicarFiltros);
-filtroFecha.addEventListener('input', aplicarFiltros);
+filtroSede.addEventListener('input', () => aplicarFiltros(true));
+filtroFecha.addEventListener('input', () => aplicarFiltros(true));
 
 cargarPacientes();
