@@ -1,91 +1,67 @@
-const dbRef = firebase.database().ref("pacientes");
+// Configuración Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
+  authDomain: "estado-pacientes.firebaseapp.com",
+  databaseURL: "
 
-const ESTADO_ORDEN = {
-  "En espera": 1,
-  "En atención": 2,
-  "Programado": 3,
-  "Atendido": 4
+https://estado-pacientes-default-rtdb.firebaseio.com
+
+",
+  projectId: "estado-pacientes",
+  storageBucket: "estado-pacientes.appspot.com",
+  messagingSenderId: "515522648971",
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
 };
 
-let pacientes = [];
-let currentPage = 1;
-const rowsPerPage = 50;
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const tabla = document.getElementById("tabla-pacientes");
+const contador = document.getElementById("contador");
 
-function renderTable(pacientesFiltrados) {
-  const resumenBody = document.getElementById("resumenBody");
-  resumenBody.innerHTML = "";
+db.ref("pacientes").on("value", (snapshot) => {
+  tabla.innerHTML = "";
+  let enEspera = 0;
 
-  const start = (currentPage - 1) * rowsPerPage;
-  const end = start + rowsPerPage;
-  const paginatedItems = pacientesFiltrados.slice(start, end);
+  const colores = {
+    "En espera": "#f8d7da",
+    "En atención": "#fff3cd",
+    "Programado": "#cfe2ff",
+    "Atendido": "#d4edda"
+  };
 
-  paginatedItems.forEach((paciente) => {
-    const row = document.createElement("tr");
+  const ordenEstado = {
+    "En espera": 1,
+    "En atención": 2,
+    "Programado": 3,
+    "Atendido": 4
+  };
 
-    row.innerHTML = `
-      <td>${paciente.fecha || ""}</td>
-      <td>${paciente.sede}</td>
-      <td>${paciente.apellidos}</td>
-      <td>${paciente.nombres}</td>
-      <td>${paciente.estudios}</td>
-      <td>${paciente.cantidad || ""}</td>
-      <td>${paciente.estado}</td>
-      <td>${paciente.fechaModificacion || ""}</td>
+  const pacientes = [];
+
+  snapshot.forEach(child => {
+    pacientes.push({ id: child.key, ...child.val() });
+  });
+
+  pacientes.sort((a, b) => ordenEstado[a.estado] - ordenEstado[b.estado]);
+
+  pacientes.forEach(p => {
+    if (p.estado === "En espera") enEspera++;
+
+    const fila = document.createElement("tr");
+    fila.style.backgroundColor = colores[p.estado] || "#fff";
+
+    fila.innerHTML = `
+      <td>${p.sede || ""}</td>
+      <td>${p.apellidos || ""}</td>
+      <td>${p.nombres || ""}</td>
+      <td>${(p.estudios || []).join(", ")}</td>
+      <td>
+        ${p.estado}<br><small>${p.modificado || ""}</small>
+      </td>
+      <td>-</td>
     `;
-
-    resumenBody.appendChild(row);
+    tabla.appendChild(fila);
   });
 
-  renderPagination(pacientesFiltrados.length);
-}
-
-function renderPagination(totalItems) {
-  const totalPages = Math.ceil(totalItems / rowsPerPage);
-  const pagination = document.getElementById("pagination");
-  pagination.innerHTML = "";
-
-  if (totalPages <= 1) return;
-
-  if (currentPage > 1) {
-    const prev = document.createElement("button");
-    prev.textContent = "← Anterior";
-    prev.onclick = () => {
-      currentPage--;
-      renderTable(pacientes);
-    };
-    pagination.appendChild(prev);
-  }
-
-  if (currentPage < totalPages) {
-    const next = document.createElement("button");
-    next.textContent = "Siguiente →";
-    next.onclick = () => {
-      currentPage++;
-      renderTable(pacientes);
-    };
-    pagination.appendChild(next);
-  }
-}
-
-dbRef.on("value", (snapshot) => {
-  pacientes = [];
-  snapshot.forEach((childSnapshot) => {
-    const paciente = childSnapshot.val();
-    paciente.key = childSnapshot.key;
-    pacientes.push(paciente);
-  });
-
-  pacientes.sort((a, b) => {
-    const estadoA = ESTADO_ORDEN[a.estado] || 5;
-    const estadoB = ESTADO_ORDEN[b.estado] || 5;
-
-    if (estadoA !== estadoB) return estadoA - estadoB;
-
-    const fechaA = new Date(b.fechaModificacion || "").getTime() || 0;
-    const fechaB = new Date(a.fechaModificacion || "").getTime() || 0;
-    return fechaA - fechaB;
-  });
-
-  currentPage = 1;
-  renderTable(pacientes);
+  contador.innerText = `Pacientes en espera: ${enEspera}`;
 });
