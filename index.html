@@ -5,19 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
+
+  <script>
+    // Protege esta página para solo usuarios "admin"
+    const usuario = localStorage.getItem('usuario');
+    if (usuario !== 'admin') {
+      alert('Acceso denegado. Redirigiendo al login...');
+      window.location.href = 'login.html';
+    }
+  </script>
 </head>
 <body>
   <h1>Estado de Pacientes</h1>
 
-  <form id="formulario">
-  
-<label for="sede">Sede:</label>
-<select id="sede" required>
-  <option value="Vitarte 1">Vitarte 1</option>
-  <option value="Vitarte 5">Vitarte 5</option>
-  <option value="Vitarte 7">Vitarte 7</option>
-</select>
+  <!-- Botón cerrar sesión -->
+  <div style="text-align: right; margin-bottom: 10px;">
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
 
+  <form id="formulario">
+    <label for="sede">Sede:</label>
+    <select id="sede" required>
+      <option value="Vitarte 1">Vitarte 1</option>
+      <option value="Vitarte 5">Vitarte 5</option>
+      <option value="Vitarte 7">Vitarte 7</option>
+    </select>
 
     <label for="apellidos">Apellidos:</label>
     <input type="text" id="apellidos" required>
@@ -94,5 +106,13 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="script.js"></script>
+
+  <!-- Script cerrar sesión -->
+  <script>
+    function cerrarSesion() {
+      localStorage.removeItem('usuario');
+      window.location.href = 'login.html';
+    }
+  </script>
 </body>
 </html>
