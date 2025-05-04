@@ -9,6 +9,15 @@
   
 </head>
 <body>
+  <script>
+  // Verificación de sesión: solo usuario 'admin' puede ver esta página
+  const usuario = localStorage.getItem("usuario");
+
+  if (usuario !== "admin") {
+    alert("Acceso denegado. Debes iniciar sesión como administrador.");
+    window.location.href = "login.html";
+  }
+</script>
   <h1>Estado de Pacientes</h1>
 
   <!-- Botón cerrar sesión -->
