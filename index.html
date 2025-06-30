@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -84,16 +83,16 @@
     <label for="filtroSede">Filtrar por sede:</label>
     <input type="text" id="filtroSede" placeholder="Sede...">
 
-    <label for="filtroFecha">Filtrar por fecha:</label>
-    <input type="date" id="filtroFecha">
-
-    <label for="filtroNombre">Filtrar por nombres o apellidos:</label>
+    <label for="filtroNombre">Filtrar por nombres/apellidos:</label>
     <input type="text" id="filtroNombre" placeholder="Nombre o Apellido...">
 
     <label for="filtroEstudio">Filtrar por estudio:</label>
     <input type="text" id="filtroEstudio" placeholder="Estudio...">
 
-    <button id="exportarExcel">Exportar a Excel</button>
+    <label for="filtroFecha">Filtrar por fecha:</label>
+    <input type="date" id="filtroFecha">
+
+    <button onclick="exportarExcel()">Exportar Excel</button>
   </div>
 
   <table>
@@ -112,12 +111,13 @@
   </table>
 
   <h2>Gráficos</h2>
-  <canvas id="graficoEstado" width="400" height="200"></canvas>
-  <canvas id="graficoSede" width="400" height="200"></canvas>
-  <canvas id="graficoEstudio" width="400" height="200"></canvas>
+  <canvas id="graficoEstados" width="400" height="200"></canvas>
+  <canvas id="graficoSedes" width="400" height="200"></canvas>
+  <canvas id="graficoEstudios" width="400" height="200"></canvas>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="script.js"></script>
 
   <script>
