@@ -21,6 +21,11 @@ const cantidadEcoPbDiv = document.getElementById('cantidad-eco-pb');
 const ecoPbCantidad = document.getElementById('ecoPbCantidad');
 const filtroSede = document.getElementById('filtroSede');
 const filtroFecha = document.getElementById('filtroFecha');
+const filtroNombre = document.getElementById('filtroNombre');
+const filtroEstudio = document.getElementById('filtroEstudio');
+const exportBtn = document.getElementById('exportarExcel');
+
+let datosPacientes = [];
 
 estudiosSelect.addEventListener('change', () => {
   const seleccionados = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
@@ -59,31 +64,30 @@ formulario.addEventListener('submit', e => {
 
 function cargarPacientes() {
   db.ref('pacientes').on('value', snapshot => {
-    tablaPacientes.innerHTML = '';
-    let pacientes = [];
+    datosPacientes = [];
     snapshot.forEach(childSnapshot => {
       const paciente = childSnapshot.val();
       paciente.key = childSnapshot.key;
-      pacientes.push(paciente);
+      datosPacientes.push(paciente);
     });
-
-    aplicarFiltros(pacientes);
+    aplicarFiltros();
   });
 }
 
-function aplicarFiltros(pacientes) {
+function aplicarFiltros() {
+  let pacientes = [...datosPacientes];
   const sedeFiltro = filtroSede.value.trim().toLowerCase();
   const fechaFiltro = filtroFecha.value;
+  const nombreFiltro = filtroNombre.value.trim().toLowerCase();
+  const estudioFiltro = filtroEstudio.value.trim().toLowerCase();
 
-  if (sedeFiltro) {
-    pacientes = pacientes.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
-  }
-
-  if (fechaFiltro) {
-    pacientes = pacientes.filter(p => p.fechaModificacion.startsWith(fechaFiltro));
-  }
+  if (sedeFiltro) pacientes = pacientes.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
+  if (fechaFiltro) pacientes = pacientes.filter(p => p.fechaModificacion.startsWith(fechaFiltro));
+  if (nombreFiltro) pacientes = pacientes.filter(p => p.apellidos.toLowerCase().includes(nombreFiltro) || p.nombres.toLowerCase().includes(nombreFiltro));
+  if (estudioFiltro) pacientes = pacientes.filter(p => p.estudios.toLowerCase().includes(estudioFiltro));
 
   mostrarPacientes(pacientes);
+  actualizarGraficos(pacientes);
 }
 
 function mostrarPacientes(pacientes) {
@@ -140,7 +144,62 @@ function eliminarPaciente(key) {
   db.ref('pacientes/' + key).remove();
 }
 
-filtroSede.addEventListener('input', cargarPacientes);
-filtroFecha.addEventListener('input', cargarPacientes);
+filtroSede.addEventListener('input', aplicarFiltros);
+filtroFecha.addEventListener('input', aplicarFiltros);
+filtroNombre.addEventListener('input', aplicarFiltros);
+filtroEstudio.addEventListener('input', aplicarFiltros);
+
+exportBtn.addEventListener('click', () => exportarExcel(datosPacientes));
+
+function exportarExcel(pacientes) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(pacientes);
+  XLSX.utils.book_append_sheet(wb, ws, 'Pacientes');
+  XLSX.writeFile(wb, 'ReportePacientes.xlsx');
+}
+
+function actualizarGraficos(pacientes) {
+  const estados = { 'En espera': 0, 'En atención': 0, 'Programado': 0, 'Atendido': 0 };
+  const sedes = {};
+  const estudios = {};
+
+  pacientes.forEach(p => {
+    estados[p.estado]++;
+
+    if (!sedes[p.sede]) sedes[p.sede] = 0;
+    sedes[p.sede]++;
+
+    p.estudios.split(', ').forEach(est => {
+      if (!estudios[est]) estudios[est] = 0;
+      estudios[est]++;
+    });
+  });
+
+  generarGrafico('graficoEstado', 'Pacientes por Estado', Object.keys(estados), Object.values(estados));
+  generarGrafico('graficoSede', 'Pacientes por Sede', Object.keys(sedes), Object.values(sedes));
+  generarGrafico('graficoEstudio', 'Pacientes por Estudio', Object.keys(estudios), Object.values(estudios));
+}
+
+function generarGrafico(canvasId, titulo, etiquetas, datos) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  if (window[canvasId]) window[canvasId].destroy();
+  window[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: etiquetas,
+      datasets: [{
+        label: titulo,
+        data: datos,
+        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
 
 cargarPacientes();
