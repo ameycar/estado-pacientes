@@ -5,22 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
-
-  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <script>
-  // Verificación de sesión: solo usuario 'admin' puede ver esta página
-  const usuario = localStorage.getItem("usuario");
+    const usuario = localStorage.getItem("usuario");
+    if (usuario !== "admin") {
+      alert("Acceso denegado. Debes iniciar sesión como administrador.");
+      window.location.href = "login.html";
+    }
+  </script>
 
-  if (usuario !== "admin") {
-    alert("Acceso denegado. Debes iniciar sesión como administrador.");
-    window.location.href = "login.html";
-  }
-</script>
   <h1>Estado de Pacientes</h1>
 
-  <!-- Botón cerrar sesión -->
   <div style="text-align: right; margin-bottom: 10px;">
     <button onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
@@ -88,6 +86,14 @@
 
     <label for="filtroFecha">Filtrar por fecha:</label>
     <input type="date" id="filtroFecha">
+
+    <label for="filtroNombre">Filtrar por nombres o apellidos:</label>
+    <input type="text" id="filtroNombre" placeholder="Nombre o Apellido...">
+
+    <label for="filtroEstudio">Filtrar por estudio:</label>
+    <input type="text" id="filtroEstudio" placeholder="Estudio...">
+
+    <button id="exportarExcel">Exportar a Excel</button>
   </div>
 
   <table>
@@ -105,11 +111,15 @@
     <tbody id="tabla-pacientes"></tbody>
   </table>
 
+  <h2>Gráficos</h2>
+  <canvas id="graficoEstado" width="400" height="200"></canvas>
+  <canvas id="graficoSede" width="400" height="200"></canvas>
+  <canvas id="graficoEstudio" width="400" height="200"></canvas>
+
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="script.js"></script>
 
-  <!-- Script cerrar sesión -->
   <script>
     function cerrarSesion() {
       localStorage.removeItem('usuario');
