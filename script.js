@@ -1,4 +1,4 @@
-// Configurar Firebase
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -6,8 +6,7 @@ const firebaseConfig = {
   projectId: "estado-pacientes",
   storageBucket: "estado-pacientes.appspot.com",
   messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-  measurementId: "G-C9STJV4J6K"
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -20,10 +19,9 @@ const estudiosSelect = document.getElementById('estudios');
 const cantidadEcoPbDiv = document.getElementById('cantidad-eco-pb');
 const ecoPbCantidad = document.getElementById('ecoPbCantidad');
 const filtroSede = document.getElementById('filtroSede');
-const filtroFecha = document.getElementById('filtroFecha');
 const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
-const exportBtn = document.getElementById('exportarExcel');
+const filtroFecha = document.getElementById('filtroFecha');
 
 let datosPacientes = [];
 
@@ -64,27 +62,37 @@ formulario.addEventListener('submit', e => {
 
 function cargarPacientes() {
   db.ref('pacientes').on('value', snapshot => {
-    datosPacientes = [];
+    let pacientes = [];
     snapshot.forEach(childSnapshot => {
       const paciente = childSnapshot.val();
       paciente.key = childSnapshot.key;
-      datosPacientes.push(paciente);
+      pacientes.push(paciente);
     });
+    datosPacientes = pacientes;
     aplicarFiltros();
   });
 }
 
 function aplicarFiltros() {
-  let pacientes = [...datosPacientes];
+  let pacientes = datosPacientes;
+
   const sedeFiltro = filtroSede.value.trim().toLowerCase();
-  const fechaFiltro = filtroFecha.value;
   const nombreFiltro = filtroNombre.value.trim().toLowerCase();
   const estudioFiltro = filtroEstudio.value.trim().toLowerCase();
+  const fechaFiltro = filtroFecha.value;
 
-  if (sedeFiltro) pacientes = pacientes.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
-  if (fechaFiltro) pacientes = pacientes.filter(p => p.fechaModificacion.startsWith(fechaFiltro));
-  if (nombreFiltro) pacientes = pacientes.filter(p => p.apellidos.toLowerCase().includes(nombreFiltro) || p.nombres.toLowerCase().includes(nombreFiltro));
-  if (estudioFiltro) pacientes = pacientes.filter(p => p.estudios.toLowerCase().includes(estudioFiltro));
+  if (sedeFiltro) {
+    pacientes = pacientes.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
+  }
+  if (nombreFiltro) {
+    pacientes = pacientes.filter(p => p.nombres.toLowerCase().includes(nombreFiltro) || p.apellidos.toLowerCase().includes(nombreFiltro));
+  }
+  if (estudioFiltro) {
+    pacientes = pacientes.filter(p => p.estudios.toLowerCase().includes(estudioFiltro));
+  }
+  if (fechaFiltro) {
+    pacientes = pacientes.filter(p => p.fechaModificacion.startsWith(fechaFiltro));
+  }
 
   mostrarPacientes(pacientes);
   actualizarGraficos(pacientes);
@@ -122,8 +130,7 @@ function mostrarPacientes(pacientes) {
     tr.style.backgroundColor =
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
-      p.estado === 'Programado' ? '#cce5ff' :
-      '#d5f5d5';
+      p.estado === 'Programado' ? '#cce5ff' : '#d5f5d5';
 
     tablaPacientes.appendChild(tr);
 
@@ -145,18 +152,29 @@ function eliminarPaciente(key) {
 }
 
 filtroSede.addEventListener('input', aplicarFiltros);
-filtroFecha.addEventListener('input', aplicarFiltros);
 filtroNombre.addEventListener('input', aplicarFiltros);
 filtroEstudio.addEventListener('input', aplicarFiltros);
+filtroFecha.addEventListener('input', aplicarFiltros);
 
-exportBtn.addEventListener('click', () => exportarExcel(datosPacientes));
+function exportarExcel() {
+  const datos = datosPacientes.map(p => ({
+    Sede: p.sede,
+    Apellidos: p.apellidos,
+    Nombres: p.nombres,
+    Estudios: p.estudios,
+    Cant: p.cant,
+    Estado: p.estado,
+    Fecha: p.fechaModificacion
+  }));
 
-function exportarExcel(pacientes) {
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(pacientes);
-  XLSX.utils.book_append_sheet(wb, ws, 'Pacientes');
-  XLSX.writeFile(wb, 'ReportePacientes.xlsx');
+  const worksheet = XLSX.utils.json_to_sheet(datos);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Pacientes');
+
+  XLSX.writeFile(workbook, 'Pacientes.xlsx');
 }
+
+let graficoEstados, graficoSedes, graficoEstudios;
 
 function actualizarGraficos(pacientes) {
   const estados = { 'En espera': 0, 'En atención': 0, 'Programado': 0, 'Atendido': 0 };
@@ -164,40 +182,61 @@ function actualizarGraficos(pacientes) {
   const estudios = {};
 
   pacientes.forEach(p => {
-    estados[p.estado]++;
-
-    if (!sedes[p.sede]) sedes[p.sede] = 0;
-    sedes[p.sede]++;
-
+    estados[p.estado] = (estados[p.estado] || 0) + 1;
+    sedes[p.sede] = (sedes[p.sede] || 0) + 1;
     p.estudios.split(', ').forEach(est => {
-      if (!estudios[est]) estudios[est] = 0;
-      estudios[est]++;
+      estudios[est] = (estudios[est] || 0) + 1;
     });
   });
 
-  generarGrafico('graficoEstado', 'Pacientes por Estado', Object.keys(estados), Object.values(estados));
-  generarGrafico('graficoSede', 'Pacientes por Sede', Object.keys(sedes), Object.values(sedes));
-  generarGrafico('graficoEstudio', 'Pacientes por Estudio', Object.keys(estudios), Object.values(estudios));
-}
-
-function generarGrafico(canvasId, titulo, etiquetas, datos) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  if (window[canvasId]) window[canvasId].destroy();
-  window[canvasId] = new Chart(ctx, {
-    type: 'bar',
+  const ctxEstados = document.getElementById('graficoEstados').getContext('2d');
+  if (graficoEstados) graficoEstados.destroy();
+  graficoEstados = new Chart(ctxEstados, {
+    type: 'pie',
     data: {
-      labels: etiquetas,
+      labels: Object.keys(estados),
       datasets: [{
-        label: titulo,
-        data: datos,
-        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+        data: Object.values(estados),
+        backgroundColor: ['#ff9999', '#ffff99', '#99ccff', '#99ff99']
       }]
     },
     options: {
-      responsive: true,
-      scales: {
-        y: { beginAtZero: true }
-      }
+      responsive: false
+    }
+  });
+
+  const ctxSedes = document.getElementById('graficoSedes').getContext('2d');
+  if (graficoSedes) graficoSedes.destroy();
+  graficoSedes = new Chart(ctxSedes, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(sedes),
+      datasets: [{
+        label: 'Cantidad por Sede',
+        data: Object.values(sedes),
+        backgroundColor: '#4CAF50'
+      }]
+    },
+    options: {
+      responsive: false
+    }
+  });
+
+  const ctxEstudios = document.getElementById('graficoEstudios').getContext('2d');
+  if (graficoEstudios) graficoEstudios.destroy();
+  graficoEstudios = new Chart(ctxEstudios, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(estudios),
+      datasets: [{
+        label: 'Cantidad por Estudio',
+        data: Object.values(estudios),
+        backgroundColor: '#2196F3'
+      }]
+    },
+    options: {
+      responsive: false,
+      indexAxis: 'y'
     }
   });
 }
