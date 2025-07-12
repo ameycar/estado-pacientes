@@ -8,7 +8,6 @@ const firebaseConfig = {
   messagingSenderId: "515522648971",
   appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -124,7 +123,10 @@ function mostrarPacientes(pacientes) {
         </select>
         <div style="font-size:10px;">${p.fechaModificacion}</div>
       </td>
-      <td><button onclick="eliminarPaciente('${p.key}')">🗑️</button></td>
+      <td>
+        <button onclick="eliminarPaciente('${p.key}')">🗑️</button>
+        ${p.estado === 'En atención' ? `<button onclick="repetirLlamado('${p.key}')">📢 Llamar otra vez</button>` : ''}
+      </td>
     `;
 
     tr.style.backgroundColor =
@@ -174,6 +176,12 @@ function exportarExcel() {
   XLSX.writeFile(workbook, 'Pacientes.xlsx');
 }
 
+function repetirLlamado(id) {
+  firebase.database().ref("pacientes/" + id).update({
+    repetir: true
+  });
+}
+
 let graficoEstados, graficoSedes, graficoEstudios;
 
 function actualizarGraficos(pacientes) {
@@ -200,9 +208,7 @@ function actualizarGraficos(pacientes) {
         backgroundColor: ['#ff9999', '#ffff99', '#99ccff', '#99ff99']
       }]
     },
-    options: {
-      responsive: false
-    }
+    options: { responsive: false }
   });
 
   const ctxSedes = document.getElementById('graficoSedes').getContext('2d');
@@ -217,9 +223,7 @@ function actualizarGraficos(pacientes) {
         backgroundColor: '#4CAF50'
       }]
     },
-    options: {
-      responsive: false
-    }
+    options: { responsive: false }
   });
 
   const ctxEstudios = document.getElementById('graficoEstudios').getContext('2d');
