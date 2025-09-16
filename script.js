@@ -24,6 +24,60 @@ const filtroFecha = document.getElementById('filtroFecha');
 
 let datosPacientes = [];
 
+// ===== FIRMA DIGITAL =====
+let pacienteActualFirma = null;
+const canvas = document.getElementById("canvasFirma");
+const ctx = canvas.getContext("2d");
+let dibujando = false;
+
+if (canvas) {
+  canvas.addEventListener("mousedown", e => { dibujando = true; dibujar(e); });
+  canvas.addEventListener("mousemove", dibujar);
+  canvas.addEventListener("mouseup", () => dibujando = false);
+  canvas.addEventListener("mouseout", () => dibujando = false);
+
+  canvas.addEventListener("touchstart", e => { dibujando = true; dibujar(e.touches[0]); });
+  canvas.addEventListener("touchmove", e => { dibujar(e.touches[0]); e.preventDefault(); });
+  canvas.addEventListener("touchend", () => dibujando = false);
+}
+
+function dibujar(e) {
+  if (!dibujando) return;
+  const rect = canvas.getBoundingClientRect();
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "black";
+  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+}
+
+function limpiarFirma() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function abrirModal(key) {
+  pacienteActualFirma = key;
+  limpiarFirma();
+  document.getElementById("modalFirma").style.display = "block";
+}
+
+function cerrarModal() {
+  document.getElementById("modalFirma").style.display = "none";
+}
+
+function guardarFirma() {
+  const dataUrl = canvas.toDataURL();
+  db.ref("pacientes/" + pacienteActualFirma).update({
+    firma: dataUrl,
+    entregado: "Sí"
+  });
+  cerrarModal();
+}
+
+// ===== FIN FIRMA =====
+
 estudiosSelect.addEventListener('change', () => {
   const seleccionados = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
   cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
@@ -36,6 +90,8 @@ formulario.addEventListener('submit', e => {
   const nombres = document.getElementById('nombres').value.trim();
   let estudios = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
   let cant = estudios.length;
+  const precio = document.getElementById('precio').value.trim();
+  const pf = document.getElementById('pf').value.trim();
   const estado = 'En espera';
   const fechaModificacion = new Date().toLocaleString();
 
@@ -50,7 +106,14 @@ formulario.addEventListener('submit', e => {
     nombres,
     estudios: estudios.join(', '),
     cant,
+    precio,
+    pf,
     estado,
+    placas: "",
+    cd: "",
+    informe: "",
+    entregado: "No",
+    firma: "",
     fechaModificacion
   };
 
@@ -114,6 +177,8 @@ function mostrarPacientes(pacientes) {
       <td>${p.nombres}</td>
       <td>${p.estudios}</td>
       <td>${p.cant}</td>
+      <td>${p.precio || ""}</td>
+      <td>${p.pf || ""}</td>
       <td>
         <select onchange="cambiarEstado('${p.key}', this.value)">
           <option ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
@@ -122,6 +187,13 @@ function mostrarPacientes(pacientes) {
           <option ${p.estado === 'Atendido' ? 'selected' : ''}>Atendido</option>
         </select>
         <div style="font-size:10px;">${p.fechaModificacion}</div>
+      </td>
+      <td>${p.placas || ""}</td>
+      <td>${p.cd || ""}</td>
+      <td>${p.informe || ""}</td>
+      <td>${p.entregado || "No"}</td>
+      <td>
+        ${p.firma ? `<img src="${p.firma}" alt="Firma" width="100"/>` : `<button onclick="abrirModal('${p.key}')">Firmar</button>`}
       </td>
       <td>
         <button onclick="eliminarPaciente('${p.key}')">🗑️</button>
@@ -165,7 +237,13 @@ function exportarExcel() {
     Nombres: p.nombres,
     Estudios: p.estudios,
     Cant: p.cant,
+    Precio: p.precio,
+    PF: p.pf,
     Estado: p.estado,
+    Placas: p.placas,
+    CD: p.cd,
+    Informe: p.informe,
+    Entregado: p.entregado,
     Fecha: p.fechaModificacion
   }));
 
