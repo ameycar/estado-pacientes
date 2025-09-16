@@ -1,4 +1,4 @@
-// Configuración Firebase
+// Configuración Firebase (mantener la tuya tal cual)
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -24,60 +24,107 @@ const filtroFecha = document.getElementById('filtroFecha');
 
 let datosPacientes = [];
 
-// ===== FIRMA DIGITAL =====
-let pacienteActualFirma = null;
-const canvas = document.getElementById("canvasFirma");
-const ctx = canvas.getContext("2d");
-let dibujando = false;
+/* --------------------
+   Helpers para fechas
+   -------------------- */
+// Devuelve 'YYYY-MM-DD' o '' si no se puede inferir
+function inferISODate(str) {
+  if (!str) return '';
+  // si ya viene en formato ISO date (YYYY-MM-DD)
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) return isoMatch[0];
 
-if (canvas) {
-  canvas.addEventListener("mousedown", e => { dibujando = true; dibujar(e); });
-  canvas.addEventListener("mousemove", dibujar);
-  canvas.addEventListener("mouseup", () => dibujando = false);
-  canvas.addEventListener("mouseout", () => dibujando = false);
+  // intento directo con Date
+  const d = new Date(str);
+  if (!isNaN(d)) return d.toISOString().slice(0,10);
 
-  canvas.addEventListener("touchstart", e => { dibujando = true; dibujar(e.touches[0]); });
-  canvas.addEventListener("touchmove", e => { dibujar(e.touches[0]); e.preventDefault(); });
-  canvas.addEventListener("touchend", () => dibujando = false);
+  // buscar dd/mm/yyyy o dd-mm-yyyy (asumo formato día/mes/año por localización)
+  const m = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (m) {
+    let day = parseInt(m[1], 10);
+    let month = parseInt(m[2], 10);
+    let year = parseInt(m[3], 10);
+    if (year < 100) year += 2000;
+    const dt = new Date(year, month - 1, day);
+    if (!isNaN(dt)) return dt.toISOString().slice(0,10);
+  }
+
+  // si no pudimos, devolver vacío
+  return '';
 }
 
-function dibujar(e) {
-  if (!dibujando) return;
+/* --------------------
+   Firma digital (canvas ya en index.html)
+   -------------------- */
+let pacienteActualFirma = null;
+const canvas = document.getElementById("canvasFirma");
+let ctx = null;
+let dibujando = false;
+if (canvas) {
+  ctx = canvas.getContext("2d");
+  // mouse
+  canvas.addEventListener("mousedown", e => { dibujando = true; iniciarDibujar(e); });
+  canvas.addEventListener("mousemove", moverDibujar);
+  canvas.addEventListener("mouseup", () => dibujando = false);
+  canvas.addEventListener("mouseout", () => dibujando = false);
+  // touch
+  canvas.addEventListener("touchstart", e => { dibujando = true; iniciarDibujar(e.touches[0]); });
+  canvas.addEventListener("touchmove", e => { moverDibujar(e.touches[0]); e.preventDefault(); });
+  canvas.addEventListener("touchend", () => dibujando = false);
+}
+function iniciarDibujar(e) {
+  if (!ctx) return;
   const rect = canvas.getBoundingClientRect();
+  ctx.beginPath();
   ctx.lineWidth = 2;
   ctx.lineCap = "round";
   ctx.strokeStyle = "black";
+  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+}
+function moverDibujar(e) {
+  if (!dibujando || !ctx) return;
+  const rect = canvas.getBoundingClientRect();
   ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
 }
-
 function limpiarFirma() {
+  if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
-
 function abrirModal(key) {
   pacienteActualFirma = key;
   limpiarFirma();
-  document.getElementById("modalFirma").style.display = "block";
+  const modal = document.getElementById("modalFirma");
+  if (modal) modal.style.display = "flex";
 }
-
 function cerrarModal() {
-  document.getElementById("modalFirma").style.display = "none";
+  const modal = document.getElementById("modalFirma");
+  if (modal) modal.style.display = "none";
+  pacienteActualFirma = null;
 }
-
 function guardarFirma() {
-  const dataUrl = canvas.toDataURL();
+  if (!pacienteActualFirma || !canvas) return;
+  const dataUrl = canvas.toDataURL("image/png");
+  const fecha_entrega_iso = new Date().toISOString().slice(0,10);
+  const fecha_entrega = new Date().toLocaleString();
   db.ref("pacientes/" + pacienteActualFirma).update({
     firma: dataUrl,
-    entregado: "Sí"
+    entregado: "Sí",
+    fecha_entrega,
+    fecha_entrega_iso
+  }).then(() => {
+    cerrarModal();
+  }).catch(err => {
+    console.error("Error guardando firma:", err);
+    alert("Error guardando la firma. Revisa la consola.");
   });
-  cerrarModal();
 }
 
-// ===== FIN FIRMA =====
-
+/* --------------------
+   Lógica de formulario
+   -------------------- */
 estudiosSelect.addEventListener('change', () => {
   const seleccionados = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
   cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
@@ -90,13 +137,15 @@ formulario.addEventListener('submit', e => {
   const nombres = document.getElementById('nombres').value.trim();
   let estudios = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
   let cant = estudios.length;
-  const precio = document.getElementById('precio').value.trim();
-  const pf = document.getElementById('pf').value.trim();
+  const precio = (document.getElementById('precio') && document.getElementById('precio').value.trim()) || "";
+  const pf = (document.getElementById('pf') && document.getElementById('pf').value.trim()) || "";
   const estado = 'En espera';
   const fechaModificacion = new Date().toLocaleString();
+  const fechaModificacionISO = new Date().toISOString().slice(0,10);
+  const created_at_iso = fechaModificacionISO;
 
   if (estudios.includes('Eco pb')) {
-    const ecoCantidad = parseInt(ecoPbCantidad.value);
+    const ecoCantidad = parseInt(ecoPbCantidad.value) || 0;
     cant = estudios.length - 1 + ecoCantidad;
   }
 
@@ -114,7 +163,9 @@ formulario.addEventListener('submit', e => {
     informe: "",
     entregado: "No",
     firma: "",
-    fechaModificacion
+    fechaModificacion,
+    fechaModificacionISO,
+    created_at_iso
   };
 
   db.ref('pacientes').push(nuevoPaciente);
@@ -122,12 +173,38 @@ formulario.addEventListener('submit', e => {
   cantidadEcoPbDiv.style.display = 'none';
 });
 
+/* --------------------
+   Cargar + backfill ISO para registros viejos
+   -------------------- */
 function cargarPacientes() {
   db.ref('pacientes').on('value', snapshot => {
     let pacientes = [];
     snapshot.forEach(childSnapshot => {
-      const paciente = childSnapshot.val();
+      const paciente = childSnapshot.val() || {};
       paciente.key = childSnapshot.key;
+
+      // backfill fechaModificacionISO si falta
+      if (!paciente.fechaModificacionISO) {
+        const iso = inferISODate(paciente.fechaModificacion) || inferISODate(paciente.created_at) || '';
+        if (iso) {
+          // actualizar en la base (no obligatorio, pero útil)
+          db.ref('pacientes/' + paciente.key).update({ fechaModificacionISO: iso }).catch(()=>{});
+          paciente.fechaModificacionISO = iso;
+        } else {
+          paciente.fechaModificacionISO = '';
+        }
+      }
+      // backfill fecha_entrega_iso si existe fecha_entrega pero no la ISO
+      if (!paciente.fecha_entrega_iso && paciente.fecha_entrega) {
+        const iso2 = inferISODate(paciente.fecha_entrega) || '';
+        if (iso2) {
+          db.ref('pacientes/' + paciente.key).update({ fecha_entrega_iso: iso2 }).catch(()=>{});
+          paciente.fecha_entrega_iso = iso2;
+        } else {
+          paciente.fecha_entrega_iso = '';
+        }
+      }
+
       pacientes.push(paciente);
     });
     datosPacientes = pacientes;
@@ -135,35 +212,45 @@ function cargarPacientes() {
   });
 }
 
+/* --------------------
+   Filtrado (ahora fecha compara ISO)
+   -------------------- */
 function aplicarFiltros() {
   let pacientes = datosPacientes;
 
   const sedeFiltro = filtroSede.value.trim().toLowerCase();
   const nombreFiltro = filtroNombre.value.trim().toLowerCase();
   const estudioFiltro = filtroEstudio.value.trim().toLowerCase();
-  const fechaFiltro = filtroFecha.value;
+  const fechaFiltro = filtroFecha.value; // viene 'YYYY-MM-DD' desde <input type="date">
 
   if (sedeFiltro) {
-    pacientes = pacientes.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
+    pacientes = pacientes.filter(p => (p.sede || '').toLowerCase().includes(sedeFiltro));
   }
   if (nombreFiltro) {
-    pacientes = pacientes.filter(p => p.nombres.toLowerCase().includes(nombreFiltro) || p.apellidos.toLowerCase().includes(nombreFiltro));
+    pacientes = pacientes.filter(p => ((p.nombres || '').toLowerCase().includes(nombreFiltro) || (p.apellidos || '').toLowerCase().includes(nombreFiltro)));
   }
   if (estudioFiltro) {
-    pacientes = pacientes.filter(p => p.estudios.toLowerCase().includes(estudioFiltro));
+    pacientes = pacientes.filter(p => (p.estudios || '').toLowerCase().includes(estudioFiltro));
   }
   if (fechaFiltro) {
-    pacientes = pacientes.filter(p => p.fechaModificacion.startsWith(fechaFiltro));
+    pacientes = pacientes.filter(p => {
+      const modIso = p.fechaModificacionISO || inferISODate(p.fechaModificacion) || '';
+      const entIso = p.fecha_entrega_iso || inferISODate(p.fecha_entrega) || '';
+      return modIso === fechaFiltro || entIso === fechaFiltro;
+    });
   }
 
   mostrarPacientes(pacientes);
   actualizarGraficos(pacientes);
 }
 
+/* --------------------
+   Mostrar tabla (se respetó estructura y colores)
+   -------------------- */
 function mostrarPacientes(pacientes) {
   pacientes.sort((a, b) => {
     const estados = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4 };
-    return estados[a.estado] - estados[b.estado];
+    return (estados[a.estado] || 99) - (estados[b.estado] || 99);
   });
 
   let enEspera = 0;
@@ -171,12 +258,13 @@ function mostrarPacientes(pacientes) {
 
   pacientes.forEach(p => {
     const tr = document.createElement('tr');
+
     tr.innerHTML = `
-      <td>${p.sede}</td>
-      <td>${p.apellidos}</td>
-      <td>${p.nombres}</td>
-      <td>${p.estudios}</td>
-      <td>${p.cant}</td>
+      <td>${p.sede || ''}</td>
+      <td>${p.apellidos || ''}</td>
+      <td>${p.nombres || ''}</td>
+      <td>${p.estudios || ''}</td>
+      <td>${p.cant || ''}</td>
       <td>${p.precio || ""}</td>
       <td>${p.pf || ""}</td>
       <td>
@@ -186,7 +274,7 @@ function mostrarPacientes(pacientes) {
           <option ${p.estado === 'Programado' ? 'selected' : ''}>Programado</option>
           <option ${p.estado === 'Atendido' ? 'selected' : ''}>Atendido</option>
         </select>
-        <div style="font-size:10px;">${p.fechaModificacion}</div>
+        <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
       </td>
       <td>${p.placas || ""}</td>
       <td>${p.cd || ""}</td>
@@ -208,23 +296,27 @@ function mostrarPacientes(pacientes) {
 
     tablaPacientes.appendChild(tr);
 
-    if (p.estado === 'En espera') {
-      enEspera++;
-    }
+    if (p.estado === 'En espera') enEspera++;
   });
 
   contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
+/* --------------------
+   Cambiar estado (ahora también actualiza ISO)
+   -------------------- */
 function cambiarEstado(key, nuevoEstado) {
   const fechaModificacion = new Date().toLocaleString();
-  db.ref('pacientes/' + key).update({ estado: nuevoEstado, fechaModificacion });
+  const fechaModificacionISO = new Date().toISOString().slice(0,10);
+  db.ref('pacientes/' + key).update({ estado: nuevoEstado, fechaModificacion, fechaModificacionISO });
 }
 
+/* --------------------
+   Eliminar / repetir llamado
+   -------------------- */
 function eliminarPaciente(key) {
   db.ref('pacientes/' + key).remove();
 }
-
 filtroSede.addEventListener('input', aplicarFiltros);
 filtroNombre.addEventListener('input', aplicarFiltros);
 filtroEstudio.addEventListener('input', aplicarFiltros);
@@ -244,7 +336,8 @@ function exportarExcel() {
     CD: p.cd,
     Informe: p.informe,
     Entregado: p.entregado,
-    Fecha: p.fechaModificacion
+    Fecha: p.fechaModificacion,
+    Fecha_Entrega_ISO: p.fecha_entrega_iso || ''
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(datos);
@@ -260,8 +353,10 @@ function repetirLlamado(id) {
   });
 }
 
+/* --------------------
+   Gráficos
+   -------------------- */
 let graficoEstados, graficoSedes, graficoEstudios;
-
 function actualizarGraficos(pacientes) {
   const estados = { 'En espera': 0, 'En atención': 0, 'Programado': 0, 'Atendido': 0 };
   const sedes = {};
@@ -270,7 +365,8 @@ function actualizarGraficos(pacientes) {
   pacientes.forEach(p => {
     estados[p.estado] = (estados[p.estado] || 0) + 1;
     sedes[p.sede] = (sedes[p.sede] || 0) + 1;
-    p.estudios.split(', ').forEach(est => {
+    (p.estudios || '').split(', ').forEach(est => {
+      if (!est) return;
       estudios[est] = (estudios[est] || 0) + 1;
     });
   });
@@ -281,10 +377,7 @@ function actualizarGraficos(pacientes) {
     type: 'pie',
     data: {
       labels: Object.keys(estados),
-      datasets: [{
-        data: Object.values(estados),
-        backgroundColor: ['#ff9999', '#ffff99', '#99ccff', '#99ff99']
-      }]
+      datasets: [{ data: Object.values(estados), backgroundColor: ['#ff9999', '#ffff99', '#99ccff', '#99ff99'] }]
     },
     options: { responsive: false }
   });
@@ -295,11 +388,7 @@ function actualizarGraficos(pacientes) {
     type: 'bar',
     data: {
       labels: Object.keys(sedes),
-      datasets: [{
-        label: 'Cantidad por Sede',
-        data: Object.values(sedes),
-        backgroundColor: '#4CAF50'
-      }]
+      datasets: [{ label: 'Cantidad por Sede', data: Object.values(sedes), backgroundColor: '#4CAF50' }]
     },
     options: { responsive: false }
   });
@@ -310,17 +399,13 @@ function actualizarGraficos(pacientes) {
     type: 'bar',
     data: {
       labels: Object.keys(estudios),
-      datasets: [{
-        label: 'Cantidad por Estudio',
-        data: Object.values(estudios),
-        backgroundColor: '#2196F3'
-      }]
+      datasets: [{ label: 'Cantidad por Estudio', data: Object.values(estudios), backgroundColor: '#2196F3' }]
     },
-    options: {
-      responsive: false,
-      indexAxis: 'y'
-    }
+    options: { responsive: false, indexAxis: 'y' }
   });
 }
 
+/* --------------------
+   Inicializar carga
+   -------------------- */
 cargarPacientes();
