@@ -111,7 +111,6 @@
         <th>Nombres</th>
         <th>Estudios</th>
         <th>Cant</th>
-        <!-- 🔹 Nuevas columnas -->
         <th>Precio</th>
         <th>PF</th>
         <th>Estado</th>
@@ -125,6 +124,18 @@
     </thead>
     <tbody id="tabla-pacientes"></tbody>
   </table>
+
+  <!-- 🔹 MODAL PARA FIRMA -->
+  <div id="modalFirma" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+    <div style="background:white; padding:20px; border-radius:10px; max-width:400px; text-align:center;">
+      <h3>Firmar</h3>
+      <canvas id="canvasFirma" width="350" height="200" style="border:1px solid #000;"></canvas>
+      <br>
+      <button onclick="limpiarFirma()">Limpiar</button>
+      <button onclick="guardarFirma()">Guardar</button>
+      <button onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
 
   <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 40px;">
     <canvas id="graficoEstados" width="300" height="300"></canvas>
