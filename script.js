@@ -125,6 +125,16 @@ function mostrarPacientes(pacientes) {
     const tr = document.createElement('tr');
     const requierePlacas = /rx|tem|rm|mamografia/i.test(p.estudios);
 
+    // Firma: si existe la mostramos como imagen
+    let firmaHTML = "";
+    if (p.estado === 'Entregado') {
+      if (p.firma) {
+        firmaHTML = `<img src="${p.firma}" style="max-width:100px; display:block; margin:auto;">`;
+      } else {
+        firmaHTML = `<button onclick="abrirModal('${p.key}')">✍️ Firmar</button>`;
+      }
+    }
+
     tr.innerHTML = `
       <td>${p.sede}</td>
       <td>${p.apellidos}</td>
@@ -147,7 +157,7 @@ function mostrarPacientes(pacientes) {
       <td>${requierePlacas && p.estado === 'Entregado' ? `<input type="text" value="${p.cd || ''}" onchange="guardarCampo('${p.key}','cd',this.value)">` : ''}</td>
       <td>${p.estado === 'Entregado' ? `<input type="text" value="${p.informe || ''}" onchange="guardarCampo('${p.key}','informe',this.value)">` : ''}</td>
       <td>${p.estado === 'Entregado' ? `<input type="text" value="${p.entregado || ''}" onchange="guardarCampo('${p.key}','entregado',this.value)">` : ''}</td>
-      <td>${p.estado === 'Entregado' ? `<button onclick="abrirModal('${p.key}')">✍️ Firmar</button>` : ''}</td>
+      <td>${firmaHTML}</td>
       <td>
         <button onclick="eliminarPaciente('${p.key}')">🗑️</button>
         ${p.estado === 'En atención' ? `<button onclick="repetirLlamado('${p.key}')">📢 Llamar otra vez</button>` : ''}
@@ -219,7 +229,6 @@ const canvas = document.getElementById('canvasFirma');
 const ctx = canvas.getContext('2d');
 let dibujando = false;
 
-// Ajustar coordenadas (soporta mouse y touch)
 function getPosicion(evt) {
   let rect = canvas.getBoundingClientRect();
   if (evt.touches) {
@@ -235,7 +244,6 @@ function getPosicion(evt) {
   }
 }
 
-// Mouse
 canvas.addEventListener("mousedown", e => {
   dibujando = true;
   const pos = getPosicion(e);
@@ -251,7 +259,6 @@ canvas.addEventListener("mousemove", e => {
 canvas.addEventListener("mouseup", () => dibujando = false);
 canvas.addEventListener("mouseout", () => dibujando = false);
 
-// Touch
 canvas.addEventListener("touchstart", e => {
   e.preventDefault();
   dibujando = true;
@@ -268,27 +275,27 @@ canvas.addEventListener("touchmove", e => {
 });
 canvas.addEventListener("touchend", () => dibujando = false);
 
-function abrirModal(pacienteId) {
-  firmaActualPaciente = pacienteId;
+function abrirModal(id) {
+  firmaActualPaciente = id;
   modalFirma.style.display = 'flex';
+  limpiarFirma();
+}
+function cerrarModal() {
+  modalFirma.style.display = 'none';
+  firmaActualPaciente = null;
 }
 function limpiarFirma() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 function guardarFirma() {
+  if (!firmaActualPaciente) return;
   const dataURL = canvas.toDataURL();
   db.ref('pacientes/' + firmaActualPaciente).update({ firma: dataURL });
   cerrarModal();
 }
-function cerrarModal() {
-  modalFirma.style.display = 'none';
-  limpiarFirma();
-}
 
 // =================== 🔹 Inicializar ===================
-filtroSede.addEventListener('input', aplicarFiltros);
-filtroNombre.addEventListener('input', aplicarFiltros);
-filtroEstudio.addEventListener('input', aplicarFiltros);
-filtroFecha.addEventListener('input', aplicarFiltros);
-
 cargarPacientes();
+[filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(input => {
+  input.addEventListener('input', aplicarFiltros);
+});
