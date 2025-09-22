@@ -1,4 +1,4 @@
-// Configuración Firebase 
+// =================== 🔹 Configuración Firebase ===================
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -11,6 +11,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// =================== 🔹 Variables ===================
 const formulario = document.getElementById('formulario');
 const tablaPacientes = document.getElementById('tabla-pacientes');
 const contador = document.getElementById('contador');
@@ -25,13 +26,13 @@ const filtroFecha = document.getElementById('filtroFecha');
 let datosPacientes = [];
 let firmaActualPaciente = null;
 
-// 🔹 Mostrar cantidad Eco pb
+// =================== 🔹 Mostrar cantidad Eco pb ===================
 estudiosSelect.addEventListener('change', () => {
   const seleccionados = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
   cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
 });
 
-// 🔹 Registrar paciente
+// =================== 🔹 Registrar paciente ===================
 formulario.addEventListener('submit', e => {
   e.preventDefault();
   const sede = document.getElementById('sede').value.trim();
@@ -71,7 +72,7 @@ formulario.addEventListener('submit', e => {
   cantidadEcoPbDiv.style.display = 'none';
 });
 
-// 🔹 Cargar pacientes
+// =================== 🔹 Cargar pacientes ===================
 function cargarPacientes() {
   db.ref('pacientes').on('value', snapshot => {
     let pacientes = [];
@@ -85,7 +86,7 @@ function cargarPacientes() {
   });
 }
 
-// 🔹 Filtros
+// =================== 🔹 Filtros ===================
 function aplicarFiltros() {
   let pacientes = datosPacientes;
 
@@ -110,7 +111,7 @@ function aplicarFiltros() {
   mostrarPacientes(pacientes);
 }
 
-// 🔹 Mostrar pacientes
+// =================== 🔹 Mostrar pacientes ===================
 function mostrarPacientes(pacientes) {
   pacientes.sort((a, b) => {
     const estados = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4, 'Entregado': 5 };
@@ -122,8 +123,6 @@ function mostrarPacientes(pacientes) {
 
   pacientes.forEach(p => {
     const tr = document.createElement('tr');
-
-    // Validar si el estudio requiere Placas/CD
     const requierePlacas = /rx|tem|rm|mamografia/i.test(p.estudios);
 
     tr.innerHTML = `
@@ -144,17 +143,11 @@ function mostrarPacientes(pacientes) {
         </select>
         <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
       </td>
-      <td>${p.estado === 'Entregado' && requierePlacas ? `<input type="text" value="${p.placas || ''}" onchange="guardarCampo('${p.key}','placas',this.value)">` : ''}</td>
-      <td>${p.estado === 'Entregado' && requierePlacas ? `<input type="text" value="${p.cd || ''}" onchange="guardarCampo('${p.key}','cd',this.value)">` : ''}</td>
+      <td>${requierePlacas && p.estado === 'Entregado' ? `<input type="text" value="${p.placas || ''}" onchange="guardarCampo('${p.key}','placas',this.value)">` : ''}</td>
+      <td>${requierePlacas && p.estado === 'Entregado' ? `<input type="text" value="${p.cd || ''}" onchange="guardarCampo('${p.key}','cd',this.value)">` : ''}</td>
       <td>${p.estado === 'Entregado' ? `<input type="text" value="${p.informe || ''}" onchange="guardarCampo('${p.key}','informe',this.value)">` : ''}</td>
       <td>${p.estado === 'Entregado' ? `<input type="text" value="${p.entregado || ''}" onchange="guardarCampo('${p.key}','entregado',this.value)">` : ''}</td>
-      <td>
-        ${p.estado === 'Entregado' 
-          ? (p.firma 
-              ? `<img src="${p.firma}" width="50" height="30" style="border:1px solid #000"/>` 
-              : `<button onclick="abrirModal('${p.key}')">✍️ Firmar</button>`)
-          : ''}
-      </td>
+      <td>${p.estado === 'Entregado' ? `<button onclick="abrirModal('${p.key}')">✍️ Firmar</button>` : ''}</td>
       <td>
         <button onclick="eliminarPaciente('${p.key}')">🗑️</button>
         ${p.estado === 'En atención' ? `<button onclick="repetirLlamado('${p.key}')">📢 Llamar otra vez</button>` : ''}
@@ -165,8 +158,7 @@ function mostrarPacientes(pacientes) {
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
       p.estado === 'Programado' ? '#cce5ff' :
-      p.estado === 'Atendido' ? '#d5f5d5' :
-      '#e0e0e0';
+      p.estado === 'Atendido' ? '#d5f5d5' : '#e0e0e0';
 
     tablaPacientes.appendChild(tr);
 
@@ -176,28 +168,28 @@ function mostrarPacientes(pacientes) {
   contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
-// 🔹 Guardar campos editables
+// =================== 🔹 Guardar campos ===================
 function guardarCampo(key, campo, valor) {
   db.ref('pacientes/' + key).update({ [campo]: valor });
 }
 
-// 🔹 Cambiar estado
+// =================== 🔹 Cambiar estado ===================
 function cambiarEstado(key, nuevoEstado) {
   const fechaModificacion = new Date().toISOString().slice(0, 16);
   db.ref('pacientes/' + key).update({ estado: nuevoEstado, fechaModificacion });
 }
 
-// 🔹 Eliminar paciente
+// =================== 🔹 Eliminar paciente ===================
 function eliminarPaciente(key) {
   db.ref('pacientes/' + key).remove();
 }
 
-// 🔹 Repetir llamado
+// =================== 🔹 Repetir llamado ===================
 function repetirLlamado(id) {
   firebase.database().ref("pacientes/" + id).update({ repetir: true });
 }
 
-// 🔹 Exportar Excel
+// =================== 🔹 Exportar Excel ===================
 function exportarExcel() {
   const datos = datosPacientes.map(p => ({
     Sede: p.sede,
@@ -221,38 +213,79 @@ function exportarExcel() {
   XLSX.writeFile(workbook, 'Pacientes.xlsx');
 }
 
-// 🔹 Firma digital
+// =================== 🔹 Firma digital ===================
 const modalFirma = document.getElementById('modalFirma');
 const canvas = document.getElementById('canvasFirma');
 const ctx = canvas.getContext('2d');
 let dibujando = false;
 
-canvas.addEventListener('mousedown', e => { dibujando = true; ctx.moveTo(e.offsetX, e.offsetY); });
-canvas.addEventListener('mousemove', e => { if (dibujando) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
-canvas.addEventListener('mouseup', () => dibujando = false);
-canvas.addEventListener('mouseleave', () => dibujando = false);
+// Ajustar coordenadas (soporta mouse y touch)
+function getPosicion(evt) {
+  let rect = canvas.getBoundingClientRect();
+  if (evt.touches) {
+    return {
+      x: evt.touches[0].clientX - rect.left,
+      y: evt.touches[0].clientY - rect.top
+    };
+  } else {
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+  }
+}
+
+// Mouse
+canvas.addEventListener("mousedown", e => {
+  dibujando = true;
+  const pos = getPosicion(e);
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+});
+canvas.addEventListener("mousemove", e => {
+  if (!dibujando) return;
+  const pos = getPosicion(e);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+});
+canvas.addEventListener("mouseup", () => dibujando = false);
+canvas.addEventListener("mouseout", () => dibujando = false);
+
+// Touch
+canvas.addEventListener("touchstart", e => {
+  e.preventDefault();
+  dibujando = true;
+  const pos = getPosicion(e);
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+});
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+  if (!dibujando) return;
+  const pos = getPosicion(e);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+});
+canvas.addEventListener("touchend", () => dibujando = false);
 
 function abrirModal(pacienteId) {
   firmaActualPaciente = pacienteId;
   modalFirma.style.display = 'flex';
 }
-
 function limpiarFirma() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
-
 function guardarFirma() {
   const dataURL = canvas.toDataURL();
   db.ref('pacientes/' + firmaActualPaciente).update({ firma: dataURL });
   cerrarModal();
 }
-
 function cerrarModal() {
   modalFirma.style.display = 'none';
   limpiarFirma();
 }
 
-// 🔹 Inicializar
+// =================== 🔹 Inicializar ===================
 filtroSede.addEventListener('input', aplicarFiltros);
 filtroNombre.addEventListener('input', aplicarFiltros);
 filtroEstudio.addEventListener('input', aplicarFiltros);
