@@ -1,4 +1,4 @@
-// Configuración Firebase
+// Configuración Firebase 
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
   authDomain: "estado-pacientes.firebaseapp.com",
@@ -23,7 +23,7 @@ const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
 let datosPacientes = [];
-let firmaActualPaciente = null; // paciente sobre el que se firma
+let firmaActualPaciente = null;
 
 // 🔹 Mostrar cantidad Eco pb
 estudiosSelect.addEventListener('change', () => {
@@ -42,7 +42,7 @@ formulario.addEventListener('submit', e => {
   const precio = document.getElementById('precio').value.trim();
   const pf = document.getElementById('pf').value.trim();
   const estado = 'En espera';
-  const fechaModificacion = new Date().toISOString().slice(0, 16); // formato YYYY-MM-DDTHH:mm
+  const fechaModificacion = new Date().toISOString().slice(0, 16);
 
   if (estudios.includes('Eco pb')) {
     const ecoCantidad = parseInt(ecoPbCantidad.value);
@@ -108,13 +108,12 @@ function aplicarFiltros() {
   }
 
   mostrarPacientes(pacientes);
-  actualizarGraficos(pacientes);
 }
 
 // 🔹 Mostrar pacientes
 function mostrarPacientes(pacientes) {
   pacientes.sort((a, b) => {
-    const estados = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4 };
+    const estados = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4, 'Entregado': 5 };
     return estados[a.estado] - estados[b.estado];
   });
 
@@ -124,7 +123,7 @@ function mostrarPacientes(pacientes) {
   pacientes.forEach(p => {
     const tr = document.createElement('tr');
 
-    // 🔹 Validar si el estudio requiere Placas/CD
+    // Validar si el estudio requiere Placas/CD
     const requierePlacas = /rx|tem|rm|mamografia/i.test(p.estudios);
 
     tr.innerHTML = `
@@ -141,14 +140,21 @@ function mostrarPacientes(pacientes) {
           <option ${p.estado === 'En atención' ? 'selected' : ''}>En atención</option>
           <option ${p.estado === 'Programado' ? 'selected' : ''}>Programado</option>
           <option ${p.estado === 'Atendido' ? 'selected' : ''}>Atendido</option>
+          <option ${p.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
         </select>
         <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
       </td>
-      <td>${requierePlacas && p.estado === 'Atendido' ? `<input type="text" value="${p.placas || ''}" onchange="guardarCampo('${p.key}','placas',this.value)">` : ''}</td>
-      <td>${requierePlacas && p.estado === 'Atendido' ? `<input type="text" value="${p.cd || ''}" onchange="guardarCampo('${p.key}','cd',this.value)">` : ''}</td>
-      <td>${p.estado === 'Atendido' ? `<input type="text" value="${p.informe || ''}" onchange="guardarCampo('${p.key}','informe',this.value)">` : ''}</td>
-      <td>${p.estado === 'Atendido' ? `<input type="text" value="${p.entregado || ''}" onchange="guardarCampo('${p.key}','entregado',this.value)">` : ''}</td>
-      <td>${p.estado === 'Atendido' ? `<button onclick="abrirModal('${p.key}')">✍️ Firmar</button>` : ''}</td>
+      <td>${p.estado === 'Entregado' && requierePlacas ? `<input type="text" value="${p.placas || ''}" onchange="guardarCampo('${p.key}','placas',this.value)">` : ''}</td>
+      <td>${p.estado === 'Entregado' && requierePlacas ? `<input type="text" value="${p.cd || ''}" onchange="guardarCampo('${p.key}','cd',this.value)">` : ''}</td>
+      <td>${p.estado === 'Entregado' ? `<input type="text" value="${p.informe || ''}" onchange="guardarCampo('${p.key}','informe',this.value)">` : ''}</td>
+      <td>${p.estado === 'Entregado' ? `<input type="text" value="${p.entregado || ''}" onchange="guardarCampo('${p.key}','entregado',this.value)">` : ''}</td>
+      <td>
+        ${p.estado === 'Entregado' 
+          ? (p.firma 
+              ? `<img src="${p.firma}" width="50" height="30" style="border:1px solid #000"/>` 
+              : `<button onclick="abrirModal('${p.key}')">✍️ Firmar</button>`)
+          : ''}
+      </td>
       <td>
         <button onclick="eliminarPaciente('${p.key}')">🗑️</button>
         ${p.estado === 'En atención' ? `<button onclick="repetirLlamado('${p.key}')">📢 Llamar otra vez</button>` : ''}
@@ -158,7 +164,9 @@ function mostrarPacientes(pacientes) {
     tr.style.backgroundColor =
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
-      p.estado === 'Programado' ? '#cce5ff' : '#d5f5d5';
+      p.estado === 'Programado' ? '#cce5ff' :
+      p.estado === 'Atendido' ? '#d5f5d5' :
+      '#e0e0e0';
 
     tablaPacientes.appendChild(tr);
 
@@ -242,42 +250,6 @@ function guardarFirma() {
 function cerrarModal() {
   modalFirma.style.display = 'none';
   limpiarFirma();
-}
-
-// 🔹 Graficos
-let graficoEstados, graficoSedes, graficoEstudios;
-
-function actualizarGraficos(pacientes) {
-  const estados = { 'En espera': 0, 'En atención': 0, 'Programado': 0, 'Atendido': 0 };
-  const sedes = {};
-  const estudios = {};
-
-  pacientes.forEach(p => {
-    estados[p.estado] = (estados[p.estado] || 0) + 1;
-    sedes[p.sede] = (sedes[p.sede] || 0) + 1;
-    p.estudios.split(', ').forEach(est => {
-      estudios[est] = (estudios[est] || 0) + 1;
-    });
-  });
-
-  if (graficoEstados) graficoEstados.destroy();
-  graficoEstados = new Chart(document.getElementById('graficoEstados'), {
-    type: 'pie',
-    data: { labels: Object.keys(estados), datasets: [{ data: Object.values(estados), backgroundColor: ['#ff9999', '#ffff99', '#99ccff', '#99ff99'] }] }
-  });
-
-  if (graficoSedes) graficoSedes.destroy();
-  graficoSedes = new Chart(document.getElementById('graficoSedes'), {
-    type: 'bar',
-    data: { labels: Object.keys(sedes), datasets: [{ label: 'Cantidad por Sede', data: Object.values(sedes), backgroundColor: '#4CAF50' }] }
-  });
-
-  if (graficoEstudios) graficoEstudios.destroy();
-  graficoEstudios = new Chart(document.getElementById('graficoEstudios'), {
-    type: 'bar',
-    data: { labels: Object.keys(estudios), datasets: [{ label: 'Cantidad por Estudio', data: Object.values(estudios), backgroundColor: '#2196F3' }] },
-    options: { indexAxis: 'y' }
-  });
 }
 
 // 🔹 Inicializar
