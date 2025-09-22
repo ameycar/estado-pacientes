@@ -1,55 +1,153 @@
+/* General */
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
-  background-color: #f9f9f9;
+  background: #f9f9f9;
+  color: #333;
 }
 
 h1 {
   text-align: center;
-  color: #333;
-}
-
-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
   margin-bottom: 20px;
+  color: #444;
 }
 
-input, select, button {
+/* Formulario */
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+form input, form select, form button {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  font-size: 14px;
 }
 
-button {
-  background-color: #4CAF50;
-  color: white;
+form button {
+  background: #007bff;
+  color: #fff;
+  border: none;
   cursor: pointer;
+  transition: background 0.3s;
 }
 
-button:hover {
-  background-color: #45a049;
+form button:hover {
+  background: #0056b3;
 }
 
+/* Filtros */
+.filtros {
+  margin: 10px 0;
+  text-align: center;
+}
+
+.filtros input {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+}
+
+/* Tabla */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 th, td {
-  padding: 10px;
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 13px;
   text-align: center;
-  border-bottom: 1px solid #ddd;
 }
 
 th {
-  background-color: #f2f2f2;
+  background: #007bff;
+  color: white;
+  font-weight: bold;
 }
 
-#contador {
-  font-weight: bold;
+tr:nth-child(even) {
+  background: #f2f2f2;
+}
+
+/* Colores por estado */
+.estado-programado {
+  background-color: #ffeeba !important; /* amarillo suave */
+}
+.estado-espera {
+  background-color: #f8d7da !important; /* rojo suave */
+}
+.estado-atencion {
+  background-color: #fff3cd !important; /* naranja suave */
+}
+.estado-atendido {
+  background-color: #d4edda !important; /* verde suave */
+}
+.estado-entregado {
+  background-color: #cce5ff !important; /* azul suave */
+}
+
+/* Firma */
+td img.firma-img {
+  max-width: 80px;
+  max-height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background: #fff;
+  padding: 15px;
+  margin: 10% auto;
+  width: 320px;
+  border-radius: 8px;
   text-align: center;
+}
+
+.modal-content button {
+  margin: 5px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+#guardarFirma {
+  background: #28a745;
+  color: #fff;
+}
+
+#cerrarFirma {
+  background: #dc3545;
+  color: #fff;
+}
+
+#limpiarFirma {
+  background: #ffc107;
+  color: #000;
 }
