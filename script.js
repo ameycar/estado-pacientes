@@ -26,8 +26,6 @@ const filtroFecha = document.getElementById('filtroFecha');
 let datosPacientes = [];               // lista local de pacientes (sync con firebase)
 let firmaActualPaciente = null;        // key del paciente que está firmando
 let pendingSelectForEntrega = null;    // select DOM que provocó la transición a Entregado (para revert si cancelan)
-
-// contraseña admin
 const ADMIN_PASS = '1234';
 
 // =================== 🔹 Mostrar cantidad Eco pb ===================
@@ -134,30 +132,23 @@ function mostrarPacientes(pacientes) {
     } else if (p.estado === 'Entregado') {
       // si está entregado pero sin firma (caso raro) permitimos firmar
       firmaHTML = `<button onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
-    } else if (p.estado === 'Atendido') {
-      // no mostramos botón de firma aún (solo cuando pase a Entregado)
-      firmaHTML = '';
     }
 
     // Placas / CD / Informe:
-    // - Si estado === Entregado -> mostrar controls, pero para edición se pedirá contraseña (editarConClave)
-    // - Si no Entregado -> mostrar texto (vacío si no existe)
     let placasHTML = '';
     if (requierePlacas) {
       if (p.estado === 'Entregado') {
-        // input readonly: onclick pide clave para editar
         placasHTML = `<input type="number" min="0" value="${p.placas || ''}" onclick="editarConClave('${p.key}','placas', this)" readonly style="width:52px; text-align:center;"/>`;
       } else {
         placasHTML = p.placas ? `<div style="width:52px; text-align:center;">${p.placas}</div>` : '';
       }
     } else {
-      // estudios que no requieren placas: mostrar vacío o dato si existe
       placasHTML = p.placas ? `<div style="width:52px; text-align:center;">${p.placas}</div>` : '';
     }
 
     let cdHTML = '';
+    if (p.state === undefined || p.state === null) { /* ignore */ }
     if (p.estado === 'Entregado') {
-      // checkbox clickable but onchange -> exige clave
       const checked = (p.cd === 'SI') ? 'checked' : '';
       cdHTML = `<input type="checkbox" ${checked} onchange="editarConClaveCheckbox('${p.key}','cd', this)">`;
     } else {
@@ -166,13 +157,13 @@ function mostrarPacientes(pacientes) {
 
     let informeHTML = '';
     if (p.estado === 'Entregado') {
-      // Informe no editable después de entregado (según última instrucción)
+      // Informe no editable after entregue (per requirement) -> show text
       informeHTML = p.informe === 'SI' ? `<div style="width:52px; text-align:center;">SI</div>` : `<div style="width:52px; text-align:center;">NO</div>`;
     } else {
       informeHTML = p.informe === 'SI' ? `<div style="width:52px; text-align:center;">SI</div>` : `<div style="width:52px; text-align:center;"></div>`;
     }
 
-    // Estados: select que llama a cambiarEstado(this) y lleva data-key
+    // Estados: select
     const estadoSelect = `
       <select data-key="${p.key}" onchange="cambiarEstado(this)" ${ (p.estado === 'Entregado') ? 'disabled' : '' } >
         <option value="En espera" ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
@@ -184,7 +175,7 @@ function mostrarPacientes(pacientes) {
       <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
     `;
 
-    // Acción eliminar: siempre requiere contraseña
+    // Acción eliminar
     const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
 
     tr.innerHTML = `
@@ -204,7 +195,6 @@ function mostrarPacientes(pacientes) {
       <td style="text-align:center;">${accionEliminar}</td>
     `;
 
-    // color por estado
     tr.style.backgroundColor =
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
@@ -219,16 +209,13 @@ function mostrarPacientes(pacientes) {
   contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
-// =================== 🔹 Editar con clave (placas - input readonly -> solicita clave para permitir escritura) ===================
+// =================== 🔹 Editar con clave (placas) ===================
 function editarConClave(key, campo, inputEl) {
-  // pedir clave
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
   const pacienteActual = datosPacientes.find(x => x.key === key) || {};
   if (pass === ADMIN_PASS) {
-    // permitir edición "temporal" -> remove readonly, focus, y al blur guardar
     inputEl.removeAttribute('readonly');
     inputEl.focus();
-    // al perder foco guardar y volver a readonly
     const blurHandler = () => {
       const nuevoValor = inputEl.value;
       db.ref('pacientes/' + key).update({ [campo]: nuevoValor });
@@ -238,7 +225,6 @@ function editarConClave(key, campo, inputEl) {
     inputEl.addEventListener('blur', blurHandler);
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
-    // restaurar valor del input desde registro
     inputEl.value = pacienteActual[campo] || '';
   }
 }
@@ -252,27 +238,24 @@ function editarConClaveCheckbox(key, campo, checkboxEl) {
     db.ref('pacientes/' + key).update({ [campo]: valor });
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
-    // restaurar estado del checkbox desde registro
     checkboxEl.checked = (pacienteActual[campo] === 'SI');
   }
 }
 
-// =================== 🔹 Guardar campo (usar en cambios normales) ===================
+// =================== 🔹 Guardar campo (uso general) ===================
 function guardarCampo(key, campo, valor) {
   db.ref('pacientes/' + key).update({ [campo]: valor });
 }
 
-// =================== 🔹 Cambiar estado (ahora recibe el select DOM) ===================
+// =================== 🔹 Cambiar estado (recibe select DOM) ===================
 function cambiarEstado(selectElem) {
   const key = selectElem.getAttribute('data-key');
   const nuevoEstado = selectElem.value;
   const actual = datosPacientes.find(x => x.key === key);
   if (!actual) return;
 
-  // reglas:
   if (actual.estado === 'Entregado') {
     alert('No se puede modificar: ya está ENTREGADO.');
-    // revertir UI al estado real
     selectElem.value = actual.estado;
     return;
   }
@@ -282,114 +265,59 @@ function cambiarEstado(selectElem) {
     return;
   }
 
-  // Si quieren marcar Entregado: abrir modal y exigir firma + datos obligatorios
   if (nuevoEstado === 'Entregado') {
-    // guardamos el select en pending para revert si cancelan
     pendingSelectForEntrega = selectElem;
     abrirModalParaEntrega(key);
-    return; // no actualizamos DB todavía
+    return;
   }
 
-  // si no es Entregado -> actualizar directamente
   const fechaModificacion = new Date().toISOString().slice(0, 16);
   db.ref('pacientes/' + key).update({ estado: nuevoEstado, fechaModificacion });
 }
 
-// =================== 🔹 Abrir modal de entrega (rellenar inputs si ya había info) ===================
-const modalFirma = document.getElementById('modalFirma'); // asumo que existe en tu index
+// =================== 🔹 Modal de entrega (usa inputs existentes en index) ===================
+const modalFirma = document.getElementById('modalFirma');
 const canvas = document.getElementById('canvasFirma');
-const ctx = canvas.getContext('2d');
+const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
 
 function abrirModalParaEntrega(key) {
   firmaActualPaciente = key;
-  // precargar valores si existen
   const paciente = datosPacientes.find(x => x.key === key) || {};
-  const placasInput = document.getElementById('modal_placas') || createHiddenModalInputs();
+  const placasInput = document.getElementById('modal_placas');
   const cdSelect = document.getElementById('modal_cd');
   const informeSelect = document.getElementById('modal_informe');
 
-  // If your index doesn't have these modal inputs, create them dynamically inside modal.
-  // (createHiddenModalInputs() ensures DOM elements exist; see function below)
+  if (!placasInput || !cdSelect || !informeSelect || !modalFirma || !canvas) {
+    alert('Faltan elementos del modal en index.html. Asegúrate de tener modal_placas/modal_cd/modal_informe/canvasFirma/modalFirma.');
+    // revertir select si hay pending
+    if (pendingSelectForEntrega) {
+      pendingSelectForEntrega.value = paciente.estado || 'En espera';
+      pendingSelectForEntrega = null;
+    }
+    return;
+  }
+
   placasInput.value = paciente.placas || '';
-  if (cdSelect) cdSelect.value = paciente.cd || '';
-  if (informeSelect) informeSelect.value = paciente.informe || '';
+  cdSelect.value = paciente.cd || '';
+  informeSelect.value = paciente.informe || '';
   limpiarFirma();
-  // show modal
   modalFirma.style.display = 'flex';
-}
-
-// Si tu index no tiene inputs dentro del modal con ids modal_placas/modal_cd/modal_informe
-// creamos elementos dentro del modalFirma para usarlos (esto mantiene compatibilidad).
-function createHiddenModalInputs() {
-  // buscar contenedor del modal
-  if (!modalFirma) return null;
-  const cont = modalFirma.querySelector('.modal-body') || modalFirma.querySelector('div') || modalFirma;
-  // placas
-  let placasInput = document.getElementById('modal_placas');
-  if (!placasInput) {
-    placasInput = document.createElement('input');
-    placasInput.id = 'modal_placas';
-    placasInput.type = 'number';
-    placasInput.min = 0;
-    placasInput.placeholder = 'Placas (nro)';
-    placasInput.style.margin = '6px';
-    cont.appendChild(placasInput);
-  }
-  // cd
-  let cdSelect = document.getElementById('modal_cd');
-  if (!cdSelect) {
-    cdSelect = document.createElement('select');
-    cdSelect.id = 'modal_cd';
-    cdSelect.innerHTML = '<option value="">CD?</option><option value="SI">SI</option><option value="NO">NO</option>';
-    cdSelect.style.margin = '6px';
-    cont.appendChild(cdSelect);
-  }
-  // informe
-  let informeSelect = document.getElementById('modal_informe');
-  if (!informeSelect) {
-    informeSelect = document.createElement('select');
-    informeSelect.id = 'modal_informe';
-    informeSelect.innerHTML = '<option value="">Informe?</option><option value="SI">SI</option><option value="NO">NO</option>';
-    informeSelect.style.margin = '6px';
-    cont.appendChild(informeSelect);
-  }
-  // add save and cancel if not exist
-  if (!document.getElementById('modal_save_entrega')) {
-    const btnSave = document.createElement('button');
-    btnSave.id = 'modal_save_entrega';
-    btnSave.textContent = 'Guardar Entrega';
-    btnSave.style.margin = '6px';
-    btnSave.addEventListener('click', guardarEntregaDesdeModal);
-    cont.appendChild(btnSave);
-  }
-  if (!document.getElementById('modal_cancel_entrega')) {
-    const btnCancel = document.createElement('button');
-    btnCancel.id = 'modal_cancel_entrega';
-    btnCancel.textContent = 'Cancelar';
-    btnCancel.style.margin = '6px';
-    btnCancel.addEventListener('click', () => {
-      // revertir select al estado original
-      if (pendingSelectForEntrega) {
-        const orig = datosPacientes.find(x => x.key === firmaActualPaciente);
-        if (orig) pendingSelectForEntrega.value = orig.estado;
-      }
-      cerrarModal();
-    });
-    cont.appendChild(btnCancel);
-  }
-
-  return placasInput;
+  // ensure pendingSelectForEntrega remains set until saved or cancelled
 }
 
 // =================== 🔹 Validación canvas vacío ===================
 function isCanvasBlank(c) {
-  const blank = document.createElement('canvas');
-  blank.width = c.width;
-  blank.height = c.height;
-  return c.toDataURL() === blank.toDataURL();
+  try {
+    const blank = document.createElement('canvas');
+    blank.width = c.width;
+    blank.height = c.height;
+    return c.toDataURL() === blank.toDataURL();
+  } catch (e) {
+    return true;
+  }
 }
 
-// =================== 🔹 Guardar entrega desde modal (valida campos obligatorios y firma) ===================
+// =================== 🔹 Guardar entrega desde modal ===================
 function guardarEntregaDesdeModal() {
   if (!firmaActualPaciente) return alert('Paciente no seleccionado.');
 
@@ -404,7 +332,6 @@ function guardarEntregaDesdeModal() {
   const cdVal = cdSelect ? cdSelect.value : '';
   const informeVal = informeSelect ? informeSelect.value : '';
 
-  // Validaciones obligatorias:
   if (requierePlacas && (placasVal === '' || isNaN(Number(placasVal)))) {
     alert('Debe indicar el número de placas (obligatorio para este estudio).');
     return;
@@ -412,8 +339,7 @@ function guardarEntregaDesdeModal() {
   if (!cdVal) { alert('Debe seleccionar CD (SI/NO).'); return; }
   if (!informeVal) { alert('Debe seleccionar Informe (SI/NO).'); return; }
 
-  // firma obligatoria
-  if (isCanvasBlank(canvas)) {
+  if (!ctx || isCanvasBlank(canvas)) {
     alert('Debe firmar antes de guardar la entrega.');
     return;
   }
@@ -421,7 +347,6 @@ function guardarEntregaDesdeModal() {
   const dataURL = canvas.toDataURL('image/png');
   const fechaModificacion = new Date().toISOString().slice(0, 16);
 
-  // actualizar registro con todos los datos de entrega
   db.ref('pacientes/' + firmaActualPaciente).update({
     estado: 'Entregado',
     placas: placasVal || '',
@@ -431,7 +356,6 @@ function guardarEntregaDesdeModal() {
     fechaModificacion
   });
 
-  // cerrar modal y limpiar pending select
   if (pendingSelectForEntrega) {
     pendingSelectForEntrega.value = 'Entregado';
     pendingSelectForEntrega = null;
@@ -439,35 +363,31 @@ function guardarEntregaDesdeModal() {
   cerrarModal();
 }
 
-// =================== 🔹 Funciones modal firma básicas (si usas modalFirma y canvasFirma pre-existentes) ===================
+// =================== 🔹 Funciones modal firma (abrir/limpiar/cerrar) ===================
 function abrirModal(key) {
-  // este abrirModal lo usamos cuando queremos firmar sin pasar por "Entregado" (caso excepcional)
   firmaActualPaciente = key;
   limpiarFirma();
-  modalFirma.style.display = 'flex';
+  if (modalFirma) modalFirma.style.display = 'flex';
 }
 function limpiarFirma() {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 function cerrarModal() {
-  modalFirma.style.display = 'none';
-  firmaActualPaciente = null;
-  // si hubo pendingSelect y el usuario canceló, revertimos valor del select
+  if (modalFirma) modalFirma.style.display = 'none';
+  // revert pendingSelect if modal cancelled
   if (pendingSelectForEntrega) {
     const actual = datosPacientes.find(x => x.key === firmaActualPaciente);
-    if (actual && pendingSelectForEntrega) {
-      pendingSelectForEntrega.value = actual.estado;
-      pendingSelectForEntrega = null;
-    }
+    if (actual) pendingSelectForEntrega.value = actual.estado;
+    pendingSelectForEntrega = null;
   }
+  firmaActualPaciente = null;
 }
 
-// Si usas el botón "Guardar" del modal original (canvasFirma), este guarda firma sola (sin cambiar estado)
-// lo dejamos por compatibilidad con tu UX anterior:
+// Si en tu index sigue existiendo el botón "Guardar firma" que solo guarda firma, lo mantenemos compat.
 function guardarFirma() {
   if (!firmaActualPaciente) return;
-  if (isCanvasBlank(canvas)) { alert('Firma vacía.'); return; }
+  if (!ctx || isCanvasBlank(canvas)) { alert('Firma vacía.'); return; }
   const dataURL = canvas.toDataURL('image/png');
   db.ref('pacientes/' + firmaActualPaciente).update({ firma: dataURL });
   cerrarModal();
@@ -476,7 +396,7 @@ function guardarFirma() {
 // =================== 🔹 Confirmar y eliminar (contraseña admin) ===================
 function confirmarEliminar(key) {
   const pass = prompt('Ingrese contraseña de administrador:');
-  if (pass === '1234') {
+  if (pass === ADMIN_PASS) {
     db.ref('pacientes/' + key).remove();
   } else {
     alert('Contraseña incorrecta. No se eliminó.');
@@ -485,9 +405,7 @@ function confirmarEliminar(key) {
 
 // =================== 🔹 Repetir llamado (mantengo tu función original) ===================
 function repetirLlamado(id) {
-  firebase.database().ref("pacientes/" + id).update({
-    repetir: true
-  });
+  firebase.database().ref("pacientes/" + id).update({ repetir: true });
 }
 
 // =================== 🔹 Exportar Excel ===================
@@ -507,7 +425,6 @@ function exportarExcel() {
     Entregado: p.estado === 'Entregado' ? 'Sí' : 'No',
     Fecha: p.fechaModificacion
   }));
-
   const worksheet = XLSX.utils.json_to_sheet(datos);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Pacientes');
@@ -515,10 +432,11 @@ function exportarExcel() {
 }
 
 // =================== 🔹 Firma digital: canvas touch + repaint para móviles ===================
-// (si tu index tiene canvas con id 'canvasFirma' y modal 'modalFirma', ya referenciados arriba)
-ctx.lineWidth = 2;
-ctx.lineCap = 'round';
-ctx.strokeStyle = '#000';
+if (ctx) {
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000';
+}
 let dibujando = false;
 
 function getPosicion(evt) {
@@ -532,43 +450,60 @@ function getPosicion(evt) {
   }
 }
 
-// Mouse
-canvas.addEventListener('mousedown', e => {
-  dibujando = true;
-  const pos = getPosicion(e);
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
-});
-canvas.addEventListener('mousemove', e => {
-  if (!dibujando) return;
-  const pos = getPosicion(e);
-  ctx.lineTo(pos.x, pos.y);
-  ctx.stroke();
-  // forzar repintado móvil:
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
-});
-canvas.addEventListener('mouseup', () => { dibujando = false; ctx.beginPath(); });
-canvas.addEventListener('mouseout', () => { dibujando = false; ctx.beginPath(); });
+if (canvas && ctx) {
+  // Mouse
+  canvas.addEventListener('mousedown', e => {
+    dibujando = true;
+    const pos = getPosicion(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('mousemove', e => {
+    if (!dibujando) return;
+    const pos = getPosicion(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('mouseup', () => { dibujando = false; ctx.beginPath(); });
+  canvas.addEventListener('mouseout', () => { dibujando = false; ctx.beginPath(); });
 
-// Touch
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  dibujando = true;
-  const pos = getPosicion(e);
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
+  // Touch
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    dibujando = true;
+    const pos = getPosicion(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!dibujando) return;
+    const pos = getPosicion(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('touchend', () => { dibujando = false; ctx.beginPath(); });
+}
+
+// =================== 🔹 Listeners modal buttons (save/cancel/clear) ===================
+const btnSaveEntrega = document.getElementById('modal_save_entrega');
+const btnCancelEntrega = document.getElementById('modal_cancel_entrega');
+const btnClearFirma = document.getElementById('modal_limpiar_firma');
+
+if (btnSaveEntrega) btnSaveEntrega.addEventListener('click', guardarEntregaDesdeModal);
+if (btnCancelEntrega) btnCancelEntrega.addEventListener('click', () => {
+  if (pendingSelectForEntrega && firmaActualPaciente) {
+    const actual = datosPacientes.find(x => x.key === firmaActualPaciente);
+    if (actual) pendingSelectForEntrega.value = actual.estado;
+    pendingSelectForEntrega = null;
+  }
+  cerrarModal();
 });
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (!dibujando) return;
-  const pos = getPosicion(e);
-  ctx.lineTo(pos.x, pos.y);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
-});
-canvas.addEventListener('touchend', () => { dibujando = false; ctx.beginPath(); });
+if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
 
 // =================== 🔹 Inicialización ===================
 if (filtroSede) filtroSede.addEventListener('input', aplicarFiltros);
