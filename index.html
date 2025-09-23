@@ -113,15 +113,15 @@
         <th>Apellidos</th>
         <th>Nombres</th>
         <th>Estudios</th>
-        <th>Cant</th>
+        <th style="width:60px">Cant</th>
         <th>Precio</th>
         <th>PF</th>
         <th>Estado</th>
-        <th>Placas</th>
-        <th>CD</th>
-        <th>Informe</th>
-        <th>Entregado</th>
-        <th>Firma</th>
+        <th style="width:70px">Placas</th>
+        <th style="width:70px">CD</th>
+        <th style="width:70px">Informe</th>
+        <th style="width:90px">Entregado</th>
+        <th style="width:110px">Firma</th>
         <th>Acción</th>
       </tr>
     </thead>
@@ -130,13 +130,14 @@
 
   <!-- 🔹 MODAL PARA FIRMA -->
   <div id="modalFirma" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center;">
-    <div style="background:white; padding:20px; border-radius:10px; max-width:400px; text-align:center;">
-      <h3>Firmar</h3>
-      <canvas id="canvasFirma" width="350" height="200" style="border:1px solid #000;"></canvas>
-      <br>
-      <button onclick="limpiarFirma()">Limpiar</button>
-      <button onclick="guardarFirma()">Guardar</button>
-      <button onclick="cerrarModal()">Cancelar</button>
+    <div style="background:white; padding:20px; border-radius:10px; max-width:420px; text-align:center;">
+      <h3>Firmar entrega</h3>
+      <canvas id="canvasFirma" width="360" height="200" style="border:1px solid #000; touch-action: none;"></canvas>
+      <div style="margin-top:10px;">
+        <button onclick="limpiarFirma()">Limpiar</button>
+        <button onclick="guardarFirma()">Guardar</button>
+        <button onclick="cerrarModal()">Cancelar</button>
+      </div>
     </div>
   </div>
 
