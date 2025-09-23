@@ -1,4 +1,3 @@
-
 // =================== 🔹 Configuración Firebase ===================
 const firebaseConfig = {
   apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
@@ -117,10 +116,8 @@ function mostrarPacientes(pacientes) {
   pacientes.forEach(p => {
     const tr = document.createElement('tr');
 
-    // identificar si el/los estudios requieren placas/CD
     const requierePlacas = /TEM|RM|RX|Mamografia/i.test(p.estudios || '');
 
-    // firma
     let firmaHTML = '';
     if (p.firma) {
       firmaHTML = `<img src="${p.firma}" alt="Firma" style="max-width:100px; max-height:45px; display:block; margin:auto;">`;
@@ -128,7 +125,6 @@ function mostrarPacientes(pacientes) {
       firmaHTML = `<button onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
     }
 
-    // placas / cd / informe
     const placasHTML = (requierePlacas && p.estado === 'Entregado')
       ? `<input type="number" min="0" value="${p.placas || ''}" onchange="guardarCampo('${p.key}','placas',this.value)" style="width:52px;"/>`
       : (p.placas ? `<div style="width:52px; text-align:center;">${p.placas}</div>` : '');
@@ -141,9 +137,8 @@ function mostrarPacientes(pacientes) {
       ? `<input type="checkbox" ${p.informe === 'SI' ? 'checked' : ''} onchange="guardarCampo('${p.key}','informe', this.checked ? 'SI' : 'NO')">`
       : `<div style="width:52px; text-align:center;">${p.informe === 'SI' ? 'SI' : ''}</div>`;
 
-    // estados
     const estadoSelect = `
-      <select onchange="cambiarEstado('${p.key}', this.value)" ${(p.estado === 'Entregado') ? 'disabled' : ''}>
+      <select onchange="cambiarEstado('${p.key}', this.value)" ${ (p.estado === 'Entregado') ? 'disabled' : '' } >
         <option ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
         <option ${p.estado === 'En atención' ? 'selected' : ''}>En atención</option>
         <option ${p.estado === 'Programado' ? 'selected' : ''}>Programado</option>
@@ -153,13 +148,9 @@ function mostrarPacientes(pacientes) {
       <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
     `;
 
-    // botón "llamar otra vez"
-    const botonLlamar = (p.estado === 'En atención')
-      ? `<button onclick="llamarOtraVez('${p.key}')">🔔</button>`
-      : '';
-
-    // acción eliminar
     const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
+    const llamarOtraVez = (p.estado === 'En atención')
+      ? `<button onclick="llamarOtraVez('${p.key}')">🔔 Llamar otra vez</button>` : '';
 
     tr.innerHTML = `
       <td>${p.sede || ''}</td>
@@ -175,10 +166,9 @@ function mostrarPacientes(pacientes) {
       <td style="text-align:center; width:70px;">${informeHTML}</td>
       <td style="text-align:center; width:90px;">${p.estado === 'Entregado' ? 'Sí' : ''}</td>
       <td style="text-align:center; width:110px;">${firmaHTML}</td>
-      <td style="text-align:center;">${botonLlamar} ${accionEliminar}</td>
+      <td style="text-align:center;">${accionEliminar} ${llamarOtraVez}</td>
     `;
 
-    // colores
     tr.style.backgroundColor =
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
@@ -193,7 +183,7 @@ function mostrarPacientes(pacientes) {
   contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
-// =================== 🔹 Guardar campo ===================
+// =================== 🔹 Guardar campo (placas/cd/informe) ===================
 function guardarCampo(key, campo, valor) {
   db.ref('pacientes/' + key).update({ [campo]: valor });
 }
@@ -217,41 +207,39 @@ function cambiarEstado(key, nuevoEstado) {
   const fechaModificacion = new Date().toISOString().slice(0, 16);
 
   if (nuevoEstado === 'En atención') {
-    // enviar turno a TV
     db.ref('turnoActual').set({
-      nombres: actual.nombres,
-      apellidos: actual.apellidos,
-      estudios: actual.estudios,
+      nombre: actual.nombres + ' ' + actual.apellidos,
       sede: actual.sede,
-      timestamp: Date.now()
+      estudio: actual.estudios,
+      hora: new Date().toLocaleTimeString()
     });
   }
 
   if (nuevoEstado === 'Entregado') {
     const updates = { estado: nuevoEstado, fechaModificacion };
-    if (!actual.placas) updates.placas = '';
-    if (!actual.cd) updates.cd = 'NO';
-    if (!actual.informe) updates.informe = 'NO';
+    if (!actual.placas) updates.placas = actual.placas || '';
+    if (!actual.cd) updates.cd = actual.cd || 'NO';
+    if (!actual.informe) updates.informe = actual.informe || 'NO';
     db.ref('pacientes/' + key).update(updates);
   } else {
     db.ref('pacientes/' + key).update({ estado: nuevoEstado, fechaModificacion });
   }
 }
 
-// =================== 🔹 Botón llamar otra vez ===================
+// =================== 🔹 Llamar otra vez ===================
 function llamarOtraVez(key) {
-  const p = datosPacientes.find(x => x.key === key);
-  if (!p) return;
+  const actual = datosPacientes.find(x => x.key === key);
+  if (!actual) return;
+
   db.ref('turnoActual').set({
-    nombres: p.nombres,
-    apellidos: p.apellidos,
-    estudios: p.estudios,
-    sede: p.sede,
-    timestamp: Date.now()
+    nombre: actual.nombres + ' ' + actual.apellidos,
+    sede: actual.sede,
+    estudio: actual.estudios,
+    hora: new Date().toLocaleTimeString()
   });
 }
 
-// =================== 🔹 Eliminar con contraseña ===================
+// =================== 🔹 Confirmar eliminar ===================
 function confirmarEliminar(key) {
   const pass = prompt('Ingrese contraseña de administrador:');
   if (pass === '1234') {
@@ -261,9 +249,80 @@ function confirmarEliminar(key) {
   }
 }
 
-// =================== 🔹 Exportar Excel ===================
-function exportarExcel() {
-  const datos = datosPacientes.map(p => ({
-    Sede: p.sede,
-    Apellidos: p.apellidos,
-    Nombres: p.nombres,
+// =================== 🔹 Firma digital ===================
+const modalFirma = document.getElementById('modalFirma');
+const canvas = document.getElementById('canvasFirma');
+const ctx = canvas.getContext('2d');
+ctx.lineWidth = 2;
+ctx.lineCap = 'round';
+ctx.strokeStyle = '#000';
+let dibujando = false;
+
+function getPosicion(evt) {
+  const rect = canvas.getBoundingClientRect();
+  if (evt.touches && evt.touches[0]) {
+    return { x: evt.touches[0].clientX - rect.left, y: evt.touches[0].clientY - rect.top };
+  } else if (evt.changedTouches && evt.changedTouches[0]) {
+    return { x: evt.changedTouches[0].clientX - rect.left, y: evt.changedTouches[0].clientY - rect.top };
+  } else {
+    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+  }
+}
+
+canvas.addEventListener('mousedown', e => {
+  dibujando = true;
+  const pos = getPosicion(e);
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+});
+canvas.addEventListener('mousemove', e => {
+  if (!dibujando) return;
+  const pos = getPosicion(e);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+});
+canvas.addEventListener('mouseup', () => { dibujando = false; ctx.beginPath(); });
+canvas.addEventListener('mouseout', () => { dibujando = false; ctx.beginPath(); });
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  dibujando = true;
+  const pos = getPosicion(e);
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!dibujando) return;
+  const pos = getPosicion(e);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+});
+canvas.addEventListener('touchend', () => { dibujando = false; ctx.beginPath(); });
+
+function abrirModal(key) {
+  firmaActualPaciente = key;
+  limpiarFirma();
+  modalFirma.style.display = 'flex';
+}
+function cerrarModal() {
+  modalFirma.style.display = 'none';
+  firmaActualPaciente = null;
+}
+function limpiarFirma() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+function guardarFirma() {
+  if (!firmaActualPaciente) return;
+  const dataURL = canvas.toDataURL('image/png');
+  db.ref('pacientes/' + firmaActualPaciente).update({ firma: dataURL });
+  cerrarModal();
+}
+
+// =================== 🔹 Inicialización ===================
+[filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
+cargarPacientes();
