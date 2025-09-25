@@ -3,108 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <title>Panel Admin</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-100">
+<body>
+  <nav>
+    <a href="#" onclick="mostrarSeccion('pacientes')">Pacientes</a>
+    <a href="#" onclick="mostrarSeccion('resumen')">Resumen</a>
+    <a href="#" onclick="mostrarSeccion('sedes')">Sedes</a>
+  </nav>
 
-  <!-- Barra de navegación -->
-  <div class="bg-blue-600 text-white p-4 flex space-x-4">
-    <button class="tab-btn font-semibold" data-tab="pacientes">Pacientes</button>
-    <button class="tab-btn font-semibold" data-tab="resumen">Resumen</button>
-    <button class="tab-btn font-semibold" data-tab="sedes">Sedes</button>
-  </div>
+  <section id="pacientes" class="seccion">
+    <h2>Módulo Pacientes</h2>
+    <p>Aquí luego moveremos lo que ahora está en <code>index.html</code>.</p>
+  </section>
 
-  <!-- Contenido de pestañas -->
-  <div class="p-6">
+  <section id="resumen" class="seccion" style="display:none;">
+    <h2>Módulo Resumen</h2>
+    <p>Aquí moveremos lo de <code>resumen.html</code>.</p>
+  </section>
 
-    <!-- Pestaña Pacientes -->
-    <div id="tab-pacientes" class="tab-content">
-      <h2 class="text-xl font-bold mb-4">Módulo Pacientes</h2>
-      <p class="text-gray-600">Aquí luego moveremos lo que ahora está en tu <code>index.html</code>.</p>
-    </div>
+  <section id="sedes" class="seccion" style="display:none;">
+    <h2>Módulo Sedes</h2>
+    <input type="text" id="nuevaSede" placeholder="Nombre de la sede">
+    <button onclick="agregarSede()">Agregar</button>
+    <ul id="listaSedes"></ul>
+  </section>
 
-    <!-- Pestaña Resumen -->
-    <div id="tab-resumen" class="tab-content hidden">
-      <h2 class="text-xl font-bold mb-4">Resumen</h2>
-      <p class="text-gray-600">Aquí luego moveremos lo de <code>resumen.html</code>.</p>
-    </div>
-
-    <!-- Pestaña Sedes -->
-    <div id="tab-sedes" class="tab-content hidden">
-      <h2 class="text-xl font-bold mb-4">Gestión de Sedes</h2>
-
-      <!-- Formulario agregar sede -->
-      <form id="formSede" class="mb-4">
-        <input type="text" id="sedeNombre" placeholder="Nombre de sede" class="border p-2 rounded w-64" required>
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Agregar</button>
-      </form>
-
-      <!-- Lista de sedes -->
-      <ul id="listaSedes" class="space-y-2"></ul>
-    </div>
-
-  </div>
-
-  <!-- Scripts -->
-  <script type="module">
-    import { getDatabase, ref, push, set, onValue, remove } 
-      from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
-    import { app } from "./firebaseConfig.js"; // asegúrate que este archivo ya existe
-
-    const db = getDatabase(app);
-
-    // -------------------
-    // CAMBIO DE PESTAÑAS
-    // -------------------
-    const tabBtns = document.querySelectorAll(".tab-btn");
-    const tabContents = document.querySelectorAll(".tab-content");
-
-    tabBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const target = btn.dataset.tab;
-        tabContents.forEach(c => c.classList.add("hidden"));
-        document.getElementById("tab-" + target).classList.remove("hidden");
-      });
-    });
-
-    // -------------------
-    // MÓDULO SEDES
-    // -------------------
-    const formSede = document.getElementById("formSede");
-    const sedeNombre = document.getElementById("sedeNombre");
-    const listaSedes = document.getElementById("listaSedes");
-
-    // Agregar sede
-    formSede.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const nuevaSedeRef = push(ref(db, "sedes"));
-      set(nuevaSedeRef, { nombre: sedeNombre.value });
-      sedeNombre.value = "";
-    });
-
-    // Listar sedes en tiempo real
-    onValue(ref(db, "sedes"), (snapshot) => {
-      listaSedes.innerHTML = "";
-      snapshot.forEach((child) => {
-        const key = child.key;
-        const { nombre } = child.val();
-
-        const li = document.createElement("li");
-        li.className = "flex justify-between items-center bg-gray-100 p-2 rounded";
-
-        li.innerHTML = `
-          <span>${nombre}</span>
-          <button class="bg-red-500 text-white px-2 py-1 rounded" data-id="${key}">Eliminar</button>
-        `;
-
-        // Botón eliminar
-        li.querySelector("button").addEventListener("click", () => {
-          remove(ref(db, "sedes/" + key));
-        });
-
-        listaSedes.appendChild(li);
-      });
-    });
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>
+
