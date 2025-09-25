@@ -47,15 +47,16 @@
     <p>Aquí moveremos lo de <code>resumen.html</code>.</p>
   </section>
 
-  <!-- Sedes -->
-  <section id="sedes" class="seccion" style="display:none;">
-    <h2>Módulo Sedes</h2>
-    <form onsubmit="agregarSede(event)">
-      <input type="text" id="nuevaSede" placeholder="Nombre de la sede" required>
-      <button type="submit">Agregar</button>
-    </form>
-    <ul id="listaSedes"></ul>
-  </section>
+ <!-- Sedes -->
+<section id="sedes" class="seccion" style="display:none;">
+  <h2>Módulo Sedes</h2>
+  <form onsubmit="agregarSede(event)">
+    <input type="text" id="nuevaSede" placeholder="Nombre de la sede" required>
+    <button type="submit">Agregar</button>
+  </form>
+  <ul id="listaSedes" style="list-style:none; padding:0;"></ul>
+</section>
+
 
   <!-- Firebase + Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
