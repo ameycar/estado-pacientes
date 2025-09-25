@@ -151,3 +151,36 @@ td img.firma-img {
   background: #ffc107;
   color: #000;
 }
+#listaSedes li {
+  background: #fff;
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#listaSedes button {
+  margin-left: 6px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#listaSedes button:hover {
+  opacity: 0.8;
+}
+
+#listaSedes button:nth-child(2) {
+  background: #ffc107; /* amarillo para editar */
+  color: black;
+}
+
+#listaSedes button:nth-child(3) {
+  background: #dc3545; /* rojo para eliminar */
+  color: white;
+}
