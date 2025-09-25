@@ -4,31 +4,60 @@
   <meta charset="UTF-8">
   <title>Panel Admin</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Barra de navegación */
+    nav {
+      background-color: #4B0000; /* Vinotinto */
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 8px 14px;
+      border-radius: 6px;
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+    nav a:hover {
+      background-color: #800000;
+    }
+  </style>
 </head>
 <body>
+  <!-- Barra de navegación -->
   <nav>
-    <a href="#" onclick="mostrarSeccion('pacientes')">Pacientes</a>
-    <a href="#" onclick="mostrarSeccion('resumen')">Resumen</a>
-    <a href="#" onclick="mostrarSeccion('sedes')">Sedes</a>
+    <a onclick="mostrarSeccion('pacientes')">Pacientes</a>
+    <a onclick="mostrarSeccion('resumen')">Resumen</a>
+    <a onclick="mostrarSeccion('sedes')">Sedes</a>
   </nav>
 
+  <!-- Pacientes -->
   <section id="pacientes" class="seccion">
     <h2>Módulo Pacientes</h2>
-    <p>Aquí luego moveremos lo que ahora está en <code>index.html</code>.</p>
+    <p>Aquí luego moveremos lo de <code>index.html</code>.</p>
   </section>
 
+  <!-- Resumen -->
   <section id="resumen" class="seccion" style="display:none;">
     <h2>Módulo Resumen</h2>
     <p>Aquí moveremos lo de <code>resumen.html</code>.</p>
   </section>
 
+  <!-- Sedes -->
   <section id="sedes" class="seccion" style="display:none;">
     <h2>Módulo Sedes</h2>
-    <input type="text" id="nuevaSede" placeholder="Nombre de la sede">
-    <button onclick="agregarSede()">Agregar</button>
+    <form onsubmit="agregarSede(event)">
+      <input type="text" id="nuevaSede" placeholder="Nombre de la sede" required>
+      <button type="submit">Agregar</button>
+    </form>
     <ul id="listaSedes"></ul>
   </section>
 
+  <!-- Firebase + Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
