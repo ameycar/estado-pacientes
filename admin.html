@@ -1,1 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Estado de Pacientes</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* estilos mínimos para admin (puedes integrarlo a style.css) */
+    body { font-family: Arial, sans-serif; margin: 12px; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .tabs { display:flex; gap:8px; margin:14px 0; }
+    .tab-btn { padding:8px 12px; border-radius:6px; border:1px solid #ddd; background:#fafafa; cursor:pointer; }
+    .tab-btn.active { background:#007bff; color:#fff; border-color:#0062cc; }
+    .module { display:none; margin-top:12px; }
+    .module.active { display:block; }
+    .card { border:1px solid #e2e2e2; padding:12px; border-radius:8px; background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    form .row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+    input[type="text"], input[type="number"], select { padding:6px 8px; border:1px solid #ccc; border-radius:6px; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    th, td { border:1px solid #eee; padding:6px 8px; text-align:left; font-size:13px; }
+    .small { width:72px; text-align:center; }
+    .actions button { margin-right:6px; }
+    .btn { padding:6px 10px; border-radius:6px; border:none; cursor:pointer; }
+    .btn.primary { background:#007bff; color:#fff; }
+    .btn.warn { background:#ffc107; }
+    .btn.danger { background:#dc3545; color:#fff; }
+    .badge-active { color:#155724; background:#d4edda; padding:4px 6px; border-radius:4px; font-size:12px; }
+    .badge-inactive { color:#721c24; background:#f8d7da; padding:4px 6px; border-radius:4px; font-size:12px; }
+    #mensaje { margin-top:8px; font-size:13px; color:#333; }
+  </style>
+</head>
+<body>
+  <script>
+    // control de acceso simple (igual que tu index)
+    const usuario = localStorage.getItem("usuario");
+    if (!usuario) {
+      alert("Acceso denegado. Debes iniciar sesión.");
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <header>
+    <h2>Panel Admin — Estado de Pacientes</h2>
+    <div>
+      <button onclick="cerrarSesion()" class="btn">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab-btn active" data-tab="pacientes">Pacientes</div>
+    <div class="tab-btn" data-tab="resumen">Resumen</div>
+    <div class="tab-btn" data-tab="usuarios">Usuarios</div>
+    <div class="tab-btn" data-tab="sedes">Sedes</div>
+    <div class="tab-btn" data-tab="turnos">Turnos TV</div>
+  </div>
+
+  <!-- MODULOS -->
+  <div id="pacientes" class="module active card">
+    <h3>Pacientes</h3>
+    <p>Pestaña en construcción. Pronto moveremos tu módulo actual aquí.</p>
+  </div>
+
+  <div id="resumen" class="module card">
+    <h3>Resumen</h3>
+    <p>Pestaña en construcción.</p>
+  </div>
+
+  <div id="usuarios" class="module card">
+    <h3>Usuarios</h3>
+    <p>Pestaña en construcción.</p>
+  </div>
+
+  <!-- === SEDES === -->
+  <div id="sedes" class="module card">
+    <h3>Sedes (Administrar)</h3>
+
+    <form id="formSede">
+      <div class="row">
+        <input id="sedeNombre" type="text" placeholder="Nombre de la sede (ej. Vitarte 1)" required style="flex:1"/>
+        <input id="sedeDireccion" type="text" placeholder="Dirección (opcional)" style="flex:1"/>
+        <button type="submit" class="btn primary">Agregar</button>
+      </div>
+    </form>
+
+    <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+      <input id="sedeSearch" type="text" placeholder="Buscar sede..." style="flex:1; padding:6px;"/>
+      <select id="filterEstado" style="padding:6px;">
+        <option value="">Todos</option>
+        <option value="activo">Activos</option>
+        <option value="inactivo">Inactivos</option>
+      </select>
+      <button id="btnReload" class="btn">Recargar</button>
+    </div>
+
+    <div id="mensaje"></div>
+
+    <table id="tablaSedes">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th class="small">Estado</th>
+          <th class="small">Creado</th>
+          <th class="small">Acciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="turnos" class="module card">
+    <h3>Turnos TV</h3>
+    <p>Pestaña en construcción.</p>
+  </div>
+
+  <!-- INICIALIZACION FIREBASE v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <script>
+    // Pega aquí la configuración STAGING si no usas un archivo firebase.js separado.
+    // Si ya tienes firebase.js en la raíz que inicializa, BORRAR este bloque y solo incluir firebase.js
+    const firebaseConfig = {
+      apiKey: "AIzaSyA25H1n0isws9Jw8-LvOvqql2M1cEfzFaU",
+      authDomain: "estado-pacientes-staging.firebaseapp.com",
+      databaseURL: "https://estado-pacientes-staging-default-rtdb.firebaseio.com",
+      projectId: "estado-pacientes-staging",
+      storageBucket: "estado-pacientes-staging.appspot.com",
+      messagingSenderId: "17770566264",
+      appId: "1:17770566264:web:bec6ff862496dc082f538d"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+  </script>
+
+  <!-- SEDES JS (puedes mover a sedes.js) -->
+  <script>
+    /* Sedes module JS - funciones CRUD */
+    const formSede = document.getElementById('formSede');
+    const sedeNombre = document.getElementById('sedeNombre');
+    const sedeDireccion = document.getElementById('sedeDireccion');
+    const tablaSedesBody = document.querySelector('#tablaSedes tbody');
+    const sedeSearch = document.getElementById('sedeSearch');
+    const filterEstado = document.getElementById('filterEstado');
+    const btnReload = document.getElementById('btnReload');
+    const mensajeDiv = document.getElementById('mensaje');
+
+    let sedesLocal = {}; // cache local { key: data }
+
+    function mostrarMensaje(txt, tiempo=3000) {
+      mensajeDiv.textContent = txt;
+      setTimeout(()=> mensajeDiv.textContent = '', tiempo);
+    }
+
+    // Crear sede
+    formSede.addEventListener('submit', e => {
+      e.preventDefault();
+      const nombre = sedeNombre.value.trim();
+      const direccion = sedeDireccion.value.trim();
+      if (!nombre) return alert('Debe indicar un nombre de sede.');
+      const nuevo = {
+        nombre,
+        direccion: direccion || '',
+        estado: 'activo',
+        fechaCreacion: new Date().toISOString()
+      };
+      const ref = db.ref('sedes').push();
+      ref.set(nuevo)
+        .then(()=> {
+          formSede.reset();
+          mostrarMensaje('Sede creada');
+        })
+        .catch(err => alert('Error al crear sede: ' + err.message));
+    });
+
+    // Escuchar sedes en tiempo real
+    function cargarSedes() {
+      db.ref('sedes').on('value', snap => {
+        const val = snap.val() || {};
+        sedesLocal = val;
+        renderTablaSedes();
+      });
+    }
+
+    function renderTablaSedes() {
+      const q = (sedeSearch.value || '').trim().toLowerCase();
+      const estadoFiltro = filterEstado.value;
+      tablaSedesBody.innerHTML = '';
+      const keys = Object.keys(sedesLocal).sort((a,b)=> {
+        const A = sedesLocal[a].fechaCreacion || '';
+        const B = sedesLocal[b].fechaCreacion || '';
+        return B.localeCompare(A);
+      });
+
+      keys.forEach(key => {
+        const s = sedesLocal[key];
+        if (!s) return;
+        // filtros
+        if (estadoFiltro && s.estado !== estadoFiltro) return;
+        if (q && !( (s.nombre||'').toLowerCase().includes(q) || (s.direccion||'').toLowerCase().includes(q) )) return;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(s.nombre||'')}</td>
+          <td>${escapeHtml(s.direccion||'')}</td>
+          <td class="small">${ s.estado === 'activo' ? '<span class="badge-active">ACT</span>' : '<span class="badge-inactive">OFF</span>' }</td>
+          <td class="small">${formatDate(s.fechaCreacion)}</td>
+          <td class="small actions">
+            <button class="btn" onclick="editarSedePrompt('${key}')">✏️</button>
+            <button class="btn" onclick="toggleEstado('${key}')">${ s.estado === 'activo' ? 'Inactivar' : 'Activar' }</button>
+            <button class="btn danger" onclick="borrarSedeConfirm('${key}')">Eliminar</button>
+          </td>
+        `;
+        tablaSedesBody.appendChild(tr);
+      });
+    }
+
+    // util: escape
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+    }
+    function formatDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleString();
+    }
+
+    // Editar (prompt simple)
+    window.editarSedePrompt = function(key) {
+      const s = sedesLocal[key];
+      if (!s) return;
+      const nuevoNombre = prompt('Nombre de sede:', s.nombre) || s.nombre;
+      const nuevaDir = prompt('Dirección:', s.direccion || '') || s.direccion || '';
+      db.ref('sedes/' + key).update({ nombre: nuevoNombre.trim(), direccion: nuevaDir.trim() })
+        .then(()=> mostrarMensaje('Sede actualizada'))
+        .catch(err=> alert('Error al actualizar: ' + err.message));
+    };
+
+    // Toggle estado activo/inactivo (no borra)
+    window.toggleEstado = function(key) {
+      const s = sedesLocal[key];
+      if (!s) return;
+      const nuevo = s.estado === 'activo' ? 'inactivo' : 'activo';
+      db.ref('sedes/' + key).update({ estado: nuevo })
+        .then(()=> mostrarMensaje('Estado actualizado'))
+        .catch(e=> alert('Error: '+ e.message));
+    };
+
+    // Eliminar definitivo (pregunta confirm)
+    window.borrarSedeConfirm = function(key) {
+      const s = sedesLocal[key];
+      if (!s) return;
+      if (!confirm(`Eliminar sede "${s.nombre}" definitivamente? (se recomienda INACTIVAR en lugar de borrar)`)) return;
+      db.ref('sedes/' + key).remove()
+        .then(()=> mostrarMensaje('Sede eliminada'))
+        .catch(e=> alert('Error: ' + e.message));
+    };
+
+    // Util para cargar sedes activas en selects de otros módulos
+    window.cargarSedesActivasEnSelect = function(selectId) {
+      const el = document.getElementById(selectId);
+      if (!el) return;
+      el.innerHTML = '<option value="">Seleccione sede</option>';
+      Object.keys(sedesLocal || {}).forEach(k => {
+        const s = sedesLocal[k];
+        if (s && s.estado === 'activo') {
+          const opt = document.createElement('option');
+          opt.value = k; // guardamos key
+          opt.textContent = s.nombre;
+          el.appendChild(opt);
+        }
+      });
+    };
+
+    // Buscador y filtros
+    sedeSearch.addEventListener('input', renderTablaSedes);
+    filterEstado.addEventListener('change', renderTablaSedes);
+    btnReload.addEventListener('click', () => { cargarSedes(); mostrarMensaje('Recargando...'); });
+
+    // Iniciar
+    cargarSedes();
+
+    // TAB switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.getAttribute('data-tab');
+        document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+        const mod = document.getElementById(tab);
+        if (mod) mod.classList.add('active');
+      });
+    });
+
+    // cerrar sesion
+    function cerrarSesion(){ localStorage.removeItem('usuario'); window.location.href='login.html'; }
+  </script>
+</body>
+</html>
 
