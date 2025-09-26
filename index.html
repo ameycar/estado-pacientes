@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <!-- Librería Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-   <h1>Estado de Pacientes prueba carlos</h1>
+  <h1>Estado de Pacientes prueba carlos</h1>
 
   <!-- Filtros -->
   <div id="filtros">
@@ -103,6 +102,12 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Scripts con Firebase V9 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import "./firebase-config.js";
+    import "./script.js";
+  </script>
 </body>
 </html>
