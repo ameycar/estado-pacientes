@@ -115,6 +115,14 @@ function mostrarPacientes(pacientes) {
 
   pacientes.forEach(p => {
     const tr = document.createElement('tr');
+    tr.classList.add("fila-paciente");
+
+    // 🔹 Clases dinámicas según estado
+    if (p.estado === 'En espera') tr.classList.add("estado-espera");
+    else if (p.estado === 'En atención') tr.classList.add("estado-atencion");
+    else if (p.estado === 'Programado') tr.classList.add("estado-programado");
+    else if (p.estado === 'Atendido') tr.classList.add("estado-atendido");
+    else if (p.estado === 'Entregado') tr.classList.add("estado-entregado");
 
     const requierePlacas = /TEM|RM|RX|Mamografia/i.test(p.estudios || '');
 
@@ -138,7 +146,7 @@ function mostrarPacientes(pacientes) {
       : `<div style="width:52px; text-align:center;">${p.informe === 'SI' ? 'SI' : ''}</div>`;
 
     const estadoSelect = `
-      <select onchange="cambiarEstado('${p.key}', this.value)" ${ (p.estado === 'Entregado') ? 'disabled' : '' } >
+      <select onchange="cambiarEstado('${p.key}', this.value)" ${(p.estado === 'Entregado') ? 'disabled' : ''} >
         <option ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
         <option ${p.estado === 'En atención' ? 'selected' : ''}>En atención</option>
         <option ${p.estado === 'Programado' ? 'selected' : ''}>Programado</option>
@@ -168,13 +176,6 @@ function mostrarPacientes(pacientes) {
       <td style="text-align:center; width:110px;">${firmaHTML}</td>
       <td style="text-align:center;">${accionEliminar} ${llamarOtraVez}</td>
     `;
-
-    tr.style.backgroundColor =
-      p.estado === 'En espera' ? '#ffe5e5' :
-      p.estado === 'En atención' ? '#fff5cc' :
-      p.estado === 'Programado' ? '#cce5ff' :
-      p.estado === 'Atendido' ? '#d5f5d5' :
-      p.estado === 'Entregado' ? '#e6f7ff' : '#fff';
 
     tablaPacientes.appendChild(tr);
     if (p.estado === 'En espera') enEspera++;
