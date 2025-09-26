@@ -1,68 +1,53 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Panel Admin</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Estado de Pacientes (v9)</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* Barra de navegación */
-    nav {
-      background-color: #4B0000; /* Vinotinto */
-      padding: 12px 20px;
-      display: flex;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      padding: 8px 14px;
-      border-radius: 6px;
-      transition: background 0.3s;
-      cursor: pointer;
-    }
-    nav a:hover {
-      background-color: #800000;
-    }
-  </style>
 </head>
 <body>
-  <!-- Barra de navegación -->
-  <nav>
-    <a onclick="mostrarSeccion('pacientes')">Pacientes</a>
-    <a onclick="mostrarSeccion('resumen')">Resumen</a>
-    <a onclick="mostrarSeccion('sedes')">Sedes</a>
-  </nav>
+  <header>
+    <nav>
+      <a onclick="mostrarSeccion('pacientes')">Pacientes</a>
+      <a onclick="mostrarSeccion('resumen')">Resumen</a>
+      <a onclick="mostrarSeccion('sedes')">Sedes</a>
+    </nav>
+  </header>
 
-  <!-- Pacientes -->
-  <section id="pacientes" class="seccion">
-    <h2>Módulo Pacientes</h2>
-    <p>Aquí luego moveremos lo de <code>index.html</code>.</p>
-  </section>
+  <main>
+    <section id="pacientes" class="seccion">
+      <h1>Pacientes</h1>
+      <p>Aquí pegaremos el módulo pacientes cuando lo migremos a v9.</p>
+    </section>
 
-  <!-- Resumen -->
-  <section id="resumen" class="seccion" style="display:none;">
-    <h2>Módulo Resumen</h2>
-    <p>Aquí moveremos lo de <code>resumen.html</code>.</p>
-  </section>
+    <section id="resumen" class="seccion" style="display:none;">
+      <h1>Resumen</h1>
+      <p>Resumen (pendiente migración).</p>
+    </section>
 
- <!-- Sedes -->
-<section id="sedes" class="seccion" style="display:none;">
-  <h2>Módulo Sedes</h2>
-  <form onsubmit="agregarSede(event)">
-    <input type="text" id="nuevaSede" placeholder="Nombre de la sede" required>
-    <button type="submit">Agregar</button>
-  </form>
-  <ul id="listaSedes" style="list-style:none; padding:0;"></ul>
-</section>
+    <section id="sedes" class="seccion" style="display:none;">
+      <h1>Sedes</h1>
 
+      <form id="formSede" class="card" style="display:flex; gap:8px; align-items:center;">
+        <input id="sedeNombre" type="text" placeholder="Nombre de la sede" required style="flex:1;">
+        <button type="submit">Agregar</button>
+      </form>
 
-  <!-- Firebase + Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="admin.js"></script>
+      <ul id="listaSedes"></ul>
+    </section>
+  </main>
+
+  <script>
+    function mostrarSeccion(id) {
+      document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'block';
+    }
+    mostrarSeccion('pacientes');
+  </script>
+
+  <!-- Cargamos admin.js como módulo (usa firebase.js que también es módulo) -->
+  <script type="module" src="admin.js"></script>
 </body>
 </html>
-
