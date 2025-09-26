@@ -1,186 +1,172 @@
-/* General */
+/* ====== 🎨 Estilos generales ====== */
 body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-  background: #f9f9f9;
-  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #111;
+  color: #eee;
+  margin: 0;
+  padding: 20px;
 }
 
 h1 {
   text-align: center;
+  color: #e63946;
   margin-bottom: 20px;
-  color: #444;
+  font-size: 2rem;
+  letter-spacing: 1px;
 }
 
-/* Formulario */
-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+/* ====== 🔍 Filtros ====== */
+#filtros {
+  display: flex;
   gap: 10px;
   margin-bottom: 20px;
-  padding: 15px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  flex-wrap: wrap;
+}
+
+#filtros input {
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #222;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+#filtros input:focus {
+  border-color: #e63946;
+  outline: none;
+  box-shadow: 0 0 5px #e63946;
+}
+
+/* ====== 📋 Formulario ====== */
+form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
 form input, form select, form button {
   padding: 8px;
-  border: 1px solid #ccc;
   border-radius: 6px;
-  font-size: 14px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+form input:focus, form select:focus {
+  border-color: #e63946;
+  outline: none;
 }
 
 form button {
-  background: #007bff;
+  background: #e63946;
   color: #fff;
   border: none;
   cursor: pointer;
-  transition: background 0.3s;
-}
-
-form button:hover {
-  background: #0056b3;
-}
-
-/* Filtros */
-.filtros {
-  margin: 10px 0;
-  text-align: center;
-}
-
-.filtros input {
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #bbb;
-}
-
-/* Tabla */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  font-size: 13px;
-  text-align: center;
-}
-
-th {
-  background: #007bff;
-  color: white;
   font-weight: bold;
 }
 
-tr:nth-child(even) {
-  background: #f2f2f2;
+form button:hover {
+  background: #b22234;
+  transform: scale(1.05);
 }
 
-/* Colores por estado */
-.estado-programado {
-  background-color: #ffeeba !important; /* amarillo suave */
-}
-.estado-espera {
-  background-color: #f8d7da !important; /* rojo suave */
-}
-.estado-atencion {
-  background-color: #fff3cd !important; /* naranja suave */
-}
-.estado-atendido {
-  background-color: #d4edda !important; /* verde suave */
-}
-.estado-entregado {
-  background-color: #cce5ff !important; /* azul suave */
+/* ====== 📊 Tabla ====== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-/* Firma */
-td img.firma-img {
-  max-width: 80px;
-  max-height: 40px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+table thead {
+  background: #e63946;
+  color: #fff;
 }
 
-/* Modal */
-.modal {
+table th, table td {
+  padding: 10px;
+  border: 1px solid #333;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+table tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ====== 🔴 Estados dinámicos ====== */
+.estado-espera { background: rgba(230, 57, 70, 0.2); }
+.estado-programado { background: rgba(255, 255, 255, 0.1); }
+.estado-atencion { background: rgba(255, 193, 7, 0.2); }
+.estado-atendido { background: rgba(34, 197, 94, 0.2); }
+.estado-entregado { background: rgba(0, 123, 255, 0.2); }
+
+/* ====== 📊 Contador ====== */
+#contador {
+  font-weight: bold;
+  margin-top: 10px;
+  font-size: 1.1rem;
+  color: #e63946;
+}
+
+/* ====== 📥 Exportar botón ====== */
+button[onclick="exportarExcel()"] {
+  margin-top: 10px;
+  background: #333;
+  border: 1px solid #e63946;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 14px;
+}
+
+button[onclick="exportarExcel()"]:hover {
+  background: #e63946;
+  transform: scale(1.05);
+}
+
+/* ====== 🖊️ Modal Firma ====== */
+#modalFirma {
   display: none;
   position: fixed;
-  z-index: 100;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-}
-
-.modal-content {
-  background: #fff;
-  padding: 15px;
-  margin: 10% auto;
-  width: 320px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.modal-content button {
-  margin: 5px;
-  padding: 6px 12px;
-  font-size: 13px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-#guardarFirma {
-  background: #28a745;
-  color: #fff;
-}
-
-#cerrarFirma {
-  background: #dc3545;
-  color: #fff;
-}
-
-#limpiarFirma {
-  background: #ffc107;
-  color: #000;
-}
-#listaSedes li {
-  background: #fff;
-  margin: 6px 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  justify-content: center;
   align-items: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 999;
 }
 
-#listaSedes button {
-  margin-left: 6px;
-  padding: 4px 8px;
+#modalFirma div {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 12px;
+  color: #fff;
+  text-align: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+#modalFirma button {
+  margin: 5px;
+  padding: 8px 12px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  background: #e63946;
+  color: #fff;
+  transition: all 0.3s ease;
 }
 
-#listaSedes button:hover {
-  opacity: 0.8;
+#modalFirma button:hover {
+  background: #b22234;
+  transform: scale(1.05);
 }
 
-#listaSedes button:nth-child(2) {
-  background: #ffc107; /* amarillo para editar */
-  color: black;
-}
-
-#listaSedes button:nth-child(3) {
-  background: #dc3545; /* rojo para eliminar */
-  color: white;
+/* ====== Animaciones ====== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
