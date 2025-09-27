@@ -24,94 +24,67 @@ h1 {
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   padding: 12px;
+  margin-bottom: 16px;
 }
 
-/* ====== 🔍 Filtros ====== */
-#filtros {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-#filtros input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.9);
-  color: #222;
-  transition: all 0.3s ease;
-}
-
-#filtros input:focus {
-  border-color: #b22234;
-  outline: none;
-  box-shadow: 0 0 6px #b22234aa;
-}
-
-/* ====== 📋 Formulario ====== */
-form {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-form input, form select {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background: rgba(255,255,255,0.9);
-  color: #222;
-  transition: all 0.3s ease;
-}
-
-/* ====== 🔘 Botones ====== */
-button {
-  padding: 10px 18px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  background: linear-gradient(135deg, #b22234, #d93a49);
+/* ====== 🔘 Botones premium ====== */
+button, .btn {
+  background: linear-gradient(135deg, #d72638, #a71d2a);
   color: #fff;
-  box-shadow: 0 4px 10px rgba(178,34,52,0.4);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: bold;
+  cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-button:hover {
-  background: linear-gradient(135deg, #a11c2d, #c32f3e);
-  box-shadow: 0 6px 15px rgba(178,34,52,0.6);
+button:hover, .btn:hover {
+  background: linear-gradient(135deg, #e63946, #c71f37);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.25);
   transform: translateY(-2px);
 }
 
-button:active {
-  transform: scale(0.96);
+button:active, .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+/* ====== 📝 Inputs ====== */
+input, select {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 4px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease-in-out;
+}
+
+input:focus, select:focus {
+  border-color: #b22234;
+  outline: none;
+  box-shadow: 0 0 5px rgba(178,34,52,0.4);
 }
 
 /* ====== 📊 Tabla ====== */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
-table th, table td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-table th {
-  background: rgba(178,34,52,0.9);
+thead {
+  background: linear-gradient(135deg, #b22234, #a71d2a);
   color: white;
 }
 
-table tr:nth-child(even) {
-  background: rgba(255,255,255,0.6);
+th, td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
 }
 
-table tr:hover {
-  background: rgba(178,34,52,0.05);
+tr:hover {
+  background: rgba(178,34,52,0.08);
 }
