@@ -1,44 +1,97 @@
+/* Fondo con degradado oscuro elegante */
 body {
-  background: #F7F7F7;
-  font-family: Arial, sans-serif;
-  color: #333333;
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #0d0d0d, #1a1a1a, #330000);
+  color: #f0f0f0;
 }
 
-/* Títulos */
-h1, h2, h3 {
-  color: #111111;
+/* Encabezado */
+h1 {
   text-align: center;
+  padding: 20px;
+  background: rgba(0,0,0,0.6);
+  color: #ff4d4d;
+  border-bottom: 2px solid #660000;
 }
 
-/* Botones principales */
-button, .btn-principal {
-  background-color: #000000;
-  color: #FFFFFF;
-  border: none;
-  padding: 10px 18px;
+/* Filtros y formulario con efecto vidrio */
+#filtros, form {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  margin: 20px auto;
+  border-radius: 10px;
+  max-width: 900px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+/* Inputs y selects */
+input, select {
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #444;
+  color: #f0f0f0;
+  padding: 8px;
+  margin: 5px;
   border-radius: 6px;
+  outline: none;
+  transition: border 0.3s;
+}
+
+input:focus, select:focus {
+  border: 1px solid #ff4d4d;
+}
+
+/* Botones modernos */
+button {
+  background: #0d0d0d;
+  border: 2px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 10px 18px;
+  margin: 8px;
+  border-radius: 8px;
+  cursor: pointer;
   font-weight: bold;
   transition: all 0.3s ease;
 }
-button:hover, .btn-principal:hover {
-  background: linear-gradient(135deg, #000000, #333333);
+
+button:hover {
+  background: #ff4d4d;
+  color: #fff;
   transform: scale(1.05);
+  box-shadow: 0 0 15px #ff1a1a;
 }
 
-/* Botón secundario (ej: Exportar Excel) */
-.btn-secundario {
-  background-color: #E63946;
-  color: #FFFFFF;
-}
-.btn-secundario:hover {
-  background-color: #B22222;
+/* Tabla con estilo oscuro */
+table {
+  width: 95%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(6px);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-/* Tablas */
-table thead {
-  background-color: #111111;
-  color: #FFFFFF;
+th, td {
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
 }
-table tr:nth-child(even) {
-  background-color: #FAFAFA;
+
+th {
+  background: rgba(255, 0, 0, 0.3);
+  color: #fff;
+}
+
+tr:nth-child(even) {
+  background: rgba(0,0,0,0.3);
+}
+
+/* Modal firma */
+#modalFirma > div {
+  background: rgba(30, 30, 30, 0.9) !important;
+  color: #fff;
+  border: 1px solid #ff4d4d;
 }
