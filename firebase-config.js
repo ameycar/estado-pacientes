@@ -1,20 +1,16 @@
-// firebase-config.js
+// firebase-config.js (módulo, Firebase v9 CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-// Configuración de Firebase (STAGING o PRODUCCIÓN según quieras probar)
 const firebaseConfig = {
-  apiKey: "AIzaSyA25H1n0isws9Jw8-LvOvqql2M1cEfzFaU",
-  authDomain: "estado-pacientes-staging.firebaseapp.com",
-  projectId: "estado-pacientes-staging",
-  storageBucket: "estado-pacientes-staging.appspot.com",
-  messagingSenderId: "17770566264",
-  appId: "1:17770566264:web:bec6ff862496dc082f538d"
+  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
+  authDomain: "estado-pacientes.firebaseapp.com",
+  databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
+  projectId: "estado-pacientes",
+  storageBucket: "estado-pacientes.appspot.com",
+  messagingSenderId: "515522648971",
+  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e"
 };
 
-// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
-
-// Exporta la base de datos
 export const db = getDatabase(app);
-
