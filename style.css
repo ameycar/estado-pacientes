@@ -1,90 +1,44 @@
-/* ====== 🎨 Estilos generales ====== */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #f5f5f5, #eaeaea, #fdfdfd);
-  color: #222;
-  margin: 0;
-  padding: 20px;
-  min-height: 100vh;
+  background: #F7F7F7;
+  font-family: Arial, sans-serif;
+  color: #333333;
 }
 
-/* ====== 🔝 Título ====== */
-h1 {
+/* Títulos */
+h1, h2, h3 {
+  color: #111111;
   text-align: center;
-  color: #b22234;
-  margin-bottom: 20px;
-  font-size: 2rem;
-  letter-spacing: 1px;
 }
 
-/* ====== 📦 Contenedor general tipo vidrio ====== */
-#filtros, form, table, #modalFirma div {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  padding: 12px;
-  margin-bottom: 16px;
-}
-
-/* ====== 🔘 Botones premium ====== */
-button, .btn {
-  background: linear-gradient(135deg, #d72638, #a71d2a);
-  color: #fff;
+/* Botones principales */
+button, .btn-principal {
+  background-color: #000000;
+  color: #FFFFFF;
   border: none;
-  border-radius: 10px;
-  padding: 10px 20px;
+  padding: 10px 18px;
+  border-radius: 6px;
   font-weight: bold;
-  cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+button:hover, .btn-principal:hover {
+  background: linear-gradient(135deg, #000000, #333333);
+  transform: scale(1.05);
 }
 
-button:hover, .btn:hover {
-  background: linear-gradient(135deg, #e63946, #c71f37);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-  transform: translateY(-2px);
+/* Botón secundario (ej: Exportar Excel) */
+.btn-secundario {
+  background-color: #E63946;
+  color: #FFFFFF;
+}
+.btn-secundario:hover {
+  background-color: #B22222;
 }
 
-button:active, .btn:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+/* Tablas */
+table thead {
+  background-color: #111111;
+  color: #FFFFFF;
 }
-
-/* ====== 📝 Inputs ====== */
-input, select {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin: 4px;
-  font-size: 0.95rem;
-  transition: all 0.2s ease-in-out;
-}
-
-input:focus, select:focus {
-  border-color: #b22234;
-  outline: none;
-  box-shadow: 0 0 5px rgba(178,34,52,0.4);
-}
-
-/* ====== 📊 Tabla ====== */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-thead {
-  background: linear-gradient(135deg, #b22234, #a71d2a);
-  color: white;
-}
-
-th, td {
-  padding: 10px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-}
-
-tr:hover {
-  background: rgba(178,34,52,0.08);
+table tr:nth-child(even) {
+  background-color: #FAFAFA;
 }
