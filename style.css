@@ -1,189 +1,121 @@
-/* Fondo con degradado oscuro elegante */
+/* General */
 body {
+  font-family: Arial, sans-serif;
   margin: 0;
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(135deg, #0d0d0d, #1a1a1a, #330000);
-  color: #f0f0f0;
-}
-
-/* Encabezado */
-h1 {
-  text-align: center;
-  padding: 20px;
-  background: rgba(0,0,0,0.6);
-  color: #ff4d4d;
-  border-bottom: 2px solid #660000;
-}
-
-/* Filtros y formulario con efecto vidrio */
-#filtros, form {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 15px;
-  margin: 20px auto;
-  border-radius: 10px;
-  max-width: 900px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-}
-
-/* Inputs y selects */
-input, select {
-  background: rgba(0,0,0,0.6);
-  border: 1px solid #444;
-  color: #f0f0f0;
-  padding: 8px;
-  margin: 5px;
-  border-radius: 6px;
-  outline: none;
-  transition: border 0.3s;
-}
-
-input:focus, select:focus {
-  border: 1px solid #ff4d4d;
-}
-
-/* Botones modernos */
-button {
-  background: #0d0d0d;
-  border: 2px solid #ff4d4d;
-  color: #ff4d4d;
-  padding: 10px 18px;
-  margin: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  background: #ff4d4d;
+  padding: 0;
+  background: linear-gradient(135deg, #1f1f1f, #3a3a3a);
   color: #fff;
-  transform: scale(1.05);
-  box-shadow: 0 0 15px #ff1a1a;
 }
 
-/* Tabla con estilo oscuro */
+/* Header */
+header {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px;
+  text-align: center;
+}
+
+header nav a {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+header nav a:hover {
+  color: #ff9800;
+}
+
+/* Secciones */
+.seccion {
+  padding: 20px;
+}
+
+/* Formularios */
+form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+form input,
+form select,
+form button {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+}
+
+form button {
+  background: #ff9800;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+form button:hover {
+  background: #e68900;
+}
+
+/* Tabla */
 table {
-  width: 95%;
-  margin: 20px auto;
+  width: 100%;
   border-collapse: collapse;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(6px);
-  border-radius: 10px;
-  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  margin-top: 15px;
 }
 
 th, td {
   padding: 10px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   text-align: center;
 }
 
 th {
-  background: rgba(255, 0, 0, 0.3);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
 }
 
 tr:nth-child(even) {
-  background: rgba(0,0,0,0.3);
-}
-
-/* Modal firma */
-#modalFirma > div {
-  background: rgba(30, 30, 30, 0.9) !important;
-  color: #fff;
-  border: 1px solid #ff4d4d;
-}
-/* Contenedor de botones del admin */
-.menu-cards {
-  display: flex;
-  justify-content: center;
-  gap: 25px;
-  margin: 30px auto;
-  flex-wrap: wrap;
-}
-
-/* Botones tipo card */
-.menu-card {
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 0, 0, 0.3);
-  padding: 25px 30px;
-  border-radius: 14px;
-  text-align: center;
-  color: #fff;
+}
+
+/* Contador */
+#contador-espera {
   font-weight: bold;
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 200px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  color: #ff9800;
 }
 
-/* Íconos grandes */
-.menu-card i {
-  font-size: 40px;
-  margin-bottom: 10px;
-  display: block;
-  color: #ff4d4d;
-  transition: all 0.3s ease;
-}
-
-/* Hover con animación */
-.menu-card:hover {
-  background: rgba(255, 0, 0, 0.2);
-  transform: translateY(-6px) scale(1.05);
-  box-shadow: 0 0 25px rgba(255, 50, 50, 0.9);
-  border-color: #ff4d4d;
-}
-
-.menu-card:hover i {
-  color: #fff;
-}
-/* === Estilo para cuadros de resumen elegantes === */
-.resumen-cards {
-  display: flex;
-  flex-wrap: wrap;
+/* Resumen con tarjetas */
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 20px;
-  margin-top: 25px;
-  justify-content: center;
+  margin-top: 20px;
 }
 
 .resumen-card {
-  background: linear-gradient(145deg, #1e1e1e, #2c2c2c); /* degradado elegante oscuro */
-  color: #fff;
-  border: 2px solid #ff4d4d; /* borde rojo elegante */
-  border-radius: 15px;
-  padding: 25px 20px;
-  flex: 1 1 220px;
-  min-width: 220px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 20px;
+  border-radius: 12px;
   text-align: center;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.6);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  transition: transform 0.2s, background 0.3s;
 }
 
 .resumen-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 25px rgba(255, 0, 0, 0.4);
+  transform: translateY(-5px);
+  background: rgba(255, 152, 0, 0.2);
 }
 
-/* === Botones en cuadros === */
-.resumen-card button {
-  background: #ff4d4d;
-  color: #fff;
-  border: none;
-  padding: 10px 18px;
-  margin-top: 12px;
-  border-radius: 8px;
-  cursor: pointer;
+.resumen-card h3 {
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  color: #ff9800;
+}
+
+.resumen-card p {
+  font-size: 2em;
+  margin: 0;
   font-weight: bold;
-  letter-spacing: 0.5px;
-  transition: background 0.3s ease, transform 0.2s ease;
 }
-
-.resumen-card button:hover {
-  background: #e63939;
-  transform: translateY(-2px);
-}
-
