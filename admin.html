@@ -3,67 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin - Estado de Pacientes (v9)</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>Admin - Estado de Pacientes</title>
 
+  <!-- tu style (si ya tienes style.css, manténlo); este es un estilo pequeño de apoyo -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase V8 (igual que usas en index) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
-  <header>
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:linear-gradient(90deg,#2b0b0b,#3e0f15);color:#fff;">
+    <div style="font-weight:700">Estado de Pacientes — Admin</div>
     <nav>
-      <a onclick="mostrarSeccion('pacientes')">Pacientes</a>
-      <a onclick="mostrarSeccion('resumen')">Resumen</a>
-      <a onclick="mostrarSeccion('sedes')">Sedes</a>
+      <a href="#" onclick="mostrarSeccion('pacientes')" style="margin-right:12px;color:#fff;text-decoration:none;">Pacientes</a>
+      <a href="#" onclick="mostrarSeccion('resumen')" style="margin-right:12px;color:#fff;text-decoration:none;">Resumen</a>
+      <a href="#" onclick="mostrarSeccion('sedes')" style="color:#fff;text-decoration:none;">Sedes</a>
     </nav>
   </header>
-<div class="menu-cards">
-  <div class="menu-card" onclick="location.href='index.html'">
-    <i class="fas fa-user-injured"></i>
-    Pacientes
-  </div>
-  <div class="menu-card" onclick="location.href='resumen.html'">
-    <i class="fas fa-chart-pie"></i>
-    Resumen
-  </div>
-  <div class="menu-card" onclick="location.href='sedes.html'">
-    <i class="fas fa-hospital"></i>
-    Sedes
-  </div>
-</div>
 
-  <main>
-    <section id="pacientes" class="seccion">
-      <h1>Pacientes</h1>
-      <p>Aquí pegaremos el módulo pacientes cuando lo migremos a v9.</p>
+  <main style="padding:18px;">
+
+    <!-- PACIENTES - se puede mantener vacío o incluir un link hacia index -->
+    <section id="pacientes" class="seccion" style="display:none;">
+      <h2>Pacientes</h2>
+      <p>Este módulo está en tu `index.html`. Aquí puedes incluir un iframe o link para abrirlo:</p>
+      <p><a href="index.html" target="_blank">Abrir módulo Pacientes (index.html)</a></p>
     </section>
 
+    <!-- RESUMEN -->
     <section id="resumen" class="seccion" style="display:none;">
-      <h1>Resumen</h1>
-      <p>Resumen (pendiente migración).</p>
+      <h2>Resumen</h2>
+      <p>Resumen y estadísticas (a implementar en fases siguientes).</p>
     </section>
 
-    <section id="sedes" class="seccion" style="display:none;">
-      <h1>Sedes</h1>
+    <!-- SEDES: CRUD -->
+    <section id="sedes" class="seccion" style="display:none; max-width:900px;">
+      <h2>Sedes</h2>
 
-      <form id="formSede" class="card" style="display:flex; gap:8px; align-items:center;">
-        <input id="sedeNombre" type="text" placeholder="Nombre de la sede" required style="flex:1;">
-        <button type="submit">Agregar</button>
+      <form id="form-sede" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <input id="sedeNombre" placeholder="Nombre de la sede" required style="padding:8px;border-radius:6px;border:1px solid #ccc;flex:1;">
+        <input id="sedeDireccion" placeholder="Dirección (opcional)" style="padding:8px;border-radius:6px;border:1px solid #ccc;flex:1;">
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input id="sedeActiva" type="checkbox" checked> Activa
+        </label>
+        <button type="submit" style="padding:8px 12px;border-radius:6px;background:#7b0f15;color:#fff;border:none;cursor:pointer;">Crear</button>
       </form>
 
-      <ul id="listaSedes"></ul>
+      <table id="tabla-sedes" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f2f2f2;">
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Nombre</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Dirección</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:center">Activa</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <p style="margin-top:10px;color:#666;font-size:13px;">Eliminar requiere contraseña de admin.</p>
     </section>
   </main>
 
-  <script>
-    function mostrarSeccion(id) {
-      document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'block';
-    }
-    mostrarSeccion('pacientes');
-  </script>
-
-  <!-- Cargamos admin.js como módulo (usa firebase.js que también es módulo) -->
-  <script type="module" src="admin.js"></script>
+  <!-- admin script -->
+  <script src="admin-script.js"></script>
 </body>
 </html>
+
