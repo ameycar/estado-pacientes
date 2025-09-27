@@ -1,113 +1,128 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Estado de Pacientes</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- Librería Excel -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Estado de Pacientes prueba carlos</h1>
+  <header>
+    <nav>
+      <a onclick="mostrarSeccion('pacientes')">Pacientes</a>
+      <a onclick="mostrarSeccion('resumen')">Resumen</a>
+      <a onclick="mostrarSeccion('sedes')">Sedes</a>
+    </nav>
+  </header>
 
-  <!-- Filtros -->
-  <div id="filtros">
-    <input type="text" id="filtroSede" placeholder="Filtrar por sede">
-    <input type="text" id="filtroNombre" placeholder="Filtrar por nombre">
-    <input type="text" id="filtroEstudio" placeholder="Filtrar por estudio">
-    <input type="date" id="filtroFecha">
-  </div>
+  <!-- Sección Pacientes -->
+  <section id="pacientes" class="seccion">
+    <h2>Registro de Pacientes</h2>
+    <form id="pacienteForm">
+      <label for="sede">Sede:</label>
+      <select id="sede" required>
+        <option value="Vitarte 1">Vitarte 1</option>
+        <option value="Vitarte 5">Vitarte 5</option>
+        <option value="Vitarte 7">Vitarte 7</option>
+      </select>
 
-  <!-- Formulario -->
-  <form id="formulario">
-    <select id="sede" required>
-      <option value="Vitarte 1">Vitarte 1</option>
-      <option value="Vitarte 5">Vitarte 5</option>
-      <option value="Vitarte 7">Vitarte 7</option>
-    </select>
-    <input type="text" id="apellidos" placeholder="Apellidos" required>
-    <input type="text" id="nombres" placeholder="Nombres" required>
+      <label for="apellidos">Apellidos:</label>
+      <input type="text" id="apellidos" required>
 
-    <select id="estudios" multiple required>
-      <option value="Consulta Medicina">Consulta Medicina</option>
-      <option value="Reevaluación">Reevaluación</option>
-      <option value="Eco tv">Eco tv</option>
-      <option value="Eco doppler">Eco doppler</option>
-      <option value="Eco abdomen completo">Eco abdomen completo</option>
-      <option value="Eco renal">Eco renal</option>
-      <option value="Eco mamaria">Eco mamaria</option>
-      <option value="Eco obstetrica">Eco obstetrica</option>
-      <option value="Eco pelvica">Eco pelvica</option>
-      <option value="Eco abdomen sup">Eco abdomen sup</option>
-      <option value="Eco abdomen inf">Eco abdomen inf</option>
-      <option value="Eco pb">Eco pb</option>
-      <option value="TEM">Tomografía</option>
-      <option value="RM">Resonancia Magnética</option>
-      <option value="RX">Rayos X</option>
-      <option value="Mamografia">Mamografía</option>
-      <option value="Eco prostata">Eco prostata</option>
-      <option value="Eco genética">Eco genética</option>
-      <option value="Eco morfo">Eco morfo</option>
-      <option value="Eco 4d">Eco 4d</option>
-      <option value="Eco 5d">Eco 5d</option>
-      <option value="Eco vias urinarias">Eco vias urinarias</option>
-    </select>
+      <label for="nombres">Nombres:</label>
+      <input type="text" id="nombres" required>
 
-    <div id="cantidad-eco-pb" style="display:none;">
-      <label>Cantidad Eco pb:</label>
-      <input type="number" id="ecoPbCantidad" min="1" value="1">
+      <label for="estudio">Estudio:</label>
+      <select id="estudio" multiple required>
+        <option value="Ecografía abdominal">Ecografía abdominal</option>
+        <option value="Ecografía renal">Ecografía renal</option>
+        <option value="Ecografía ginecológica">Ecografía ginecológica</option>
+        <option value="Ecografía obstétrica">Ecografía obstétrica</option>
+        <option value="Ecografía prostática">Ecografía prostática</option>
+        <option value="Ecografía testicular">Ecografía testicular</option>
+        <option value="Ecografía de partes blandas">Ecografía de partes blandas</option>
+        <option value="Ecografía mamaria">Ecografía mamaria</option>
+        <option value="Ecografía tiroidea">Ecografía tiroidea</option>
+        <option value="Ecografía doppler">Ecografía doppler</option>
+        <option value="Ecografía musculoesquelética">Ecografía musculoesquelética</option>
+      </select>
+
+      <label for="cant">Cant:</label>
+      <input type="number" id="cant" min="1" value="1" required>
+
+      <button type="submit">Agregar Paciente</button>
+    </form>
+
+    <div id="filtros">
+      <label for="filtroApellido">Buscar por Apellido:</label>
+      <input type="text" id="filtroApellido" placeholder="Ingrese apellido">
+
+      <label for="filtroSede">Filtrar por Sede:</label>
+      <select id="filtroSede">
+        <option value="">Todas</option>
+        <option value="Vitarte 1">Vitarte 1</option>
+        <option value="Vitarte 5">Vitarte 5</option>
+        <option value="Vitarte 7">Vitarte 7</option>
+      </select>
+
+      <label for="filtroFecha">Filtrar por Fecha:</label>
+      <input type="date" id="filtroFecha">
     </div>
 
-    <input type="text" id="precio" placeholder="Precio">
-    <input type="text" id="pf" placeholder="PF">
+    <h3>Pacientes Registrados</h3>
+    <table id="tablaPacientes">
+      <thead>
+        <tr>
+          <th>Sede</th>
+          <th>Apellidos</th>
+          <th>Nombres</th>
+          <th>Estudios</th>
+          <th>Cant</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="listaPacientes"></tbody>
+    </table>
+    <p>Total en espera: <span id="contador-espera">0</span></p>
+  </section>
 
-    <button type="submit">Agregar Paciente</button>
-  </form>
+  <!-- Sección Resumen -->
+  <section id="resumen" class="seccion" style="display:none;">
+    <h2>Resumen General</h2>
 
-  <p id="contador">Pacientes en espera: 0</p>
-  <button onclick="exportarExcel()">📊 Exportar Excel</button>
-
-  <!-- Tabla pacientes -->
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Sede</th>
-        <th>Apellidos</th>
-        <th>Nombres</th>
-        <th>Estudios</th>
-        <th>Cant</th>
-        <th>Precio</th>
-        <th>PF</th>
-        <th>Estado</th>
-        <th>Placas</th>
-        <th>CD</th>
-        <th>Informe</th>
-        <th>Entregado</th>
-        <th>Firma</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-pacientes"></tbody>
-  </table>
-
-  <!-- Modal firma -->
-  <div id="modalFirma" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); justify-content:center; align-items:center;">
-    <div style="background:#fff; padding:20px; border-radius:10px;">
-      <canvas id="canvasFirma" width="300" height="150" style="border:1px solid #000;"></canvas>
-      <br>
-      <button onclick="guardarFirma()">Guardar</button>
-      <button onclick="cerrarModal()">Cancelar</button>
-      <button onclick="limpiarFirma()">Limpiar</button>
+    <div class="resumen-grid">
+      <div class="resumen-card">
+        <h3>Programados</h3>
+        <p id="count-programado">0</p>
+      </div>
+      <div class="resumen-card">
+        <h3>En espera</h3>
+        <p id="count-espera">0</p>
+      </div>
+      <div class="resumen-card">
+        <h3>En atención</h3>
+        <p id="count-atencion">0</p>
+      </div>
+      <div class="resumen-card">
+        <h3>Atendidos</h3>
+        <p id="count-atendido">0</p>
+      </div>
     </div>
-  </div>
+
+    <h3>Pacientes por sede</h3>
+    <div id="resumen-sedes" class="resumen-grid"></div>
+  </section>
+
+  <!-- Sección Sedes -->
+  <section id="sedes" class="seccion" style="display:none;">
+    <h2>Pacientes por Sede</h2>
+    <div id="sedes-container"></div>
+  </section>
 
   <!-- Scripts con Firebase V9 -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-    import "./firebase-config.js";
-    import "./script.js";
-  </script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
