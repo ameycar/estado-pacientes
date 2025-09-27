@@ -57,7 +57,7 @@ form {
   margin-bottom: 20px;
 }
 
-form input, form select, form button {
+form input, form select {
   padding: 8px;
   border-radius: 8px;
   border: 1px solid #ccc;
@@ -66,114 +66,52 @@ form input, form select, form button {
   transition: all 0.3s ease;
 }
 
-form input:focus, form select:focus {
-  border-color: #b22234;
-  outline: none;
-}
-
-form button {
-  background: #b22234;
-  color: #fff;
+/* ====== 🔘 Botones ====== */
+button {
+  padding: 10px 18px;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
+  background: linear-gradient(135deg, #b22234, #d93a49);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(178,34,52,0.4);
+  transition: all 0.3s ease;
 }
 
-form button:hover {
-  background: #8b1a2b;
-  transform: scale(1.05);
+button:hover {
+  background: linear-gradient(135deg, #a11c2d, #c32f3e);
+  box-shadow: 0 6px 15px rgba(178,34,52,0.6);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: scale(0.96);
 }
 
 /* ====== 📊 Tabla ====== */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 15px;
-  overflow: hidden;
-}
-
-table thead {
-  background: #b22234;
-  color: #fff;
+  margin-top: 20px;
 }
 
 table th, table td {
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   text-align: center;
-  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+table th {
+  background: rgba(178,34,52,0.9);
+  color: white;
+}
+
+table tr:nth-child(even) {
+  background: rgba(255,255,255,0.6);
 }
 
 table tr:hover {
-  background: rgba(178, 34, 52, 0.05);
-}
-
-/* ====== 🔴 Estados dinámicos ====== */
-.estado-espera { background: rgba(178, 34, 52, 0.15); }
-.estado-programado { background: rgba(0,0,0,0.05); }
-.estado-atencion { background: rgba(255, 193, 7, 0.2); }
-.estado-atendido { background: rgba(34, 197, 94, 0.2); }
-.estado-entregado { background: rgba(0, 123, 255, 0.2); }
-
-/* ====== 📊 Contador ====== */
-#contador {
-  font-weight: bold;
-  margin-top: 10px;
-  font-size: 1.1rem;
-  color: #b22234;
-}
-
-/* ====== 📥 Exportar botón ====== */
-button[onclick="exportarExcel()"] {
-  margin-top: 10px;
-  background: #fff;
-  border: 1px solid #b22234;
-  color: #b22234;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-weight: bold;
-}
-
-button[onclick="exportarExcel()"]:hover {
-  background: #b22234;
-  color: #fff;
-  transform: scale(1.05);
-}
-
-/* ====== 🖊️ Modal Firma ====== */
-#modalFirma {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-#modalFirma div {
-  text-align: center;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-#modalFirma button {
-  margin: 5px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background: #b22234;
-  color: #fff;
-  transition: all 0.3s ease;
-}
-
-#modalFirma button:hover {
-  background: #8b1a2b;
-  transform: scale(1.05);
-}
-
-/* ====== Animaciones ====== */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  background: rgba(178,34,52,0.05);
 }
