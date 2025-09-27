@@ -1,18 +1,29 @@
 /* ====== 🎨 Estilos generales ====== */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #111;
-  color: #eee;
+  background: linear-gradient(135deg, #f5f5f5, #eaeaea, #fdfdfd);
+  color: #222;
   margin: 0;
   padding: 20px;
+  min-height: 100vh;
 }
 
+/* ====== 🔝 Título ====== */
 h1 {
   text-align: center;
-  color: #e63946;
+  color: #b22234;
   margin-bottom: 20px;
   font-size: 2rem;
   letter-spacing: 1px;
+}
+
+/* ====== 📦 Contenedor general tipo vidrio ====== */
+#filtros, form, table, #modalFirma div {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  padding: 12px;
 }
 
 /* ====== 🔍 Filtros ====== */
@@ -25,17 +36,17 @@ h1 {
 
 #filtros input {
   padding: 8px;
-  border: 1px solid #444;
-  border-radius: 6px;
-  background: #222;
-  color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.9);
+  color: #222;
   transition: all 0.3s ease;
 }
 
 #filtros input:focus {
-  border-color: #e63946;
+  border-color: #b22234;
   outline: none;
-  box-shadow: 0 0 5px #e63946;
+  box-shadow: 0 0 6px #b22234aa;
 }
 
 /* ====== 📋 Formulario ====== */
@@ -48,20 +59,20 @@ form {
 
 form input, form select, form button {
   padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #222;
-  color: #fff;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: rgba(255,255,255,0.9);
+  color: #222;
   transition: all 0.3s ease;
 }
 
 form input:focus, form select:focus {
-  border-color: #e63946;
+  border-color: #b22234;
   outline: none;
 }
 
 form button {
-  background: #e63946;
+  background: #b22234;
   color: #fff;
   border: none;
   cursor: pointer;
@@ -69,7 +80,7 @@ form button {
 }
 
 form button:hover {
-  background: #b22234;
+  background: #8b1a2b;
   transform: scale(1.05);
 }
 
@@ -78,30 +89,28 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 15px;
-  background: #1a1a1a;
-  border-radius: 10px;
   overflow: hidden;
 }
 
 table thead {
-  background: #e63946;
+  background: #b22234;
   color: #fff;
 }
 
 table th, table td {
   padding: 10px;
-  border: 1px solid #333;
+  border: 1px solid #ddd;
   text-align: center;
   transition: all 0.3s ease;
 }
 
 table tr:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(178, 34, 52, 0.05);
 }
 
 /* ====== 🔴 Estados dinámicos ====== */
-.estado-espera { background: rgba(230, 57, 70, 0.2); }
-.estado-programado { background: rgba(255, 255, 255, 0.1); }
+.estado-espera { background: rgba(178, 34, 52, 0.15); }
+.estado-programado { background: rgba(0,0,0,0.05); }
 .estado-atencion { background: rgba(255, 193, 7, 0.2); }
 .estado-atendido { background: rgba(34, 197, 94, 0.2); }
 .estado-entregado { background: rgba(0, 123, 255, 0.2); }
@@ -111,21 +120,23 @@ table tr:hover {
   font-weight: bold;
   margin-top: 10px;
   font-size: 1.1rem;
-  color: #e63946;
+  color: #b22234;
 }
 
 /* ====== 📥 Exportar botón ====== */
 button[onclick="exportarExcel()"] {
   margin-top: 10px;
-  background: #333;
-  border: 1px solid #e63946;
-  color: #fff;
-  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #b22234;
+  color: #b22234;
+  border-radius: 8px;
   padding: 8px 14px;
+  font-weight: bold;
 }
 
 button[onclick="exportarExcel()"]:hover {
-  background: #e63946;
+  background: #b22234;
+  color: #fff;
   transform: scale(1.05);
 }
 
@@ -134,17 +145,13 @@ button[onclick="exportarExcel()"]:hover {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.4);
   justify-content: center;
   align-items: center;
   z-index: 999;
 }
 
 #modalFirma div {
-  background: #1a1a1a;
-  padding: 20px;
-  border-radius: 12px;
-  color: #fff;
   text-align: center;
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -155,13 +162,13 @@ button[onclick="exportarExcel()"]:hover {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  background: #e63946;
+  background: #b22234;
   color: #fff;
   transition: all 0.3s ease;
 }
 
 #modalFirma button:hover {
-  background: #b22234;
+  background: #8b1a2b;
   transform: scale(1.05);
 }
 
