@@ -117,3 +117,9 @@ input, select, textarea {
   .form-grid{ grid-template-columns: 1fr; }
   .tabla{ min-width:820px; }
 }
+/* ====== ESTILOS POR ESTADO (resaltado en filas de la tabla) ====== */
+.estado-espera { background: rgba(220,30,30,0.08); color:#ff4d4d; font-weight:600; }
+.estado-atencion { background: rgba(255,220,90,0.08); color:#ffd633; font-weight:600; }
+.estado-programado { background: rgba(100,160,255,0.08); color:#66aaff; font-weight:600; }
+.estado-atendido { background: rgba(80,200,120,0.08); color:#4dd98c; font-weight:600; }
+.estado-entregado { background: rgba(120,140,255,0.08); color:#aab0ff; font-weight:600; }
