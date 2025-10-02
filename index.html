@@ -10,6 +10,10 @@
 
   <!-- Librería Excel (SheetJS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- Firebase v8 (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
   <h1>Estado de Pacientes</h1>
@@ -26,10 +30,9 @@
   <!-- Formulario -->
   <form id="formulario" class="panel form-grid">
     <select id="sede" required>
-      <option value="Vitarte 1">Vitarte 1</option>
-      <option value="Vitarte 5">Vitarte 5</option>
-      <option value="Vitarte 7">Vitarte 7</option>
+      <option value="">-- Cargando sedes... --</option>
     </select>
+
     <input type="text" id="apellidos" placeholder="Apellidos" required>
     <input type="text" id="nombres" placeholder="Nombres" required>
 
@@ -141,7 +144,7 @@
     </div>
   </div>
 
-  <!-- Firebase config + app script (modular) -->
-  <script type="module" src="./script.js"></script>
+  <!-- App script (v8) -->
+  <script src="script.js"></script>
 </body>
 </html>
