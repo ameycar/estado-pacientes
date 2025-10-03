@@ -1,140 +1,78 @@
-// script.js (módulo, Firebase v9)
-// importa funciones de RTDB y el objeto db (desde firebase-config.js)
-import { ref, onValue, push, update, remove, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-import { db } from './firebase-config.js';
+// script.js  (module - Firebase v9)
+import { db } from "./firebase-config.js";
+import {
+  ref, onValue, push, update, remove, set
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-// ========== CONFIG / ESTADO ==========
-const ADMIN_PASS = '1234'; // cambia aquí si quieres otra clave
+// ---------- constantes y DOM ----------
+const ADMIN_PASS = '1234';
+
+const formulario = document.getElementById('formulario');
+const tablaPacientes = document.getElementById('tabla-pacientes');
+const contador = document.getElementById('contador');
+const estudiosSelect = document.getElementById('estudios');
+const cantidadEcoPbDiv = document.getElementById('cantidad-eco-pb');
+const ecoPbCantidad = document.getElementById('ecoPbCantidad');
+const filtroSede = document.getElementById('filtroSede');
+const filtroNombre = document.getElementById('filtroNombre');
+const filtroEstudio = document.getElementById('filtroEstudio');
+const filtroFecha = document.getElementById('filtroFecha');
+
 let datosPacientes = [];
 let firmaActualPaciente = null;
-let pendingSelectForEntrega = null; // elemento select (para revert si cancelan)
+let pendingSelectForEntrega = null;
 
-// ========== ELEMENTOS (se obtienen cuando DOM listo) ==========
-let formulario, tablaPacientes, contador, estudiosSelect, cantidadEcoPbDiv, ecoPbCantidad;
-let filtroSede, filtroNombre, filtroEstudio, filtroFecha;
-let modalFirma, canvas, ctx, modalPlacas, modalCd, modalInforme;
-let btnSaveEntrega, btnCancelEntrega, btnClearFirma;
-
-// Inicializar cuando DOM listo
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
-
-function init() {
-  // DOM elements
-  formulario = document.getElementById('formulario');
-  tablaPacientes = document.getElementById('tabla-pacientes');
-  contador = document.getElementById('contador');
-  estudiosSelect = document.getElementById('estudios');
-  cantidadEcoPbDiv = document.getElementById('cantidad-eco-pb');
-  ecoPbCantidad = document.getElementById('ecoPbCantidad');
-  filtroSede = document.getElementById('filtroSede');
-  filtroNombre = document.getElementById('filtroNombre');
-  filtroEstudio = document.getElementById('filtroEstudio');
-  filtroFecha = document.getElementById('filtroFecha');
-
-  modalFirma = document.getElementById('modalFirma');
-  canvas = document.getElementById('canvasFirma');
-  modalPlacas = document.getElementById('modal_placas');
-  modalCd = document.getElementById('modal_cd');
-  modalInforme = document.getElementById('modal_informe');
-  btnSaveEntrega = document.getElementById('modal_save_entrega');
-  btnCancelEntrega = document.getElementById('modal_cancel_entrega');
-  btnClearFirma = document.getElementById('modal_limpiar_firma');
-
-  // canvas context
-  if (canvas && canvas.getContext) {
-    ctx = canvas.getContext('2d');
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#000';
-  }
-
-  // listeners
-  if (estudiosSelect) {
-    estudiosSelect.addEventListener('change', () => {
-      const seleccionados = Array.from(estudiosSelect.selectedOptions).map(o => o.value);
-      cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
-    });
-  }
-
-  if (formulario) {
-    formulario.addEventListener('submit', onSubmitPaciente);
-  }
-
-  [filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
-
-  if (btnSaveEntrega) btnSaveEntrega.addEventListener('click', guardarEntregaDesdeModal);
-  if (btnCancelEntrega) btnCancelEntrega.addEventListener('click', () => {
-    // revertir select si cancelaron entrega
-    if (pendingSelectForEntrega && firmaActualPaciente) {
-      const actual = datosPacientes.find(x => x.key === firmaActualPaciente);
-      if (actual) pendingSelectForEntrega.value = actual.estado;
-      pendingSelectForEntrega = null;
-    }
-    cerrarModal();
+// ---------- Mostrar cantidad Eco pb ----------
+if (estudiosSelect) {
+  estudiosSelect.addEventListener('change', () => {
+    const seleccionados = Array.from(estudiosSelect.selectedOptions).map(o => o.value);
+    cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
   });
-  if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
-
-  // canvas eventos (mouse + touch)
-  setupCanvasEvents();
-
-  // Exponer funciones que se usan en atributos inline (onchange/onclick)
-  window.cambiarEstado = cambiarEstado;
-  window.abrirModal = abrirModalFirma; // boton "✍️" en tabla
-  window.confirmarEliminar = confirmarEliminar;
-  window.llamarOtraVez = llamarOtraVez;
-  window.editarConClave = editarConClave;
-  window.editarConClaveCheckbox = editarConClaveCheckbox;
-  window.guardarCampo = guardarCampo;
-
-  // start listening datos
-  cargarPacientes();
 }
 
-// =================== SUBMIT ===================
-function onSubmitPaciente(e) {
-  e.preventDefault();
-  const sede = document.getElementById('sede').value.trim();
-  const apellidos = document.getElementById('apellidos').value.trim();
-  const nombres = document.getElementById('nombres').value.trim();
-  const estudios = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
-  let cant = estudios.length;
-  const precio = document.getElementById('precio').value.trim();
-  const pf = document.getElementById('pf').value.trim();
-  const estado = 'En espera';
-  const fechaModificacion = new Date().toISOString().slice(0, 16);
+// ---------- Registrar paciente ----------
+if (formulario) {
+  formulario.addEventListener('submit', e => {
+    e.preventDefault();
+    const sede = document.getElementById('sede').value.trim();
+    const apellidos = document.getElementById('apellidos').value.trim();
+    const nombres = document.getElementById('nombres').value.trim();
+    let estudios = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
+    let cant = estudios.length;
+    const precio = document.getElementById('precio').value.trim();
+    const pf = document.getElementById('pf').value.trim();
+    const estado = 'En espera';
+    const fechaModificacion = new Date().toISOString().slice(0, 16);
 
-  if (estudios.includes('Eco pb')) {
-    const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
-    cant = estudios.length - 1 + ecoCantidad;
-  }
+    if (estudios.includes('Eco pb')) {
+      const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
+      cant = estudios.length - 1 + ecoCantidad;
+    }
 
-  const nuevoPaciente = {
-    sede,
-    apellidos,
-    nombres,
-    estudios: estudios.join(', '),
-    cant,
-    precio,
-    pf,
-    estado,
-    placas: '',
-    cd: 'NO',
-    informe: 'NO',
-    entregado: '',
-    firma: '',
-    fechaModificacion
-  };
+    const nuevoPaciente = {
+      sede,
+      apellidos,
+      nombres,
+      estudios: estudios.join(', '),
+      cant,
+      precio,
+      pf,
+      estado,
+      placas: '',
+      cd: 'NO',
+      informe: 'NO',
+      entregado: '',
+      firma: '',
+      fechaModificacion
+    };
 
-  push(ref(db, 'pacientes'), nuevoPaciente);
-  formulario.reset();
-  cantidadEcoPbDiv.style.display = 'none';
+    push(ref(db, 'pacientes'), nuevoPaciente);
+    formulario.reset();
+    cantidadEcoPbDiv.style.display = 'none';
+  });
 }
 
-// =================== CARGAR PACIENTES (RTDB) ===================
+// ---------- Cargar pacientes (real-time) ----------
 function cargarPacientes() {
   onValue(ref(db, 'pacientes'), snapshot => {
     const pacientes = [];
@@ -148,9 +86,10 @@ function cargarPacientes() {
   });
 }
 
-// =================== FILTROS ===================
+// ---------- Filtros ----------
 function aplicarFiltros() {
-  let pacientes = datosPacientes.slice();
+  let pacientes = (datosPacientes || []).slice();
+
   const sedeFiltro = (filtroSede && filtroSede.value || '').trim().toLowerCase();
   const nombreFiltro = (filtroNombre && filtroNombre.value || '').trim().toLowerCase();
   const estudioFiltro = (filtroEstudio && filtroEstudio.value || '').trim().toLowerCase();
@@ -164,7 +103,7 @@ function aplicarFiltros() {
   mostrarPacientes(pacientes);
 }
 
-// =================== MOSTRAR PACIENTES ===================
+// ---------- Mostrar pacientes ----------
 function mostrarPacientes(pacientes) {
   pacientes.sort((a, b) => {
     const order = { 'En espera': 1, 'Programado': 2, 'En atención': 3, 'Atendido': 4, 'Entregado': 5 };
@@ -178,56 +117,41 @@ function mostrarPacientes(pacientes) {
     const tr = document.createElement('tr');
     tr.classList.add("fila-paciente");
 
-    // clases por estado
     if (p.estado === 'En espera') tr.classList.add("estado-espera");
     else if (p.estado === 'En atención') tr.classList.add("estado-atencion");
     else if (p.estado === 'Programado') tr.classList.add("estado-programado");
     else if (p.estado === 'Atendido') tr.classList.add("estado-atendido");
     else if (p.estado === 'Entregado') tr.classList.add("estado-entregado");
 
-    // requiere placas
     const requierePlacas = /TEM|RM|RX|Mamografia/i.test(p.estudios || '');
 
-    // firma visible
+    // firma: mostrar imagen si existe
     let firmaHTML = '';
     if (p.firma) {
-      firmaHTML = `<img class="firma-img" src="${p.firma}" alt="Firma">`;
+      firmaHTML = `<img src="${p.firma}" alt="Firma" class="firma-img">`;
     } else if (p.estado === 'Entregado') {
-      firmaHTML = `<button class="btn small" onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
+      // caso raro: entregado sin firma -> permitir firmar
+      firmaHTML = `<button onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
     }
 
-    // placas: si requiere placas y está ENTREGADO -> input readonly con editarConClave on click
-    let placasHTML = '';
-    if (requierePlacas) {
-      if (p.estado === 'Entregado') {
-        placasHTML = `<input type="number" min="0" value="${p.placas || ''}" onclick="editarConClave('${p.key}','placas', this)" readonly style="width:52px; text-align:center;" />`;
-      } else {
-        placasHTML = p.placas ? `<div style="width:52px; text-align:center;">${p.placas}</div>` : '';
-      }
-    } else {
-      placasHTML = p.placas ? `<div style="width:52px; text-align:center;">${p.placas}</div>` : '';
-    }
+    // Placas: si requiere y está Entregado -> input readonly (edición con clave)
+    const placasHTML = (requierePlacas && p.estado === 'Entregado')
+      ? `<input type="number" min="0" value="${p.placas || ''}" onclick="editarConClave(event,'${p.key}','placas', this)" readonly style="width:60px; text-align:center;"/>`
+      : (p.placas ? `<div style="width:60px; text-align:center;">${p.placas}</div>` : '');
 
-    // cd: checkbox editable solo con clave (onclick -> editarConClaveCheckbox)
-    let cdHTML = '';
-    if (p.estado === 'Entregado') {
-      const checked = (p.cd === 'SI') ? 'checked' : '';
-      cdHTML = `<input type="checkbox" ${checked} onclick="editarConClaveCheckbox('${p.key}','cd', this)">`;
-    } else {
-      cdHTML = p.cd === 'SI' ? `<div style="width:52px; text-align:center;">SI</div>` : `<div style="width:52px; text-align:center;"></div>`;
-    }
+    // CD / Informe: muestro checkbox que requiere clave para cambiar después de entregado
+    const cdChecked = p.cd === 'SI' ? 'checked' : '';
+    const cdHTML = (p.estado === 'Entregado')
+      ? `<input type="checkbox" ${cdChecked} onclick="editarConClaveCheckbox(event,'${p.key}','cd', this)">`
+      : `<div style="width:60px; text-align:center;">${p.cd === 'SI' ? 'SI' : ''}</div>`;
 
-    // informe: show SI/NO text; if Entregado keep as text (no edit) — if you want to allow edit with password you can adapt
-    let informeHTML = '';
-    if (p.estado === 'Entregado') {
-      informeHTML = `<div style="width:52px; text-align:center;">${p.informe === 'SI' ? 'SI' : 'NO'}</div>`;
-    } else {
-      informeHTML = p.informe === 'SI' ? `<div style="width:52px; text-align:center;">SI</div>` : `<div style="width:52px; text-align:center;"></div>`;
-    }
+    const informeHTML = (p.estado === 'Entregado')
+      ? `<input type="checkbox" ${p.informe === 'SI' ? 'checked' : ''} onclick="editarConClaveCheckbox(event,'${p.key}','informe', this)">`
+      : `<div style="width:60px; text-align:center;">${p.informe === 'SI' ? 'SI' : ''}</div>`;
 
-    // estado select (agrego data-key para encontrar el select desde la función)
+    // estado (select) - se bloquea si ya está ENTREGADO
     const estadoSelect = `
-      <select data-key="${p.key}" onchange="cambiarEstado('${p.key}', this.value, this)" ${ (p.estado === 'Entregado') ? 'disabled' : '' }>
+      <select onchange="cambiarEstado('${p.key}', this.value)" ${ (p.estado === 'Entregado') ? 'disabled' : '' } >
         <option ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
         <option ${p.estado === 'En atención' ? 'selected' : ''}>En atención</option>
         <option ${p.estado === 'Programado' ? 'selected' : ''}>Programado</option>
@@ -237,14 +161,15 @@ function mostrarPacientes(pacientes) {
       <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
     `;
 
-    const accionEliminar = `<button class="btn small danger" onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
-    const llamarOtraVez = (p.estado === 'En atención') ? `<button class="btn small" onclick="llamarOtraVez('${p.key}')">🔔 Llamar otra vez</button>` : '';
+    const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
+    const llamarOtraVez = (p.estado === 'En atención')
+      ? `<button onclick="llamarOtraVez('${p.key}')">🔔 Llamar otra vez</button>` : '';
 
     tr.innerHTML = `
-      <td>${escapeHtml(p.sede || '')}</td>
-      <td>${escapeHtml(p.apellidos || '')}</td>
-      <td>${escapeHtml(p.nombres || '')}</td>
-      <td>${escapeHtml(p.estudios || '')}</td>
+      <td>${p.sede || ''}</td>
+      <td>${p.apellidos || ''}</td>
+      <td>${p.nombres || ''}</td>
+      <td>${p.estudios || ''}</td>
       <td style="text-align:center; width:60px;">${p.cant || ''}</td>
       <td style="text-align:center;">${p.precio || ''}</td>
       <td style="text-align:center;">${p.pf || ''}</td>
@@ -264,81 +189,12 @@ function mostrarPacientes(pacientes) {
   contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
-// =================== GUARDAR CAMPO (general) ===================
-function guardarCampo(key, campo, valor) {
-  update(ref(db, 'pacientes/' + key), { [campo]: valor });
-}
-
-// =================== CAMBIAR ESTADO ===================
-function cambiarEstado(key, nuevoEstado, selectElem) {
-  const actual = datosPacientes.find(x => x.key === key);
-  if (!actual) return;
-
-  // reglas
-  if (actual.estado === 'Entregado') {
-    alert('No se puede modificar: ya está ENTREGADO.');
-    // revertir UI
-    if (selectElem) selectElem.value = actual.estado;
-    aplicarFiltros();
-    return;
-  }
-  if (actual.estado === 'Atendido' && nuevoEstado !== 'Entregado') {
-    alert('Una vez ATENDIDO solo puede avanzar a ENTREGADO.');
-    if (selectElem) selectElem.value = actual.estado;
-    aplicarFiltros();
-    return;
-  }
-
-  const fechaModificacion = new Date().toISOString().slice(0, 16);
-
-  // Si pasa a "En atención" actualizamos turnoActual (para TV)
-  if (nuevoEstado === 'En atención') {
-    set(ref(db, 'turnoActual'), {
-      nombre: actual.nombres + ' ' + actual.apellidos,
-      sede: actual.sede,
-      estudio: actual.estudios,
-      hora: new Date().toLocaleTimeString()
-    });
-  }
-
-  // si va a Entregado: abrimos modal para datos obligatorios
-  if (nuevoEstado === 'Entregado') {
-    // guardamos el select para poder revertir si cancelan
-    pendingSelectForEntrega = selectElem || null;
-    abrirModalParaEntrega(key);
-    return;
-  }
-
-  // actualizar estado normal
-  update(ref(db, 'pacientes/' + key), { estado: nuevoEstado, fechaModificacion });
-}
-
-// =================== LLAMAR OTRA VEZ (sincroniza turnoActual) ===================
-function llamarOtraVez(key) {
-  const actual = datosPacientes.find(x => x.key === key);
-  if (!actual) return;
-  set(ref(db, 'turnoActual'), {
-    nombre: actual.nombres + ' ' + actual.apellidos,
-    sede: actual.sede,
-    estudio: actual.estudios,
-    hora: new Date().toLocaleTimeString()
-  });
-}
-
-// =================== CONFIRMAR ELIMINAR (con clave) ===================
-function confirmarEliminar(key) {
-  const pass = prompt('Ingrese contraseña de administrador:');
-  if (pass === ADMIN_PASS) {
-    remove(ref(db, 'pacientes/' + key));
-  } else {
-    alert('Contraseña incorrecta. No se eliminó.');
-  }
-}
-
-// =================== EDITAR CON CLAVE (placas num) ===================
-function editarConClave(key, campo, inputEl) {
-  const pacienteActual = datosPacientes.find(x => x.key === key) || {};
+// ---------- editar con clave (placas) ----------
+function editarConClave(evt, key, campo, inputEl) {
+  // evita que el input cambie sin autorización
+  evt.preventDefault();
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
+  const pacienteActual = datosPacientes.find(x => x.key === key) || {};
   if (pass === ADMIN_PASS) {
     inputEl.removeAttribute('readonly');
     inputEl.focus();
@@ -351,54 +207,143 @@ function editarConClave(key, campo, inputEl) {
     inputEl.addEventListener('blur', blurHandler);
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
-    inputEl.value = pacienteActual[campo] || '';
   }
 }
 
-// =================== EDITAR CHECKBOX CON CLAVE (CD) ===================
-function editarConClaveCheckbox(key, campo, checkboxEl) {
-  const pacienteActual = datosPacientes.find(x => x.key === key) || {};
+// ---------- editar checkbox con clave (CD/Informe) ----------
+function editarConClaveCheckbox(evt, key, campo, checkboxEl) {
+  // evitar toggle visual hasta confirmar
+  evt.preventDefault();
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
+  const pacienteActual = datosPacientes.find(x => x.key === key) || {};
   if (pass === ADMIN_PASS) {
-    const valor = checkboxEl.checked ? 'SI' : 'NO';
-    update(ref(db, 'pacientes/' + key), { [campo]: valor });
+    const nuevoVal = (!checkboxEl.checked) ? 'SI' : 'NO'; // como evt.preventDefault impidió toggle, invertimos
+    // set real checked state then update DB
+    checkboxEl.checked = (nuevoVal === 'SI');
+    update(ref(db, 'pacientes/' + key), { [campo]: nuevoVal });
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
+    // mantener el valor real del registro
     checkboxEl.checked = (pacienteActual[campo] === 'SI');
   }
 }
 
-// =================== MODAL ENTREGA / FIRMA ===================
+// ---------- Guardar campo general ----------
+function guardarCampo(key, campo, valor) {
+  update(ref(db, 'pacientes/' + key), { [campo]: valor });
+}
+
+// ---------- Cambiar estado (respeta reglas y abre modal si Entregado) ----------
+function cambiarEstado(key, nuevoEstado) {
+  const actual = datosPacientes.find(x => x.key === key);
+  if (!actual) return;
+
+  if (actual.estado === 'Entregado') {
+    alert('No se puede modificar: ya está ENTREGADO.');
+    aplicarFiltros();
+    return;
+  }
+  if (actual.estado === 'Atendido' && nuevoEstado !== 'Entregado') {
+    alert('Una vez ATENDIDO solo puede avanzar a ENTREGADO.');
+    aplicarFiltros();
+    return;
+  }
+
+  const fechaModificacion = new Date().toISOString().slice(0, 16);
+
+  if (nuevoEstado === 'En atención') {
+    // sincronizar turno para TV / pantalla
+    set(ref(db, 'turnoActual'), {
+      nombre: actual.nombres + ' ' + actual.apellidos,
+      sede: actual.sede,
+      estudio: actual.estudios,
+      hora: new Date().toLocaleTimeString()
+    });
+  }
+
+  if (nuevoEstado === 'Entregado') {
+    // abrir modal para pedir placas/cd/informe/firma
+    pendingSelectForEntrega = { key, prev: actual.estado };
+    abrirModalParaEntrega(key);
+    return;
+  }
+
+  update(ref(db, 'pacientes/' + key), { estado: nuevoEstado, fechaModificacion });
+}
+
+// ---------- Llamar otra vez ----------
+function llamarOtraVez(key) {
+  const actual = datosPacientes.find(x => x.key === key);
+  if (!actual) return;
+
+  set(ref(db, 'turnoActual'), {
+    nombre: actual.nombres + ' ' + actual.apellidos,
+    sede: actual.sede,
+    estudio: actual.estudios,
+    hora: new Date().toLocaleTimeString()
+  });
+}
+
+// ---------- Confirmar eliminar ----------
+function confirmarEliminar(key) {
+  const pass = prompt('Ingrese contraseña de administrador:');
+  if (pass === ADMIN_PASS) {
+    remove(ref(db, 'pacientes/' + key));
+  } else {
+    alert('Contraseña incorrecta. No se eliminó.');
+  }
+}
+
+// ---------- Modal de entrega (obligatorio) ----------
+const modalFirma = document.getElementById('modalFirma');
+const canvas = document.getElementById('canvasFirma');
+const ctx = canvas ? canvas.getContext('2d') : null;
+
+// redimensiona canvas para pantallas retina y móviles
+function resizeCanvasForDisplay() {
+  if (!canvas || !ctx) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000';
+}
+
 function abrirModalParaEntrega(key) {
   firmaActualPaciente = key;
   const paciente = datosPacientes.find(x => x.key === key) || {};
-  // llenar modal con valores existentes
-  if (modalPlacas) modalPlacas.value = paciente.placas || '';
-  if (modalCd) modalCd.value = paciente.cd || '';
-  if (modalInforme) modalInforme.value = paciente.informe || '';
-  limpiarFirma();
-  if (modalFirma) {
-    modalFirma.style.display = 'flex';
-    modalFirma.setAttribute('aria-hidden', 'false');
+  const placasInput = document.getElementById('modal_placas');
+  const cdSelect = document.getElementById('modal_cd');
+  const informeSelect = document.getElementById('modal_informe');
+
+  if (!placasInput || !cdSelect || !informeSelect || !modalFirma || !canvas) {
+    alert('Faltan elementos del modal en index.html. Revisa modal_placas/modal_cd/modal_informe/canvasFirma.');
+    // revertir select si hay pendiente
+    if (pendingSelectForEntrega) {
+      update(ref(db, 'pacientes/' + key), { estado: paciente.estado || 'En espera' });
+      pendingSelectForEntrega = null;
+    }
+    return;
   }
+
+  placasInput.value = paciente.placas || '';
+  cdSelect.value = paciente.cd || '';
+  informeSelect.value = paciente.informe || '';
+
+  // preparar canvas (resizing)
+  modalFirma.style.display = 'flex';
+  modalFirma.setAttribute('aria-hidden', 'false');
+  // allow layout to compute
+  setTimeout(() => {
+    resizeCanvasForDisplay();
+    limpiarFirma();
+  }, 50);
 }
 
-// abrir modal SOLO para firmar/editar firma (botón ✍️)
-function abrirModalFirma(key) {
-  firmaActualPaciente = key;
-  const paciente = datosPacientes.find(x => x.key === key) || {};
-  // si ya está entregado, permitimos firmar (o rehacer firma)
-  if (modalPlacas) modalPlacas.value = paciente.placas || '';
-  if (modalCd) modalCd.value = paciente.cd || '';
-  if (modalInforme) modalInforme.value = paciente.informe || '';
-  limpiarFirma();
-  if (modalFirma) {
-    modalFirma.style.display = 'flex';
-    modalFirma.setAttribute('aria-hidden', 'false');
-  }
-}
-
-// =================== isCanvasBlank ===================
+// ---------- canvas helpers ----------
 function isCanvasBlank(c) {
   try {
     const blank = document.createElement('canvas');
@@ -410,15 +355,70 @@ function isCanvasBlank(c) {
   }
 }
 
-// =================== GUARDAR ENTREGA DESDE MODAL ===================
+let dibujando = false;
+function getPosicion(evt) {
+  const rect = canvas.getBoundingClientRect();
+  if (evt.touches && evt.touches[0]) {
+    return { x: evt.touches[0].clientX - rect.left, y: evt.touches[0].clientY - rect.top };
+  } else if (evt.changedTouches && evt.changedTouches[0]) {
+    return { x: evt.changedTouches[0].clientX - rect.left, y: evt.changedTouches[0].clientY - rect.top };
+  } else {
+    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+  }
+}
+
+// Eventos para dibujo (mouse + touch)
+if (canvas && ctx) {
+  canvas.addEventListener('mousedown', e => {
+    dibujando = true;
+    const pos = getPosicion(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('mousemove', e => {
+    if (!dibujando) return;
+    const pos = getPosicion(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('mouseup', () => { dibujando = false; ctx.beginPath(); });
+  canvas.addEventListener('mouseout', () => { dibujando = false; ctx.beginPath(); });
+
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    dibujando = true;
+    const pos = getPosicion(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!dibujando) return;
+    const pos = getPosicion(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  });
+  canvas.addEventListener('touchend', () => { dibujando = false; ctx.beginPath(); });
+}
+
+// ---------- Guardar entrega desde modal ----------
 function guardarEntregaDesdeModal() {
   if (!firmaActualPaciente) return alert('Paciente no seleccionado.');
+
+  const placasInput = document.getElementById('modal_placas');
+  const cdSelect = document.getElementById('modal_cd');
+  const informeSelect = document.getElementById('modal_informe');
+
   const paciente = datosPacientes.find(x => x.key === firmaActualPaciente) || {};
   const requierePlacas = /TEM|RM|RX|Mamografia/i.test(paciente.estudios || '');
 
-  const placasVal = modalPlacas ? modalPlacas.value.trim() : '';
-  const cdVal = modalCd ? modalCd.value : '';
-  const informeVal = modalInforme ? modalInforme.value : '';
+  const placasVal = placasInput ? placasInput.value.trim() : '';
+  const cdVal = cdSelect ? cdSelect.value : '';
+  const informeVal = informeSelect ? informeSelect.value : '';
 
   if (requierePlacas && (placasVal === '' || isNaN(Number(placasVal)))) {
     alert('Debe indicar el número de placas (obligatorio para este estudio).');
@@ -444,40 +444,43 @@ function guardarEntregaDesdeModal() {
     fechaModificacion
   });
 
-  // actualizar turnoActual? No necesario al entregar
-  // if had pending select, set its value to Entregado
-  if (pendingSelectForEntrega) {
-    try {
-      pendingSelectForEntrega.value = 'Entregado';
-    } catch (e) {}
-    pendingSelectForEntrega = null;
-  }
-
+  // si algún select quedó pendiente, actualizamos el valor visible
+  pendingSelectForEntrega = null;
   cerrarModal();
 }
 
-// =================== FUNCIONES DEL MODAL ===================
+// ---------- Modal util ----------
+function abrirModal(key) {
+  firmaActualPaciente = key;
+  resizeCanvasForDisplay();
+  limpiarFirma();
+  if (modalFirma) {
+    modalFirma.style.display = 'flex';
+    modalFirma.setAttribute('aria-hidden', 'false');
+  }
+}
 function limpiarFirma() {
-  if (!ctx || !canvas) return;
+  if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
-
 function cerrarModal() {
-  if (!modalFirma) return;
-  modalFirma.style.display = 'none';
-  modalFirma.setAttribute('aria-hidden', 'true');
-  // revertir pending select si cancelaron
-  if (pendingSelectForEntrega && firmaActualPaciente) {
-    const actual = datosPacientes.find(x => x.key === firmaActualPaciente);
+  if (modalFirma) {
+    modalFirma.style.display = 'none';
+    modalFirma.setAttribute('aria-hidden', 'true');
+  }
+  // si había un select pendiente para Entregado, revertimos su valor visible
+  if (pendingSelectForEntrega) {
+    const actual = datosPacientes.find(x => x.key === pendingSelectForEntrega.key);
     if (actual) {
-      try { pendingSelectForEntrega.value = actual.estado; } catch (e) {}
+      // restaurar estado en la UI (aplicarFiltros recarga)
+      aplicarFiltros();
     }
     pendingSelectForEntrega = null;
   }
   firmaActualPaciente = null;
 }
 
-// Si alguien usa botón "Guardar firma" suelto (compat)
+// ---------- Guardar firma suelta (compat) ----------
 function guardarFirma() {
   if (!firmaActualPaciente) return;
   if (!ctx || isCanvasBlank(canvas)) { alert('Firma vacía.'); return; }
@@ -486,61 +489,9 @@ function guardarFirma() {
   cerrarModal();
 }
 
-// =================== SETUP CANVAS (touch + mouse) ===================
-function setupCanvasEvents() {
-  if (!canvas || !ctx) return;
-  let drawing = false;
-
-  function getPos(evt) {
-    const r = canvas.getBoundingClientRect();
-    if (evt.touches && evt.touches[0]) {
-      return { x: evt.touches[0].clientX - r.left, y: evt.touches[0].clientY - r.top };
-    } else {
-      return { x: evt.clientX - r.left, y: evt.clientY - r.top };
-    }
-  }
-
-  // Mouse
-  canvas.addEventListener('mousedown', (e) => {
-    drawing = true;
-    const p = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-  });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!drawing) return;
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-  });
-  canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
-  canvas.addEventListener('mouseout', () => { drawing = false; ctx.beginPath(); });
-
-  // Touch
-  canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    drawing = true;
-    const p = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-  }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (!drawing) return;
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-  }, { passive: false });
-  canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
-}
-
-// =================== EXPORTAR EXCEL ===================
+// ---------- Exportar Excel ----------
 function exportarExcel() {
-  const datos = datosPacientes.map(p => ({
+  const datos = (datosPacientes || []).map(p => ({
     Sede: p.sede,
     Apellidos: p.apellidos,
     Nombres: p.nombres,
@@ -561,17 +512,29 @@ function exportarExcel() {
   XLSX.writeFile(workbook, 'Pacientes.xlsx');
 }
 
-// helper para evitar XSS en strings simples
-function escapeHtml(s) {
-  if (!s) return '';
-  return String(s).replace(/[&<>"'`=\/]/g, function (c) {
-    return {
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#x60;','=':'&#x3D;','/':'&#x2F;'
-    }[c];
-  });
-}
+// ---------- Listeners modal buttons ----------
+const btnSaveEntrega = document.getElementById('modal_save_entrega');
+const btnCancelEntrega = document.getElementById('modal_cancel_entrega');
+const btnClearFirma = document.getElementById('modal_limpiar_firma');
 
-// Exponer algunas funciones globalmente (por seguridad adicional)
-window.guardarCampo = guardarCampo;
+if (btnSaveEntrega) btnSaveEntrega.addEventListener('click', guardarEntregaDesdeModal);
+if (btnCancelEntrega) btnCancelEntrega.addEventListener('click', () => { cerrarModal(); });
+if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
+
+// ---------- Listeners filtros ----------
+[filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
+
+// ---------- Exponer funciones para handlers inline ----------
+window.cambiarEstado = cambiarEstado;
+window.abrirModal = abrirModal;
+window.confirmarEliminar = confirmarEliminar;
+window.llamarOtraVez = llamarOtraVez;
+window.editarConClave = editarConClave;
+window.editarConClaveCheckbox = editarConClaveCheckbox;
 window.guardarFirma = guardarFirma;
+window.limpiarFirma = limpiarFirma;
+window.guardarEntregaDesdeModal = guardarEntregaDesdeModal;
 window.exportarExcel = exportarExcel;
+
+// ---------- Iniciar ----------
+cargarPacientes();
