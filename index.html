@@ -2,167 +2,257 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Estado de Pacientes</title>
+
+  <!-- Librerías -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+    }
+    h1 {
+      background: #004080;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+    .contenedor {
+      padding: 10px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    form {
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    form input, form select, form button {
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    form button {
+      background: #004080;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 5px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #004080;
+      color: white;
+    }
+    .estado-espera { background-color: #ffcccc; }
+    .estado-atencion { background-color: #fff2cc; }
+    .estado-programado { background-color: #d9ead3; }
+    .estado-atendido { background-color: #cfe2f3; }
+    .estado-entregado { background-color: #d0d0d0; }
+    #contador {
+      margin: 10px 0;
+      font-weight: bold;
+      color: #004080;
+    }
+    #filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    #filtros input, #filtros select {
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    #cantidad-eco-pb {
+      display: none;
+      grid-column: span 2;
+    }
+    #cantidad-eco-pb label {
+      font-size: 14px;
+    }
+    .firma-img {
+      width: 90px;
+      height: auto;
+    }
+
+    /* ---------- Modal Firma ---------- */
+    #modalFirma {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #modalFirma .contenido {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      width: 95%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #canvasFirma {
+      border: 1px solid #333;
+      border-radius: 5px;
+      width: 100%;
+      height: 200px;
+      touch-action: none;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 6px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary { background: #004080; color: white; }
+    .btn-secondary { background: #ccc; }
+    .btn-danger { background: #e74c3c; color: white; }
+  </style>
 </head>
 <body>
-  <script>
-    // Mantén el chequeo de sesión si lo quieres (igual que antes)
-    const usuario = localStorage.getItem("usuario");
-    if (usuario !== "admin") {
-      // Si quieres que la app sea pública quita esto.
-      // Si quieres seguir forzando login, deja la redirección:
-      // alert("Acceso denegado. Debes iniciar sesión como administrador.");
-      // window.location.href = "login.html";
-    }
-  </script>
+  <h1>📋 Estado de Pacientes</h1>
 
-  <h1>Estado de Pacientes</h1>
-
-  <div style="text-align: right; margin-bottom: 10px;">
-    <button onclick="cerrarSesion()">Cerrar sesión</button>
-  </div>
-
-  <form id="formulario">
-    <label for="sede">Sede:</label>
-    <select id="sede" required>
-      <option value="Vitarte 1">Vitarte 1</option>
-      <option value="Vitarte 5">Vitarte 5</option>
-      <option value="Vitarte 7">Vitarte 7</option>
-    </select>
-
-    <label for="apellidos">Apellidos:</label>
-    <input type="text" id="apellidos" required>
-
-    <label for="nombres">Nombres:</label>
-    <input type="text" id="nombres" required>
-
-    <label for="estudios">Estudios:</label>
-    <select id="estudios" multiple required>
-      <!-- mantén tu lista completa -->
-      <option value="Consulta Medicina">Consulta Medicina</option>
-      <option value="Reevaluación">Reevaluación</option>
-      <option value="Eco tv">Eco tv</option>
-      <option value="Eco doppler">Eco doppler</option>
-      <option value="Eco abdomen completo">Eco abdomen completo</option>
-      <option value="Eco renal">Eco renal</option>
-      <option value="Eco mamaria">Eco mamaria</option>
-      <option value="Eco obstetrica">Eco obstetrica</option>
-      <option value="Eco pelvica">Eco pelvica</option>
-      <option value="Eco abdomen sup">Eco abdomen sup</option>
-      <option value="Eco abdomen inf">Eco abdomen inf</option>
-      <option value="Eco pb">Eco pb</option>
-      <option value="TEM">Tomografía</option>
-      <option value="RM">Resonancia Magnética</option>
-      <option value="RX">Rayos X</option>
-      <option value="Mamografia">Mamografía</option>
-      <option value="Eco prostata">Eco prostata</option>
-      <option value="Eco genética">Eco genética</option>
-      <option value="Eco morfo">Eco morfo</option>
-      <option value="Eco 4d">Eco 4d</option>
-      <option value="Eco 5d">Eco 5d</option>
-      <option value="Eco vias urinarias">Eco vias urinarias</option>
-    </select>
-
-    <div id="cantidad-eco-pb" style="display:none;">
-      <label for="ecoPbCantidad">Cantidad Eco pb:</label>
-      <select id="ecoPbCantidad">
-        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-        <option value="10">10</option>
+  <div class="contenedor">
+    <!-- ---------- FORMULARIO ---------- -->
+    <form id="formulario">
+      <select id="sede" required>
+        <option value="">Seleccione sede</option>
+        <option value="Vitarte 1">Vitarte 1</option>
+        <option value="Vitarte 5">Vitarte 5</option>
+        <option value="Vitarte 7">Vitarte 7</option>
       </select>
+
+      <input type="text" id="apellidos" placeholder="Apellidos" required />
+      <input type="text" id="nombres" placeholder="Nombres" required />
+
+      <select id="estudios" multiple required>
+        <option value="Eco abd">Eco abd</option>
+        <option value="Eco pb">Eco pb</option>
+        <option value="Eco tiroides">Eco tiroides</option>
+        <option value="Eco mama">Eco mama</option>
+        <option value="Eco renal">Eco renal</option>
+        <option value="Eco pelvis">Eco pelvis</option>
+        <option value="Eco partes blandas">Eco partes blandas</option>
+        <option value="Eco obstétrica">Eco obstétrica</option>
+        <option value="RX">RX</option>
+        <option value="TEM">TEM</option>
+        <option value="RM">RM</option>
+        <option value="Mamografia">Mamografía</option>
+      </select>
+
+      <div id="cantidad-eco-pb">
+        <label for="ecoPbCantidad">Cantidad Eco pb:</label>
+        <input type="number" id="ecoPbCantidad" min="1" value="1" />
+      </div>
+
+      <input type="number" id="precio" placeholder="Precio" />
+      <input type="text" id="pf" placeholder="PF" />
+      <button type="submit">➕ Agregar</button>
+    </form>
+
+    <!-- ---------- FILTROS ---------- -->
+    <div id="filtros">
+      <input type="text" id="filtroSede" placeholder="Filtrar por sede">
+      <input type="text" id="filtroNombre" placeholder="Filtrar por nombre">
+      <input type="text" id="filtroEstudio" placeholder="Filtrar por estudio">
+      <input type="date" id="filtroFecha">
+      <button onclick="exportarExcel()">📊 Exportar Excel</button>
     </div>
 
-    <label for="precio">Precio:</label>
-    <input type="number" id="precio" required>
+    <div id="contador">Pacientes en espera: 0</div>
 
-    <label for="pf">PF (ticket de pago):</label>
-    <input type="text" id="pf" required>
-
-    <button type="submit">Registrar</button>
-  </form>
-
-  <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
-
-  <div id="filtros" style="margin-top: 20px;">
-    <label for="filtroSede">Filtrar por sede:</label>
-    <input type="text" id="filtroSede" placeholder="Sede...">
-
-    <label for="filtroNombre">Filtrar por nombre/apellido:</label>
-    <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
-
-    <label for="filtroEstudio">Filtrar por estudio:</label>
-    <input type="text" id="filtroEstudio" placeholder="Estudio...">
-
-    <label for="filtroFecha">Filtrar por fecha:</label>
-    <input type="date" id="filtroFecha">
-
-    <button onclick="exportarExcel()">Exportar a Excel</button>
+    <!-- ---------- TABLA ---------- -->
+    <table>
+      <thead>
+        <tr>
+          <th>Sede</th>
+          <th>Apellidos</th>
+          <th>Nombres</th>
+          <th>Estudios</th>
+          <th>Cant</th>
+          <th>Precio</th>
+          <th>PF</th>
+          <th>Estado</th>
+          <th>Placas</th>
+          <th>CD</th>
+          <th>Informe</th>
+          <th>Entregado</th>
+          <th>Firma</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-pacientes"></tbody>
+    </table>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
-        <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
-        <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
-        <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-pacientes"></tbody>
-  </table>
+  <!-- ---------- MODAL FIRMA / ENTREGA ---------- -->
+  <div id="modalFirma" aria-hidden="true">
+    <div class="contenido">
+      <h3>Entrega del paciente</h3>
 
-  <!-- MODAL: entrega (placas/cd/informe + firma) -->
-  <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
-    <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
-      <h3 style="margin-top:0;">Finalizar Entrega</h3>
+      <label>Placas:</label>
+      <input type="number" id="modal_placas" min="0" />
 
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">Placas:</label>
-        <input id="modal_placas" type="number" min="0" placeholder="nro" style="width:80px;">
-      </div>
+      <label>CD:</label>
+      <select id="modal_cd">
+        <option value="">Seleccione</option>
+        <option value="SI">SI</option>
+        <option value="NO">NO</option>
+      </select>
 
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">CD:</label>
-        <select id="modal_cd" style="width:120px;">
-          <option value="">Seleccione</option>
-          <option value="SI">SI</option>
-          <option value="NO">NO</option>
-        </select>
-      </div>
+      <label>Informe:</label>
+      <select id="modal_informe">
+        <option value="">Seleccione</option>
+        <option value="SI">SI</option>
+        <option value="NO">NO</option>
+      </select>
 
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">Informe:</label>
-        <select id="modal_informe" style="width:120px;">
-          <option value="">Seleccione</option>
-          <option value="SI">SI</option>
-          <option value="NO">NO</option>
-        </select>
-      </div>
+      <label>Firma del paciente:</label>
+      <canvas id="canvasFirma"></canvas>
 
-      <div style="margin:8px 0;">
-        <label>Firma:</label>
-        <canvas id="canvasFirma" width="360" height="200" style="border:1px solid #000; touch-action: none; display:block; margin:6px 0; width:100%;"></canvas>
-        <div style="display:flex; gap:8px; justify-content:center;">
-          <button id="modal_limpiar_firma" type="button">Limpiar</button>
-          <button id="modal_save_entrega" type="button">Guardar Entrega</button>
-          <button id="modal_cancel_entrega" type="button">Cancelar</button>
-        </div>
+      <div class="modal-buttons">
+        <button id="modal_limpiar_firma" class="btn-secondary">🧽 Limpiar</button>
+        <button id="modal_cancel_entrega" class="btn-danger">❌ Cancelar</button>
+        <button id="modal_save_entrega" class="btn-primary">💾 Guardar</button>
       </div>
     </div>
   </div>
 
-  <!-- script principal (modular) -->
+  <!-- ---------- JS ---------- -->
+  <script type="module" src="./firebase-config.js"></script>
   <script type="module" src="./script.js"></script>
-
-  <script>
-    function cerrarSesion() {
-      localStorage.removeItem('usuario');
-      window.location.href = 'login.html';
-    }
-  </script>
 </body>
 </html>
+
