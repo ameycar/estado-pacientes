@@ -17,10 +17,47 @@ const filtroSede = document.getElementById('filtroSede');
 const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
+const sedeSelect = document.getElementById('sede');
 
 let datosPacientes = [];
+let datosSedes = [];
 let firmaActualPaciente = null;
 let pendingSelectForEntrega = null;
+
+// ---------- Cargar sedes (dinámico) ----------
+function cargarSedes() {
+  const sedesRef = ref(db, 'sedes');
+  onValue(sedesRef, snapshot => {
+    const arr = [];
+    snapshot.forEach(child => {
+      const s = child.val();
+      s.key = child.key;
+      arr.push(s);
+    });
+    datosSedes = arr;
+    poblarSelectSedes();
+  });
+}
+function poblarSelectSedes() {
+  if (!sedeSelect) return;
+  // limpia opciones
+  sedeSelect.innerHTML = '';
+  // opcion vacía
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = 'Seleccione sede...';
+  sedeSelect.appendChild(empty);
+
+  // solo agregar sedes con activa: true
+  datosSedes.filter(s => s.activa !== false).forEach(s => {
+    // if s.activa explicitly false -> skip; otherwise include
+    if (s.activa === false) return;
+    const opt = document.createElement('option');
+    opt.value = s.nombre || s.key || 'Sede';
+    opt.textContent = s.nombre || s.key || 'Sede';
+    sedeSelect.appendChild(opt);
+  });
+}
 
 // ---------- Mostrar cantidad Eco pb ----------
 if (estudiosSelect) {
@@ -48,6 +85,8 @@ if (formulario) {
       const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
       cant = estudios.length - 1 + ecoCantidad;
     }
+
+    if (!sede) { alert('Seleccione una sede activa.'); return; }
 
     const nuevoPaciente = {
       sede,
@@ -110,6 +149,7 @@ function mostrarPacientes(pacientes) {
     return (order[a.estado] || 0) - (order[b.estado] || 0);
   });
 
+  if (!tablaPacientes) return;
   tablaPacientes.innerHTML = '';
   let enEspera = 0;
 
@@ -161,9 +201,9 @@ function mostrarPacientes(pacientes) {
       <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
     `;
 
-    const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
+    const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')" class="btn">🗑️</button>`;
     const llamarOtraVez = (p.estado === 'En atención')
-      ? `<button onclick="llamarOtraVez('${p.key}')">🔔 Llamar otra vez</button>` : '';
+      ? `<button onclick="llamarOtraVez('${p.key}')" class="btn">🔔 Llamar otra vez</button>` : '';
 
     tr.innerHTML = `
       <td>${p.sede || ''}</td>
@@ -186,12 +226,11 @@ function mostrarPacientes(pacientes) {
     if (p.estado === 'En espera') enEspera++;
   });
 
-  contador.textContent = `Pacientes en espera: ${enEspera}`;
+  if (contador) contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
 // ---------- editar con clave (placas) ----------
 function editarConClave(evt, key, campo, inputEl) {
-  // evita que el input cambie sin autorización
   evt.preventDefault();
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
   const pacienteActual = datosPacientes.find(x => x.key === key) || {};
@@ -212,18 +251,16 @@ function editarConClave(evt, key, campo, inputEl) {
 
 // ---------- editar checkbox con clave (CD/Informe) ----------
 function editarConClaveCheckbox(evt, key, campo, checkboxEl) {
-  // evitar toggle visual hasta confirmar
   evt.preventDefault();
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
   const pacienteActual = datosPacientes.find(x => x.key === key) || {};
   if (pass === ADMIN_PASS) {
-    const nuevoVal = (!checkboxEl.checked) ? 'SI' : 'NO'; // como evt.preventDefault impidió toggle, invertimos
-    // set real checked state then update DB
+    // toggle: si estaba checked -> set NO, else SI
+    const nuevoVal = (pacienteActual[campo] === 'SI') ? 'NO' : 'SI';
     checkboxEl.checked = (nuevoVal === 'SI');
     update(ref(db, 'pacientes/' + key), { [campo]: nuevoVal });
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
-    // mantener el valor real del registro
     checkboxEl.checked = (pacienteActual[campo] === 'SI');
   }
 }
@@ -252,7 +289,6 @@ function cambiarEstado(key, nuevoEstado) {
   const fechaModificacion = new Date().toISOString().slice(0, 16);
 
   if (nuevoEstado === 'En atención') {
-    // sincronizar turno para TV / pantalla
     set(ref(db, 'turnoActual'), {
       nombre: actual.nombres + ' ' + actual.apellidos,
       sede: actual.sede,
@@ -321,7 +357,6 @@ function abrirModalParaEntrega(key) {
 
   if (!placasInput || !cdSelect || !informeSelect || !modalFirma || !canvas) {
     alert('Faltan elementos del modal en index.html. Revisa modal_placas/modal_cd/modal_informe/canvasFirma.');
-    // revertir select si hay pendiente
     if (pendingSelectForEntrega) {
       update(ref(db, 'pacientes/' + key), { estado: paciente.estado || 'En espera' });
       pendingSelectForEntrega = null;
@@ -333,10 +368,8 @@ function abrirModalParaEntrega(key) {
   cdSelect.value = paciente.cd || '';
   informeSelect.value = paciente.informe || '';
 
-  // preparar canvas (resizing)
   modalFirma.style.display = 'flex';
   modalFirma.setAttribute('aria-hidden', 'false');
-  // allow layout to compute
   setTimeout(() => {
     resizeCanvasForDisplay();
     limpiarFirma();
@@ -444,7 +477,6 @@ function guardarEntregaDesdeModal() {
     fechaModificacion
   });
 
-  // si algún select quedó pendiente, actualizamos el valor visible
   pendingSelectForEntrega = null;
   cerrarModal();
 }
@@ -468,13 +500,8 @@ function cerrarModal() {
     modalFirma.style.display = 'none';
     modalFirma.setAttribute('aria-hidden', 'true');
   }
-  // si había un select pendiente para Entregado, revertimos su valor visible
   if (pendingSelectForEntrega) {
-    const actual = datosPacientes.find(x => x.key === pendingSelectForEntrega.key);
-    if (actual) {
-      // restaurar estado en la UI (aplicarFiltros recarga)
-      aplicarFiltros();
-    }
+    aplicarFiltros();
     pendingSelectForEntrega = null;
   }
   firmaActualPaciente = null;
@@ -536,5 +563,6 @@ window.limpiarFirma = limpiarFirma;
 window.guardarEntregaDesdeModal = guardarEntregaDesdeModal;
 window.exportarExcel = exportarExcel;
 
-// ---------- Iniciar ----------
+// ---------- Inicializar ----------
+cargarSedes();
 cargarPacientes();
