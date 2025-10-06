@@ -1,4 +1,6 @@
-// firebase-config.js (módulo, Firebase v9 CDN)
+// firebase-config.js (modular v9)
+// Pega este archivo en la raíz del proyecto (junto a index.html, script.js, style.css)
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
