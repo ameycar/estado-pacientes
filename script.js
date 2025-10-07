@@ -5,8 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
 // ---------- constantes y DOM ----------
-const ADMIN_PASS = '1234';
-
+const ADMIN_PASS = '1234'; // si quieres mantener la contraseña de admin
 const formulario = document.getElementById('formulario');
 const tablaPacientes = document.getElementById('tabla-pacientes');
 const contador = document.getElementById('contador');
@@ -17,45 +16,49 @@ const filtroSede = document.getElementById('filtroSede');
 const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
-const sedeSelect = document.getElementById('sede');
 
 let datosPacientes = [];
-let datosSedes = [];
 let firmaActualPaciente = null;
 let pendingSelectForEntrega = null;
 
-// ---------- Cargar sedes (dinámico) ----------
-function cargarSedes() {
-  const sedesRef = ref(db, 'sedes');
-  onValue(sedesRef, snapshot => {
+// usuario logueado (object) guardado en localStorage as 'user'
+const currentUser = (() => {
+  try { return JSON.parse(localStorage.getItem('user') || 'null'); }
+  catch(e){ return null; }
+})();
+
+// utilidad para normalizar clave de sede
+function keyify(s) {
+  if (!s) return 'sin_sede';
+  return String(s).replace(/[^\w]/g,'_').toLowerCase();
+}
+
+// ---------- cargar sedes y popular select ----------
+function loadSedesToSelect() {
+  const select = document.getElementById('sede');
+  if (!select) return;
+  onValue(ref(db, 'sedes'), snapshot => {
+    select.innerHTML = '';
+    // orden simple por nombre
     const arr = [];
     snapshot.forEach(child => {
-      const s = child.val();
-      s.key = child.key;
-      arr.push(s);
+      const s = child.val(); s.key = child.key;
+      if (s && s.active !== false) arr.push(s);
     });
-    datosSedes = arr;
-    poblarSelectSedes();
-  });
-}
-function poblarSelectSedes() {
-  if (!sedeSelect) return;
-  // limpia opciones
-  sedeSelect.innerHTML = '';
-  // opcion vacía
-  const empty = document.createElement('option');
-  empty.value = '';
-  empty.textContent = 'Seleccione sede...';
-  sedeSelect.appendChild(empty);
-
-  // solo agregar sedes con activa: true
-  datosSedes.filter(s => s.activa !== false).forEach(s => {
-    // if s.activa explicitly false -> skip; otherwise include
-    if (s.activa === false) return;
-    const opt = document.createElement('option');
-    opt.value = s.nombre || s.key || 'Sede';
-    opt.textContent = s.nombre || s.key || 'Sede';
-    sedeSelect.appendChild(opt);
+    arr.sort((a,b)=> (a.name||a.nombre||'').localeCompare(b.name||b.nombre||''));
+    arr.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.name || s.nombre || s.key;
+      opt.textContent = s.name || s.nombre || s.key;
+      select.appendChild(opt);
+    });
+    // si user es de sede, fijar y bloquear select
+    if (currentUser && currentUser.role && currentUser.role !== 'admin') {
+      select.value = currentUser.sede || select.value;
+      select.disabled = true;
+    } else {
+      select.disabled = false;
+    }
   });
 }
 
@@ -71,7 +74,11 @@ if (estudiosSelect) {
 if (formulario) {
   formulario.addEventListener('submit', e => {
     e.preventDefault();
-    const sede = document.getElementById('sede').value.trim();
+
+    // si el usuario logueado es sede, forzamos la sede al valor del user
+    const sedeEl = document.getElementById('sede');
+    const sede = (currentUser && currentUser.role !== 'admin') ? (currentUser.sede || sedeEl.value) : (sedeEl.value || '').trim();
+
     const apellidos = document.getElementById('apellidos').value.trim();
     const nombres = document.getElementById('nombres').value.trim();
     let estudios = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
@@ -85,8 +92,6 @@ if (formulario) {
       const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
       cant = estudios.length - 1 + ecoCantidad;
     }
-
-    if (!sede) { alert('Seleccione una sede activa.'); return; }
 
     const nuevoPaciente = {
       sede,
@@ -118,7 +123,12 @@ function cargarPacientes() {
     snapshot.forEach(childSnapshot => {
       const paciente = childSnapshot.val();
       paciente.key = childSnapshot.key;
-      pacientes.push(paciente);
+      // Si user es de una sede, sólo agregamos pacientes de esa sede
+      if (currentUser && currentUser.role === 'sede') {
+        if (paciente.sede === currentUser.sede) pacientes.push(paciente);
+      } else {
+        pacientes.push(paciente);
+      }
     });
     datosPacientes = pacientes;
     aplicarFiltros();
@@ -149,7 +159,6 @@ function mostrarPacientes(pacientes) {
     return (order[a.estado] || 0) - (order[b.estado] || 0);
   });
 
-  if (!tablaPacientes) return;
   tablaPacientes.innerHTML = '';
   let enEspera = 0;
 
@@ -201,9 +210,9 @@ function mostrarPacientes(pacientes) {
       <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
     `;
 
-    const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')" class="btn">🗑️</button>`;
+    const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
     const llamarOtraVez = (p.estado === 'En atención')
-      ? `<button onclick="llamarOtraVez('${p.key}')" class="btn">🔔 Llamar otra vez</button>` : '';
+      ? `<button onclick="llamarOtraVez('${p.key}')">🔔 Llamar otra vez</button>` : '';
 
     tr.innerHTML = `
       <td>${p.sede || ''}</td>
@@ -226,7 +235,7 @@ function mostrarPacientes(pacientes) {
     if (p.estado === 'En espera') enEspera++;
   });
 
-  if (contador) contador.textContent = `Pacientes en espera: ${enEspera}`;
+  contador.textContent = `Pacientes en espera: ${enEspera}`;
 }
 
 // ---------- editar con clave (placas) ----------
@@ -255,8 +264,7 @@ function editarConClaveCheckbox(evt, key, campo, checkboxEl) {
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
   const pacienteActual = datosPacientes.find(x => x.key === key) || {};
   if (pass === ADMIN_PASS) {
-    // toggle: si estaba checked -> set NO, else SI
-    const nuevoVal = (pacienteActual[campo] === 'SI') ? 'NO' : 'SI';
+    const nuevoVal = (!checkboxEl.checked) ? 'SI' : 'NO';
     checkboxEl.checked = (nuevoVal === 'SI');
     update(ref(db, 'pacientes/' + key), { [campo]: nuevoVal });
   } else {
@@ -289,16 +297,18 @@ function cambiarEstado(key, nuevoEstado) {
   const fechaModificacion = new Date().toISOString().slice(0, 16);
 
   if (nuevoEstado === 'En atención') {
-    set(ref(db, 'turnoActual'), {
+    const turno = {
       nombre: actual.nombres + ' ' + actual.apellidos,
       sede: actual.sede,
       estudio: actual.estudios,
       hora: new Date().toLocaleTimeString()
-    });
+    };
+    // escribimos por sede (turnoActual/<sede_key>) y un global para compatibilidad
+    set(ref(db, `turnoActual/${keyify(actual.sede)}`), turno);
+    set(ref(db, 'turnoActual_global'), turno);
   }
 
   if (nuevoEstado === 'Entregado') {
-    // abrir modal para pedir placas/cd/informe/firma
     pendingSelectForEntrega = { key, prev: actual.estado };
     abrirModalParaEntrega(key);
     return;
@@ -312,12 +322,14 @@ function llamarOtraVez(key) {
   const actual = datosPacientes.find(x => x.key === key);
   if (!actual) return;
 
-  set(ref(db, 'turnoActual'), {
+  const turno = {
     nombre: actual.nombres + ' ' + actual.apellidos,
     sede: actual.sede,
     estudio: actual.estudios,
     hora: new Date().toLocaleTimeString()
-  });
+  };
+  set(ref(db, `turnoActual/${keyify(actual.sede)}`), turno);
+  set(ref(db, 'turnoActual_global'), turno);
 }
 
 // ---------- Confirmar eliminar ----------
@@ -370,10 +382,7 @@ function abrirModalParaEntrega(key) {
 
   modalFirma.style.display = 'flex';
   modalFirma.setAttribute('aria-hidden', 'false');
-  setTimeout(() => {
-    resizeCanvasForDisplay();
-    limpiarFirma();
-  }, 50);
+  setTimeout(() => { resizeCanvasForDisplay(); limpiarFirma(); }, 50);
 }
 
 // ---------- canvas helpers ----------
@@ -563,6 +572,6 @@ window.limpiarFirma = limpiarFirma;
 window.guardarEntregaDesdeModal = guardarEntregaDesdeModal;
 window.exportarExcel = exportarExcel;
 
-// ---------- Inicializar ----------
-cargarSedes();
+// ---------- Iniciar ----------
+loadSedesToSelect();
 cargarPacientes();
