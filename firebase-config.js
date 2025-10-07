@@ -1,5 +1,5 @@
 // firebase-config.js (modular v9)
-// Pega este archivo en la raíz del proyecto (junto a index.html, script.js, style.css)
+// Pega este archivo en la raíz del proyecto
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
