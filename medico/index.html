@@ -1,1 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Módulo Médico - Estado de Pacientes</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
 
+  <header>
+    <h1>Centro Médico DR. Luis Quito</h1>
+    <h2>Panel Médico</h2>
+    <p id="user-info"></p>
+  </header>
+
+  <main>
+    <h3>Pacientes de mi sede</h3>
+    <table id="tablaPacientes">
+      <thead>
+        <tr>
+          <th>Apellidos</th>
+          <th>Nombres</th>
+          <th>Estudio</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="listaPacientes"></tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    import { db } from "../firebase-config.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    // 🧠 Simulación de sesión (esto luego se reemplazará con login real)
+    const usuarioActual = JSON.parse(localStorage.getItem('usuarioActual'));
+    const userInfo = document.getElementById('user-info');
+    userInfo.textContent = usuarioActual ? `Sesión: ${usuarioActual.nombre} (${usuarioActual.rol}) - ${usuarioActual.sede}` : 'No autenticado';
+
+    const tabla = document.getElementById('listaPacientes');
+    const pacientesRef = ref(db, 'pacientes');
+
+    onValue(pacientesRef, (snapshot) => {
+      tabla.innerHTML = '';
+      const data = snapshot.val();
+
+      for (const id in data) {
+        const p = data[id];
+        if (p.sede === usuarioActual.sede) { // Solo pacientes de su sede
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${p.apellidos}</td>
+            <td>${p.nombres}</td>
+            <td>${Array.isArray(p.estudio) ? p.estudio.join(', ') : p.estudio}</td>
+            <td>${p.estado}</td>
+            <td>
+              ${p.estado === 'En espera' ? `<button onclick="llamarPaciente('${id}', '${p.nombres}', '${p.apellidos}')">Llamar</button>` : ''}
+            </td>
+          `;
+          tabla.appendChild(tr);
+        }
+      }
+    });
+
+    // 🩺 Función para cambiar estado
+    window.llamarPaciente = (id, nombres, apellidos) => {
+      const confirmar = confirm(`¿Llamar al paciente ${nombres} ${apellidos}?`);
+      if (confirmar) {
+        update(ref(db, 'pacientes/' + id), {
+          estado: 'En atención',
+          horaAtencion: new Date().toLocaleString()
+        });
+      }
+    };
+  </script>
+
+</body>
+</html>
