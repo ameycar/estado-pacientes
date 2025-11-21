@@ -5,32 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-   <h1>Estado de Pacientes prueba carlos</h1>
+  <script>
+    // (Opcional) control simple de sesión — si quieres forzar login activa la redirección
+    const usuario = localStorage.getItem("user"); // ahora guardamos objeto JSON en 'user'
+    // if (!usuario) { window.location.href = 'login.html'; }
+  </script>
 
-  <!-- Filtros -->
-  <div id="filtros">
-    <input type="text" id="filtroSede" placeholder="Filtrar por sede">
-    <input type="text" id="filtroNombre" placeholder="Filtrar por nombre">
-    <input type="text" id="filtroEstudio" placeholder="Filtrar por estudio">
-    <input type="date" id="filtroFecha">
+  <h1>Estado de Pacientes</h1>
+
+  <div style="text-align: right; margin-bottom: 10px;">
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 
-  <!-- Formulario -->
   <form id="formulario">
+    <label for="sede">Sede:</label>
     <select id="sede" required>
-      <option value="Vitarte 1">Vitarte 1</option>
-      <option value="Vitarte 5">Vitarte 5</option>
-      <option value="Vitarte 7">Vitarte 7</option>
+      <!-- las sedes se cargarán desde Firebase (sede activas) -->
     </select>
-    <input type="text" id="apellidos" placeholder="Apellidos" required>
-    <input type="text" id="nombres" placeholder="Nombres" required>
 
+    <label for="apellidos">Apellidos:</label>
+    <input type="text" id="apellidos" required>
+
+    <label for="nombres">Nombres:</label>
+    <input type="text" id="nombres" required>
+
+    <label for="estudios">Estudios:</label>
     <select id="estudios" multiple required>
+      <!-- LISTA COMPLETA (no tocar) -->
       <option value="Consulta Medicina">Consulta Medicina</option>
       <option value="Reevaluación">Reevaluación</option>
       <option value="Eco tv">Eco tv</option>
@@ -56,53 +60,102 @@
     </select>
 
     <div id="cantidad-eco-pb" style="display:none;">
-      <label>Cantidad Eco pb:</label>
-      <input type="number" id="ecoPbCantidad" min="1" value="1">
+      <label for="ecoPbCantidad">Cantidad Eco pb:</label>
+      <select id="ecoPbCantidad">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+        <option value="10">10</option>
+      </select>
     </div>
 
-    <input type="text" id="precio" placeholder="Precio">
-    <input type="text" id="pf" placeholder="PF">
+    <label for="precio">Precio:</label>
+    <input type="number" id="precio" required>
 
-    <button type="submit">Agregar Paciente</button>
+    <label for="pf">PF (ticket de pago):</label>
+    <input type="text" id="pf" required>
+
+    <button type="submit">Registrar</button>
   </form>
 
-  <p id="contador">Pacientes en espera: 0</p>
-  <button onclick="exportarExcel()">📊 Exportar Excel</button>
+  <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
 
-  <!-- Tabla pacientes -->
-  <table border="1">
+  <div id="filtros" style="margin-top: 20px;">
+    <label for="filtroSede">Filtrar por sede:</label>
+    <input type="text" id="filtroSede" placeholder="Sede...">
+
+    <label for="filtroNombre">Filtrar por nombre/apellido:</label>
+    <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
+
+    <label for="filtroEstudio">Filtrar por estudio:</label>
+    <input type="text" id="filtroEstudio" placeholder="Estudio...">
+
+    <label for="filtroFecha">Filtrar por fecha:</label>
+    <input type="date" id="filtroFecha">
+
+    <button onclick="exportarExcel()">Exportar a Excel</button>
+  </div>
+
+  <table>
     <thead>
       <tr>
-        <th>Sede</th>
-        <th>Apellidos</th>
-        <th>Nombres</th>
-        <th>Estudios</th>
-        <th>Cant</th>
-        <th>Precio</th>
-        <th>PF</th>
-        <th>Estado</th>
-        <th>Placas</th>
-        <th>CD</th>
-        <th>Informe</th>
-        <th>Entregado</th>
-        <th>Firma</th>
-        <th>Acciones</th>
+        <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
+        <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
+        <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
+        <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acción</th>
       </tr>
     </thead>
     <tbody id="tabla-pacientes"></tbody>
   </table>
 
-  <!-- Modal firma -->
-  <div id="modalFirma" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); justify-content:center; align-items:center;">
-    <div style="background:#fff; padding:20px; border-radius:10px;">
-      <canvas id="canvasFirma" width="300" height="150" style="border:1px solid #000;"></canvas>
-      <br>
-      <button onclick="guardarFirma()">Guardar</button>
-      <button onclick="cerrarModal()">Cancelar</button>
-      <button onclick="limpiarFirma()">Limpiar</button>
+  <!-- MODAL: entrega (placas/cd/informe + firma) -->
+  <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
+    <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
+      <h3 style="margin-top:0;">Finalizar Entrega</h3>
+
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <label style="min-width:60px;">Placas:</label>
+        <input id="modal_placas" type="number" min="0" placeholder="nro" style="width:80px;">
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <label style="min-width:60px;">CD:</label>
+        <select id="modal_cd" style="width:120px;">
+          <option value="">Seleccione</option>
+          <option value="SI">SI</option>
+          <option value="NO">NO</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <label style="min-width:60px;">Informe:</label>
+        <select id="modal_informe" style="width:120px;">
+          <option value="">Seleccione</option>
+          <option value="SI">SI</option>
+          <option value="NO">NO</option>
+        </select>
+      </div>
+
+      <div style="margin:8px 0;">
+        <label>Firma:</label>
+        <canvas id="canvasFirma" width="360" height="200" style="border:1px solid #000; touch-action: none; display:block; margin:6px 0; width:100%;"></canvas>
+        <div style="display:flex; gap:8px; justify-content:center;">
+          <button id="modal_limpiar_firma" type="button">Limpiar</button>
+          <button id="modal_save_entrega" type="button">Guardar Entrega</button>
+          <button id="modal_cancel_entrega" type="button">Cancelar</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- script principal (modular) -->
+  <script type="module" src="./script.js"></script>
+
+  <script>
+    function cerrarSesion() {
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+  </script>
 </body>
 </html>

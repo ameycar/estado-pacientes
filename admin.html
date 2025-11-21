@@ -1,1 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Estado de Pacientes</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:linear-gradient(90deg,#2b0b0b,#3e0f15);color:#fff;">
+    <div style="font-weight:700">Estado de Pacientes — Admin</div>
+    <nav>
+      <a href="#" onclick="mostrarSeccion('pacientes')" style="margin-right:12px;color:#fff;text-decoration:none;">Pacientes</a>
+      <a href="#" onclick="mostrarSeccion('resumen')" style="margin-right:12px;color:#fff;text-decoration:none;">Resumen</a>
+      <a href="#" onclick="mostrarSeccion('sedes')" style="color:#fff;text-decoration:none;">Sedes</a>
+      <a href="#" onclick="mostrarSeccion('usuarios')" style="margin-left:12px;color:#fff;text-decoration:none;">Usuarios</a>
+    </nav>
+  </header>
 
+  <main style="padding:18px;">
+    <section id="pacientes" class="seccion" style="display:none;">
+      <h2>Pacientes</h2>
+      <p><a href="index.html" target="_blank">Abrir módulo Pacientes (index.html)</a></p>
+    </section>
+
+    <section id="resumen" class="seccion" style="display:none;">
+      <h2>Resumen</h2>
+      <p>Resumen y estadísticas (a implementar en fases siguientes).</p>
+    </section>
+
+    <section id="sedes" class="seccion" style="display:none; max-width:900px;">
+      <h2>Sedes</h2>
+
+      <form id="form-sede" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <input id="sedeNombre" placeholder="Nombre de la sede" required style="padding:8px;border-radius:6px;border:1px solid #ccc;flex:1;">
+        <input id="sedeDireccion" placeholder="Dirección (opcional)" style="padding:8px;border-radius:6px;border:1px solid #ccc;flex:1;">
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input id="sedeActiva" type="checkbox" checked> Activa
+        </label>
+        <button type="submit" style="padding:8px 12px;border-radius:6px;background:#7b0f15;color:#fff;border:none;cursor:pointer;">Crear</button>
+      </form>
+
+      <table id="tabla-sedes" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f2f2f2;">
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Nombre</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Dirección</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:center">Activa</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <p style="margin-top:10px;color:#666;font-size:13px;">Eliminar requiere contraseña de admin.</p>
+    </section>
+
+    <section id="usuarios" class="seccion" style="display:none; max-width:900px;">
+      <h2>Usuarios</h2>
+      <form id="form-usuario" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <input id="user_username" placeholder="username (login)" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <input id="user_display" placeholder="Nombre visible" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <input id="user_password" placeholder="Contraseña" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <select id="user_role" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+          <option value="sede">Sede</option>
+          <option value="admin">Admin</option>
+        </select>
+        <input id="user_sede" placeholder="Sede asignada (opcional)" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <button type="submit" style="padding:8px 12px;border-radius:6px;background:#0a6; color:#fff;border:none;cursor:pointer;">Crear usuario</button>
+      </form>
+
+      <table id="tabla-usuarios" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f2f2f2;">
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Usuario</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Nombre</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Rol</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left">Sede</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module" src="./admin-script.js"></script>
+  <script>
+    function mostrarSeccion(id) {
+      document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'block';
+    }
+    // mostrar pacientes por defecto
+    mostrarSeccion('pacientes');
+  </script>
+</body>
+</html>

@@ -1,54 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 100px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      font-size: 16px;
-    }
-    #mensaje {
-      color: red;
-      margin-top: 10px;
-    }
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login - Estado de Pacientes</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <h2>Inicio de Sesión</h2>
-  <form id="login-form">
-    <input type="text" id="usuario" placeholder="Usuario" required /><br />
-    <input type="password" id="contrasena" placeholder="Contraseña" required /><br />
-    <button type="submit">Ingresar</button>
-  </form>
-  <div id="mensaje"></div>
+  <main style="max-width:420px;margin:60px auto;">
+    <h2>Iniciar sesión</h2>
+    <form id="loginForm">
+      <input id="loginUser" placeholder="Usuario" required style="width:100%;padding:8px;margin:8px 0"/>
+      <input id="loginPass" placeholder="Contraseña" type="password" required style="width:100%;padding:8px;margin:8px 0"/>
+      <button type="submit" style="padding:8px 12px;">Entrar</button>
+    </form>
+    <p id="loginMsg" style="color:#b00"></p>
+  </main>
 
-  <script>
-    const form = document.getElementById("login-form");
-    const mensaje = document.getElementById("mensaje");
-
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const usuario = document.getElementById("usuario").value.trim();
-      const contrasena = document.getElementById("contrasena").value.trim();
-
-      if (usuario === "admin" && contrasena === "1234") {
-        localStorage.setItem("usuario", "admin");
-        window.location.replace("index.html");
-      } else if (usuario === "consulta" && contrasena === "1234") {
-        localStorage.setItem("usuario", "consulta");
-        window.location.replace("resumen.html");
-      } else {
-        mensaje.textContent = "Credenciales incorrectas.";
-      }
-    });
-  </script>
+  <script type="module" src="./login.js"></script>
 </body>
 </html>
-

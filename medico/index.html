@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Módulo Médico - Estado de Pacientes</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <header>
+    <h1>Centro Médico DR. Luis Quito</h1>
+    <h2>Panel Médico</h2>
+    <p id="user-info"></p>
+  </header>
+
+  <main>
+    <h3>Pacientes de mi sede</h3>
+    <table id="tablaPacientes">
+      <thead>
+        <tr>
+          <th>Apellidos</th>
+          <th>Nombres</th>
+          <th>Estudio</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="listaPacientes"></tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    import { db } from "../firebase-config.js";
+    import { ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    // ✅ Recuperar datos del usuario logueado
+    const usuarioActual = JSON.parse(localStorage.getItem('usuarioActual'));
+    const userInfo = document.getElementById('user-info');
+    if (!usuarioActual) {
+      alert('No hay sesión activa');
+      window.location.href = '../usuarios/login.html';
+    }
+    userInfo.textContent = `Sesión: ${usuarioActual.nombre} (${usuarioActual.rol}) - ${usuarioActual.sede}`;
+
+    const tabla = document.getElementById('listaPacientes');
+    const pacientesRef = ref(db, 'pacientes');
+
+    // 🧩 Mostrar pacientes solo de su sede
+    onValue(pacientesRef, (snapshot) => {
+      tabla.innerHTML = '';
+      const data = snapshot.val();
+      for (const id in data) {
+        const p = data[id];
+        if (p.sede === usuarioActual.sede) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${p.apellidos}</td>
+            <td>${p.nombres}</td>
+            <td>${Array.isArray(p.estudio) ? p.estudio.join(', ') : p.estudio}</td>
+            <td>${p.estado}</td>
+            <td>
+              ${p.estado === 'En espera' ? `<button onclick="llamarPaciente('${id}', '${p.nombres}', '${p.apellidos}')">📢 Llamar</button>` : ''}
+            </td>
+          `;
+          tabla.appendChild(tr);
+        }
+      }
+    });
+
+    // 🩺 Función para llamar paciente
+    window.llamarPaciente = async (id, nombres, apellidos) => {
+      const confirmar = confirm(`¿Llamar al paciente ${nombres} ${apellidos}?`);
+      if (!confirmar) return;
+
+      // 1️⃣ Cambia estado a "En atención"
+      await update(ref(db, 'pacientes/' + id), {
+        estado: 'En atención',
+        horaAtencion: new Date().toLocaleString(),
+      });
+
+      // 2️⃣ Envía señal al monitor TV (por sede)
+      const llamadoRef = ref(db, `llamados/${usuarioActual.sede}`);
+      await set(llamadoRef, {
+        nombres,
+        apellidos,
+        sede: usuarioActual.sede,
+        area: "Ecografía",
+        hora: new Date().toLocaleTimeString(),
+      });
+
+      alert(`Paciente ${nombres} ${apellidos} llamado correctamente.`);
+    };
+  </script>
+
+</body>
+</html>
