@@ -1,119 +1,254 @@
-:root{
-  --bg:#0f0f10;
-  --panel-bg: rgba(255,255,255,0.03);
-  --card:#101214;
-  --accent:#7b0b0b; /* vino oscuro */
-  --accent-2:#111;
-  --text:#f5f5f5;
-  --muted: #cfcfcf;
-  --danger:#b00020;
+:root {
+  /* Paleta Médica Prémium y Elegante */
+  --bg: #f8fafc;                          /* Fondo gris clínico suave */
+  --panel-bg: #ffffff;                    /* Paneles blancos puros */
+  --card: #ffffff;
+  --accent: #0284c7;                     /* Azul médico profesional */
+  --accent-hover: #0369a1;               /* Azul oscuro */
+  --text: #0f172a;                       /* Texto principal (azul muy oscuro) */
+  --muted: #64748b;                      /* Texto secundario neutro */
+  --border: #e2e8f0;                     /* Bordes limpios */
+  --danger: #ef4444;                     /* Rojo de alerta */
+
+  /* Estados Visuales Claros con Resaltado */
+  --espera-bg: #fef3c7;     --espera-border: #f59e0b;     --espera-text: #b45309;
+  --atencion-bg: #dbeafe;   --atencion-border: #3b82f6;   --atencion-text: #1d4ed8;
+  --programado-bg: #f3e8ff; --programado-border: #a855f7; --programado-text: #6b21a8;
+  --atendido-bg: #dcfce7;   --atendido-border: #22c55e;   --atendido-text: #15803d;
+  --entregado-bg: #e0e7ff;  --entregado-border: #6366f1;  --entregado-text: #4338ca;
 }
 
-* { box-sizing: border-box; }
-body{
-  margin:18px;
-  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-  background: linear-gradient(180deg, #0b0b0c 0%, #151515 100%);
-  color:var(--text);
-  -webkit-font-smoothing:antialiased;
+* { 
+  box-sizing: border-box; 
 }
 
-/* header / titulos */
-h1{ text-align:center; margin-bottom:14px; font-size:20px; color:var(--text); }
-
-/* panels / cards */
-.panel{
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.04);
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+body {
+  margin: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* form grid */
-.form-grid{
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap:10px;
-  align-items:center;
+/* Header / Títulos */
+h1 { 
+  text-align: center; 
+  margin: 16px 0; 
+  font-size: 22px; 
+  font-weight: 700;
+  color: var(--text); 
+  letter-spacing: -0.5px;
 }
 
-/* inputs / selects / buttons */
+/* Panels / Cards */
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+/* Inputs / Selects / Buttons */
 input, select, textarea {
-  padding:8px 10px;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.02);
-  color:var(--text);
-  font-size:14px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.btn{
-  padding:8px 10px;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,0.06);
-  background:transparent;
-  color:var(--text);
-  cursor:pointer;
-  transition: transform .08s ease, box-shadow .12s ease;
-}
-.btn.small{ padding:6px 8px; font-size:13px; }
-.btn.primary{
-  background: linear-gradient(90deg, var(--accent), #4a0a0a);
-  color:white;
-  border:none;
-  box-shadow: 0 4px 14px rgba(123,11,11,0.18);
-}
-.btn.danger{
-  background: linear-gradient(90deg, var(--danger), #7b0010);
-  color:white;
-  border:none;
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
-/* tablas */
-.table-wrap { overflow:auto; }
+.btn {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn.small { 
+  padding: 6px 10px; 
+  font-size: 12px; 
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+}
+
+.btn.primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn.danger {
+  background: #fee2e2;
+  color: var(--danger);
+  border: 1px solid #fca5a5;
+}
+
+/* Tablas con desplazamiento suave */
+.table-wrap { 
+  overflow-x: auto; 
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
 .tabla {
-  width:100%;
-  border-collapse:collapse;
-  min-width: 980px;
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  background: #ffffff;
 }
+
 .tabla thead th {
-  text-align:center; padding:10px; font-weight:600;
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  color:var(--muted);
-  border-bottom:1px solid rgba(255,255,255,0.03);
+  text-align: center; 
+  padding: 12px 8px; 
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #f1f5f9;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
 }
+
 .tabla td {
-  padding:8px; border-bottom:1px solid rgba(255,255,255,0.02);
-  font-size:13px; color:var(--text); text-align:center;
+  padding: 10px 8px; 
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; 
+  color: var(--text); 
+  text-align: center;
 }
-.firma-img{ max-width:100px; max-height:45px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); display:block; margin:0 auto; }
 
-/* filas por estado (colores suaves) */
-.estado-espera { background: rgba(220,30,30,0.04); }
-.estado-atencion { background: rgba(255,220,90,0.03); }
-.estado-programado { background: rgba(100,160,255,0.03); }
-.estado-atendido { background: rgba(80,200,120,0.03); }
-.estado-entregado { background: rgba(120,140,255,0.04); }
-
-/* modal */
-.modal{ display:none; position:fixed; inset:0; align-items:center; justify-content:center; }
-.modal[aria-hidden="false"] { display:flex; }
-.modal-content{
-  width:420px; max-width:94%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  padding:14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
+.firma-img { 
+  max-width: 90px; 
+  max-height: 40px; 
+  border-radius: 4px; 
+  border: 1px solid var(--border); 
+  display: block; 
+  margin: 0 auto; 
+  background: #ffffff;
 }
-.modal-row{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
-.modal-row label{ min-width:70px; color:var(--muted); font-size:14px; }
-.modal-actions{ display:flex; gap:10px; justify-content:center; margin-top:8px; }
 
-/* canvas firma */
-.canvas-firma{ width:100%; max-width:100%; height:auto; touch-action:none; border-radius:6px; }
+/* Filas por Estado (Badges Visuales Destacados) */
+.estado-espera { 
+  background-color: var(--espera-bg); 
+  color: var(--espera-text);
+  font-weight: 600;
+}
+.estado-atencion { 
+  background-color: var(--atencion-bg); 
+  color: var(--atencion-text);
+  font-weight: 600;
+}
+.estado-programado { 
+  background-color: var(--programado-bg); 
+  color: var(--programado-text);
+  font-weight: 600;
+}
+.estado-atendido { 
+  background-color: var(--atendido-bg); 
+  color: var(--atendido-text);
+  font-weight: 600;
+}
+.estado-entregado { 
+  background-color: var(--entregado-bg); 
+  color: var(--entregado-text);
+  font-weight: 600;
+}
 
-/* responsive */
-@media (max-width:720px){
-  .form-grid{ grid-template-columns: 1fr; }
-  .tabla{ min-width:820px; }
+/* Modal de Entrega y Firma */
+.modal { 
+  display: none; 
+  position: fixed; 
+  inset: 0; 
+  align-items: center; 
+  justify-content: center; 
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+.modal[aria-hidden="false"] { 
+  display: flex; 
+}
+
+.modal-content {
+  width: 420px; 
+  max-width: 92%;
+  background: #ffffff;
+  padding: 20px; 
+  border-radius: 12px; 
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-row { 
+  display: flex; 
+  gap: 10px; 
+  align-items: center; 
+  margin-bottom: 12px; 
+}
+
+.modal-row label { 
+  min-width: 80px; 
+  color: var(--text); 
+  font-weight: 600;
+  font-size: 14px; 
+}
+
+.modal-actions { 
+  display: flex; 
+  gap: 10px; 
+  justify-content: center; 
+  margin-top: 14px; 
+}
+
+/* Canvas de Firma */
+.canvas-firma { 
+  width: 100%; 
+  height: 180px; 
+  touch-action: none; 
+  border-radius: 8px; 
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+}
+
+/* Optimizaciones para Móviles */
+@media (max-width: 720px) {
+  body {
+    margin: 8px;
+  }
+  .form-grid { 
+    grid-template-columns: 1fr; 
+  }
+  .panel {
+    padding: 12px;
+  }
 }
