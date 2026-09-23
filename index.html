@@ -6,6 +6,8 @@
   <title>Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Librería para lectura de QR con cámara -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
   <script>
@@ -21,6 +23,14 @@
   </div>
 
   <div class="panel">
+    <!-- Botón y contenedor para Escáner QR de Tickets -->
+    <div style="margin-bottom: 14px; text-align: center;">
+      <button type="button" id="btnScanQR" class="btn primary" style="background: #0d9488; width: 100%; max-width: 380px; padding: 10px 16px; font-size: 0.95rem;">
+        📷 Escanear QR de Ticket
+      </button>
+      <div id="qr-reader" style="width: 100%; max-width: 320px; margin: 10px auto; display: none; border-radius: 8px; overflow: hidden; border: 2px solid #0d9488;"></div>
+    </div>
+
     <form id="formulario" class="form-grid">
       <div>
         <label for="sede">Sede:</label>
@@ -43,6 +53,7 @@
         <label for="estudios">Estudios:</label>
         <select id="estudios" multiple required>
           <option value="Consulta Medicina">Consulta Medicina</option>
+          <option value="Laboratorio">Laboratorio / Análisis Clínicos</option>
           <option value="eco">eco</option>
           <option value="Reevaluación">Reevaluación</option>
           <option value="Eco tv">Eco tv</option>
@@ -66,6 +77,12 @@
           <option value="Eco 5d">Eco 5d</option>
           <option value="Eco vias urinarias">Eco vias urinarias</option>
         </select>
+      </div>
+
+      <!-- Campo Dinámico: Detalle de Análisis de Laboratorio -->
+      <div id="grupo-detalle-lab" style="display: none;">
+        <label for="detalleLaboratorio">Detalle Análisis (Laboratorio):</label>
+        <input type="text" id="detalleLaboratorio" placeholder="Ej: Glucosa, Hemograma, Triglicéridos...">
       </div>
 
       <div id="cantidad-eco-pb" style="display:none;">
