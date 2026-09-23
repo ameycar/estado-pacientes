@@ -1,11 +1,11 @@
-// script.js  (module - Firebase v9)
+// script.js (module - Firebase v9)
 import { db } from "./firebase-config.js";
 import {
   ref, onValue, push, update, remove, set
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-// ---------- constantes y DOM ----------
-const ADMIN_PASS = '1234'; // contraseña de admin
+// ---------- Constantes y DOM ----------
+const ADMIN_PASS = '1234'; // Contraseña de administrador
 const formulario = document.getElementById('formulario');
 const tablaPacientes = document.getElementById('tabla-pacientes');
 const contador = document.getElementById('contador');
@@ -19,7 +19,7 @@ const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
-// ---------- Escáner QR con Cámara ----------
+// ---------- Escáner QR con Cámara / Ticket ----------
 let html5QrCode = null;
 const btnScanQR = document.getElementById('btnScanQR');
 const qrReaderDiv = document.getElementById('qr-reader');
@@ -51,14 +51,14 @@ function iniciarEscanerQR() {
     () => {}
   ).catch(err => {
     alert("Error al encender cámara: " + err);
-    qrReaderDiv.style.display = 'none';
+    if (qrReaderDiv) qrReaderDiv.style.display = 'none';
   });
 }
 
 function detenerEscanerQR() {
   if (html5QrCode) {
     html5QrCode.stop().then(() => {
-      qrReaderDiv.style.display = 'none';
+      if (qrReaderDiv) qrReaderDiv.style.display = 'none';
     }).catch(err => console.error(err));
   }
 }
@@ -66,7 +66,7 @@ function detenerEscanerQR() {
 function procesarTicketQR(contenidoQR) {
   const textoLimpio = contenidoQR.trim();
   
-  // 1. Intentar Parsear como JSON primero
+  // 1. Parsear JSON
   try {
     const datos = JSON.parse(textoLimpio);
     if (datos.apellidos) document.getElementById('apellidos').value = datos.apellidos.trim();
@@ -97,55 +97,53 @@ function procesarTicketQR(contenidoQR) {
     alert("✅ Datos del QR cargados con éxito.");
     return;
   } catch (e) {
-    // Si no es JSON, continuar al formateador de Comprobantes Sunat/Ticket
+    // Si no es JSON, evalúa formato Sunat/Ticket
   }
 
-  // 2. Parsear formato de comprobantes (separado por '|')
+  // 2. Parsear Comprobantes Sunat (separado por '|')
   if (textoLimpio.includes('|')) {
     const partes = textoLimpio.split('|');
     
-    // Asignar el código completo o la serie-correlativo al PF
+    // PF (Comprobante / Ticket)
     const pfVal = (partes[2] && partes[3]) ? `${partes[2]}-${partes[3]}` : textoLimpio;
     document.getElementById('pf').value = pfVal;
 
-    // Asignar precio si está presente en la posición estándar de monto total (índice 5)
+    // Precio (Monto Total en la posición 5 del estándar)
     if (partes[5] && !isNaN(parseFloat(partes[5]))) {
       document.getElementById('precio').value = parseFloat(partes[5]);
     }
 
-    // Extraer campos adicionales si están en la cadena (Ej: Apellidos, Nombres)
+    // Nombres y Apellidos si vienen incluidos en campos adicionales
     if (partes[11]) document.getElementById('apellidos').value = partes[11].trim();
     if (partes[12]) document.getElementById('nombres').value = partes[12].trim();
 
-    alert("🎟️ Datos de comprobante/ticket procesados.");
+    alert("🎟️ Datos de comprobante procesados.");
   } else {
     document.getElementById('pf').value = textoLimpio;
     alert("🎟️ Ticket/PF asignado: " + textoLimpio);
   }
 }
 
-// ---------- Paginación ----------
+// ---------- Variables Globales y Paginación ----------
 let paginaActual = 1;
 const registrosPorPagina = 10;
 let listaPacientesFiltrada = [];
-
 let datosPacientes = [];
 let firmaActualPaciente = null;
 let pendingSelectForEntrega = null;
 
-// usuario logueado en localStorage
+// Usuario desde localStorage
 const currentUser = (() => {
   try { return JSON.parse(localStorage.getItem('user') || 'null'); }
   catch(e){ return null; }
 })();
 
-// utilidad para normalizar clave de sede
 function keyify(s) {
   if (!s) return 'sin_sede';
   return String(s).replace(/[^\w]/g,'_').toLowerCase();
 }
 
-// ---------- cargar sedes ----------
+// ---------- Cargar Sedes ----------
 function loadSedesToSelect() {
   const select = document.getElementById('sede');
   if (!select) return;
@@ -172,19 +170,20 @@ function loadSedesToSelect() {
   });
 }
 
-// ---------- Mostrar Eco pb y Laboratorio dinámico ----------
+// ---------- Campos Dinámicos de Estudios ----------
 if (estudiosSelect) {
   estudiosSelect.addEventListener('change', () => {
     const seleccionados = Array.from(estudiosSelect.selectedOptions).map(o => o.value);
-    cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
-    
+    if (cantidadEcoPbDiv) {
+      cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
+    }
     if (grupoDetalleLab) {
       grupoDetalleLab.style.display = seleccionados.some(val => val.toLowerCase().includes('laboratorio')) ? 'block' : 'none';
     }
   });
 }
 
-// ---------- Registrar paciente ----------
+// ---------- Registrar Paciente ----------
 if (formulario) {
   formulario.addEventListener('submit', e => {
     e.preventDefault();
@@ -235,7 +234,7 @@ if (formulario) {
   });
 }
 
-// ---------- Cargar pacientes (real-time) ----------
+// ---------- Cargar Pacientes (Realtime Firebase) ----------
 function cargarPacientes() {
   onValue(ref(db, 'pacientes'), snapshot => {
     const pacientes = [];
@@ -253,7 +252,7 @@ function cargarPacientes() {
   });
 }
 
-// ---------- Filtros ----------
+// ---------- Filtros y Ordenamiento ----------
 function aplicarFiltros() {
   let pacientes = (datosPacientes || []).slice();
 
@@ -267,12 +266,7 @@ function aplicarFiltros() {
   if (estudioFiltro) pacientes = pacientes.filter(p => (p.estudios || '').toLowerCase().includes(estudioFiltro));
   if (fechaFiltro) pacientes = pacientes.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
 
-  paginaActual = 1;
-  mostrarPacientes(pacientes);
-}
-
-// ---------- Mostrar Pacientes ----------
-function mostrarPacientes(pacientes) {
+  // Ordenar los más recientes primero
   pacientes.sort((a, b) => {
     const fechaA = a.fechaModificacion || '';
     const fechaB = b.fechaModificacion || '';
@@ -280,10 +274,26 @@ function mostrarPacientes(pacientes) {
   });
 
   listaPacientesFiltrada = pacientes;
+
+  // Ajustar la página si excede el número total posible
+  const totalPaginas = Math.ceil(listaPacientesFiltrada.length / registrosPorPagina) || 1;
+  if (paginaActual > totalPaginas) {
+    paginaActual = 1;
+  }
+
+  // Actualizar contador global de pacientes en espera
+  if (contador) {
+    const enEsperaCount = datosPacientes.filter(p => p.estado === 'En espera').length;
+    contador.textContent = `Pacientes en espera: ${enEsperaCount}`;
+  }
+
+  mostrarPacientesPagina();
+}
+
+// ---------- Renderizado de la Tabla ----------
+function mostrarPacientesPagina() {
+  if (!tablaPacientes) return;
   tablaPacientes.innerHTML = '';
-  
-  const enEsperaCount = pacientes.filter(p => p.estado === 'En espera').length;
-  if (contador) contador.textContent = `Pacientes en espera: ${enEsperaCount}`;
 
   const inicio = (paginaActual - 1) * registrosPorPagina;
   const fin = inicio + registrosPorPagina;
@@ -359,7 +369,7 @@ function mostrarPacientes(pacientes) {
   renderizarControlesPaginacion();
 }
 
-// ---------- Paginación ----------
+// ---------- Controles de Paginación ----------
 function renderizarControlesPaginacion() {
   const contenedor = document.getElementById("paginacion");
   if (!contenedor) return;
@@ -369,6 +379,7 @@ function renderizarControlesPaginacion() {
 
   if (totalPaginas <= 1) return;
 
+  // Botón Anterior (‹)
   const btnAnt = document.createElement("button");
   btnAnt.className = "pag-quad";
   btnAnt.innerText = "‹";
@@ -376,6 +387,7 @@ function renderizarControlesPaginacion() {
   btnAnt.onclick = () => cambiarPagina(paginaActual - 1);
   contenedor.appendChild(btnAnt);
 
+  // Cuadritos numerados (1, 2, 3...)
   for (let i = 1; i <= totalPaginas; i++) {
     const btnPage = document.createElement("button");
     btnPage.className = `pag-quad ${i === paginaActual ? 'activa' : ''}`;
@@ -384,6 +396,7 @@ function renderizarControlesPaginacion() {
     contenedor.appendChild(btnPage);
   }
 
+  // Botón Siguiente (›)
   const btnSig = document.createElement("button");
   btnSig.className = "pag-quad";
   btnSig.innerText = "›";
@@ -394,12 +407,10 @@ function renderizarControlesPaginacion() {
 
 function cambiarPagina(nuevaPagina) {
   paginaActual = nuevaPagina;
-  mostrarPacientes(listaPacientesFiltrada);
-  const tablaWrap = document.querySelector(".table-wrap");
-  if (tablaWrap) tablaWrap.scrollIntoView({ behavior: 'smooth' });
+  mostrarPacientesPagina();
 }
 
-// ---------- Modificar campos y Cambiar estado ----------
+// ---------- Edición y Cambios de Estado ----------
 function editarConClave(evt, key, campo, inputEl) {
   evt.preventDefault();
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
@@ -492,7 +503,7 @@ function confirmarEliminar(key) {
   }
 }
 
-// ---------- Modal de Entrega ----------
+// ---------- Modal de Entrega y Firma ----------
 const modalFirma = document.getElementById('modalFirma');
 const canvas = document.getElementById('canvasFirma');
 const ctx = canvas ? canvas.getContext('2d') : null;
@@ -645,10 +656,12 @@ function abrirModal(key) {
     modalFirma.setAttribute('aria-hidden', 'false');
   }
 }
+
 function limpiarFirma() {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
+
 function cerrarModal() {
   if (modalFirma) {
     modalFirma.style.display = 'none';
@@ -691,7 +704,7 @@ function exportarExcel() {
   XLSX.writeFile(workbook, 'Pacientes.xlsx');
 }
 
-// ---------- Event Listeners ----------
+// ---------- Event Listeners para Filtros y Modales ----------
 const btnSaveEntrega = document.getElementById('modal_save_entrega');
 const btnCancelEntrega = document.getElementById('modal_cancel_entrega');
 const btnClearFirma = document.getElementById('modal_limpiar_firma');
@@ -702,7 +715,7 @@ if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
 
 [filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
 
-// ---------- ASIGNACIÓN A WINDOW (Crítico para eventos onClick/onChange en línea) ----------
+// ---------- ASIGNACIÓN GLOBAL A WINDOW (Importante para los eventos del HTML) ----------
 window.cambiarEstado = cambiarEstado;
 window.abrirModal = abrirModal;
 window.confirmarEliminar = confirmarEliminar;
@@ -714,6 +727,6 @@ window.limpiarFirma = limpiarFirma;
 window.guardarEntregaDesdeModal = guardarEntregaDesdeModal;
 window.exportarExcel = exportarExcel;
 
-// ---------- Iniciar ----------
+// ---------- Inicialización ----------
 loadSedesToSelect();
 cargarPacientes();
