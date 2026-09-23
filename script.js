@@ -12,10 +12,96 @@ const contador = document.getElementById('contador');
 const estudiosSelect = document.getElementById('estudios');
 const cantidadEcoPbDiv = document.getElementById('cantidad-eco-pb');
 const ecoPbCantidad = document.getElementById('ecoPbCantidad');
+const grupoDetalleLab = document.getElementById('grupo-detalle-lab');
+const detalleLaboratorioInput = document.getElementById('detalleLaboratorio');
 const filtroSede = document.getElementById('filtroSede');
 const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
+
+// ---------- Escáner QR con Cámara ----------
+let html5QrCode = null;
+const btnScanQR = document.getElementById('btnScanQR');
+const qrReaderDiv = document.getElementById('qr-reader');
+
+if (btnScanQR) {
+  btnScanQR.addEventListener('click', () => {
+    if (qrReaderDiv.style.display === 'none') {
+      qrReaderDiv.style.display = 'block';
+      iniciarEscanerQR();
+    } else {
+      detenerEscanerQR();
+    }
+  });
+}
+
+function iniciarEscanerQR() {
+  if (typeof Html5Qrcode === 'undefined') {
+    alert("La librería del lector QR no se ha cargado correctamente.");
+    return;
+  }
+  html5QrCode = new Html5Qrcode("qr-reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 220, height: 220 } },
+    (decodedText) => {
+      procesarTicketQR(decodedText);
+      detenerEscanerQR();
+    },
+    () => {}
+  ).catch(err => {
+    alert("Error al encender cámara: " + err);
+    qrReaderDiv.style.display = 'none';
+  });
+}
+
+function detenerEscanerQR() {
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => {
+      qrReaderDiv.style.display = 'none';
+    }).catch(err => console.error(err));
+  }
+}
+
+function procesarTicketQR(contenidoQR) {
+  try {
+    const datos = JSON.parse(contenidoQR);
+
+    if (datos.apellidos) document.getElementById('apellidos').value = datos.apellidos.trim();
+    if (datos.nombres) document.getElementById('nombres').value = datos.nombres.trim();
+    if (datos.pf) document.getElementById('pf').value = datos.pf.trim();
+    if (datos.precio) document.getElementById('precio').value = datos.precio;
+
+    if (datos.estudios) {
+      let lista = Array.isArray(datos.estudios) ? datos.estudios : datos.estudios.split(',');
+      lista = lista.map(e => e.trim());
+
+      const esLaboratorio = datos.tipo === 'laboratorio' || lista.some(e => /glucosa|hemograma|trigliceridos|colesterol|orina|heces|perfil/i.test(e));
+
+      if (esLaboratorio) {
+        Array.from(estudiosSelect.options).forEach(opt => {
+          opt.selected = opt.value.toLowerCase().includes('laboratorio');
+        });
+        if (grupoDetalleLab) grupoDetalleLab.style.display = 'block';
+        if (detalleLaboratorioInput) detalleLaboratorioInput.value = lista.join(', ');
+      } else {
+        if (grupoDetalleLab) grupoDetalleLab.style.display = 'none';
+        Array.from(estudiosSelect.options).forEach(opt => {
+          opt.selected = lista.some(l => l.toLowerCase() === opt.value.toLowerCase());
+        });
+      }
+      estudiosSelect.dispatchEvent(new Event('change'));
+    }
+
+    alert("✅ Datos del ticket QR cargados con éxito.");
+  } catch (e) {
+    const textoLimpio = contenidoQR.trim();
+    if (textoLimpio) {
+      document.getElementById('pf').value = textoLimpio;
+      alert("🎟️ Ticket/PF detectado: " + textoLimpio);
+    }
+  }
+}
 
 // ---------- Paginación ----------
 let paginaActual = 1;
@@ -65,11 +151,16 @@ function loadSedesToSelect() {
   });
 }
 
-// ---------- Mostrar Eco pb ----------
+// ---------- Mostrar Eco pb y Laboratorio dinámico ----------
 if (estudiosSelect) {
   estudiosSelect.addEventListener('change', () => {
     const seleccionados = Array.from(estudiosSelect.selectedOptions).map(o => o.value);
     cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
+    
+    // Muestra u oculta el campo de detalle de laboratorio
+    if (grupoDetalleLab) {
+      grupoDetalleLab.style.display = seleccionados.some(val => val.toLowerCase().includes('laboratorio')) ? 'block' : 'none';
+    }
   });
 }
 
@@ -83,23 +174,29 @@ if (formulario) {
 
     const apellidos = document.getElementById('apellidos').value.trim();
     const nombres = document.getElementById('nombres').value.trim();
-    let estudios = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
-    let cant = estudios.length;
+    let estudiosArr = Array.from(estudiosSelect.selectedOptions).map(option => option.value);
+    let cant = estudiosArr.length;
     const precio = document.getElementById('precio').value.trim();
     const pf = document.getElementById('pf').value.trim();
     const estado = 'En espera';
     const fechaModificacion = new Date().toISOString().slice(0, 16);
 
-    if (estudios.includes('Eco pb')) {
+    if (estudiosArr.includes('Eco pb')) {
       const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
-      cant = estudios.length - 1 + ecoCantidad;
+      cant = estudiosArr.length - 1 + ecoCantidad;
+    }
+
+    // Formatear el campo de estudios incluyendo el detalle de laboratorio si corresponde
+    let textoEstudios = estudiosArr.join(', ');
+    if (estudiosArr.some(e => e.toLowerCase().includes('laboratorio')) && detalleLaboratorioInput && detalleLaboratorioInput.value.trim() !== '') {
+      textoEstudios += ` (${detalleLaboratorioInput.value.trim()})`;
     }
 
     const nuevoPaciente = {
       sede,
       apellidos,
       nombres,
-      estudios: estudios.join(', '),
+      estudios: textoEstudios,
       cant,
       precio,
       pf,
@@ -115,6 +212,7 @@ if (formulario) {
     push(ref(db, 'pacientes'), nuevoPaciente);
     formulario.reset();
     cantidadEcoPbDiv.style.display = 'none';
+    if (grupoDetalleLab) grupoDetalleLab.style.display = 'none';
   });
 }
 
@@ -150,14 +248,12 @@ function aplicarFiltros() {
   if (estudioFiltro) pacientes = pacientes.filter(p => (p.estudios || '').toLowerCase().includes(estudioFiltro));
   if (fechaFiltro) pacientes = pacientes.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
 
-  // Reiniciar a la primera página tras filtrar
   paginaActual = 1;
   mostrarPacientes(pacientes);
 }
 
 // ---------- Mostrar Pacientes (10 por página, más recientes primero) ----------
 function mostrarPacientes(pacientes) {
-  // Ordenar por fecha descendente (los más recientes arriba)
   pacientes.sort((a, b) => {
     const fechaA = a.fechaModificacion || '';
     const fechaB = b.fechaModificacion || '';
@@ -170,7 +266,6 @@ function mostrarPacientes(pacientes) {
   const enEsperaCount = pacientes.filter(p => p.estado === 'En espera').length;
   contador.textContent = `Pacientes en espera: ${enEsperaCount}`;
 
-  // Corte de 10 por página
   const inicio = (paginaActual - 1) * registrosPorPagina;
   const fin = inicio + registrosPorPagina;
   const pacientesPagina = listaPacientesFiltrada.slice(inicio, fin);
