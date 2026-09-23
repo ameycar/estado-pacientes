@@ -64,9 +64,11 @@ function detenerEscanerQR() {
 }
 
 function procesarTicketQR(contenidoQR) {
+  const textoLimpio = contenidoQR.trim();
+  
+  // 1. Intentar Parsear como JSON primero
   try {
-    const datos = JSON.parse(contenidoQR);
-
+    const datos = JSON.parse(textoLimpio);
     if (datos.apellidos) document.getElementById('apellidos').value = datos.apellidos.trim();
     if (datos.nombres) document.getElementById('nombres').value = datos.nombres.trim();
     if (datos.pf) document.getElementById('pf').value = datos.pf.trim();
@@ -92,14 +94,33 @@ function procesarTicketQR(contenidoQR) {
       }
       estudiosSelect.dispatchEvent(new Event('change'));
     }
-
-    alert("✅ Datos del ticket QR cargados con éxito.");
+    alert("✅ Datos del QR cargados con éxito.");
+    return;
   } catch (e) {
-    const textoLimpio = contenidoQR.trim();
-    if (textoLimpio) {
-      document.getElementById('pf').value = textoLimpio;
-      alert("🎟️ Ticket/PF detectado: " + textoLimpio);
+    // Si no es JSON, continuar al formateador de Comprobantes Sunat/Ticket
+  }
+
+  // 2. Parsear formato de comprobantes (separado por '|')
+  if (textoLimpio.includes('|')) {
+    const partes = textoLimpio.split('|');
+    
+    // Asignar el código completo o la serie-correlativo al PF
+    const pfVal = (partes[2] && partes[3]) ? `${partes[2]}-${partes[3]}` : textoLimpio;
+    document.getElementById('pf').value = pfVal;
+
+    // Asignar precio si está presente en la posición estándar de monto total (índice 5)
+    if (partes[5] && !isNaN(parseFloat(partes[5]))) {
+      document.getElementById('precio').value = parseFloat(partes[5]);
     }
+
+    // Extraer campos adicionales si están en la cadena (Ej: Apellidos, Nombres)
+    if (partes[11]) document.getElementById('apellidos').value = partes[11].trim();
+    if (partes[12]) document.getElementById('nombres').value = partes[12].trim();
+
+    alert("🎟️ Datos de comprobante/ticket procesados.");
+  } else {
+    document.getElementById('pf').value = textoLimpio;
+    alert("🎟️ Ticket/PF asignado: " + textoLimpio);
   }
 }
 
@@ -157,7 +178,6 @@ if (estudiosSelect) {
     const seleccionados = Array.from(estudiosSelect.selectedOptions).map(o => o.value);
     cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
     
-    // Muestra u oculta el campo de detalle de laboratorio
     if (grupoDetalleLab) {
       grupoDetalleLab.style.display = seleccionados.some(val => val.toLowerCase().includes('laboratorio')) ? 'block' : 'none';
     }
@@ -186,7 +206,6 @@ if (formulario) {
       cant = estudiosArr.length - 1 + ecoCantidad;
     }
 
-    // Formatear el campo de estudios incluyendo el detalle de laboratorio si corresponde
     let textoEstudios = estudiosArr.join(', ');
     if (estudiosArr.some(e => e.toLowerCase().includes('laboratorio')) && detalleLaboratorioInput && detalleLaboratorioInput.value.trim() !== '') {
       textoEstudios += ` (${detalleLaboratorioInput.value.trim()})`;
@@ -211,7 +230,7 @@ if (formulario) {
 
     push(ref(db, 'pacientes'), nuevoPaciente);
     formulario.reset();
-    cantidadEcoPbDiv.style.display = 'none';
+    if (cantidadEcoPbDiv) cantidadEcoPbDiv.style.display = 'none';
     if (grupoDetalleLab) grupoDetalleLab.style.display = 'none';
   });
 }
@@ -252,7 +271,7 @@ function aplicarFiltros() {
   mostrarPacientes(pacientes);
 }
 
-// ---------- Mostrar Pacientes (10 por página, más recientes primero) ----------
+// ---------- Mostrar Pacientes ----------
 function mostrarPacientes(pacientes) {
   pacientes.sort((a, b) => {
     const fechaA = a.fechaModificacion || '';
@@ -264,7 +283,7 @@ function mostrarPacientes(pacientes) {
   tablaPacientes.innerHTML = '';
   
   const enEsperaCount = pacientes.filter(p => p.estado === 'En espera').length;
-  contador.textContent = `Pacientes en espera: ${enEsperaCount}`;
+  if (contador) contador.textContent = `Pacientes en espera: ${enEsperaCount}`;
 
   const inicio = (paginaActual - 1) * registrosPorPagina;
   const fin = inicio + registrosPorPagina;
@@ -340,7 +359,7 @@ function mostrarPacientes(pacientes) {
   renderizarControlesPaginacion();
 }
 
-// ---------- Paginación Cuadritos ----------
+// ---------- Paginación ----------
 function renderizarControlesPaginacion() {
   const contenedor = document.getElementById("paginacion");
   if (!contenedor) return;
@@ -376,12 +395,11 @@ function renderizarControlesPaginacion() {
 function cambiarPagina(nuevaPagina) {
   paginaActual = nuevaPagina;
   mostrarPacientes(listaPacientesFiltrada);
-  
   const tablaWrap = document.querySelector(".table-wrap");
   if (tablaWrap) tablaWrap.scrollIntoView({ behavior: 'smooth' });
 }
 
-// ---------- Editar con clave ----------
+// ---------- Modificar campos y Cambiar estado ----------
 function editarConClave(evt, key, campo, inputEl) {
   evt.preventDefault();
   const pass = prompt('Ingrese contraseña de administrador para modificar ' + campo + ':');
@@ -412,10 +430,6 @@ function editarConClaveCheckbox(evt, key, campo, checkboxEl) {
     alert('Contraseña incorrecta. No se permite modificar.');
     checkboxEl.checked = (pacienteActual[campo] === 'SI');
   }
-}
-
-function guardarCampo(key, campo, valor) {
-  update(ref(db, 'pacientes/' + key), { [campo]: valor });
 }
 
 function cambiarEstado(key, nuevoEstado) {
@@ -655,7 +669,6 @@ function guardarFirma() {
   cerrarModal();
 }
 
-// ---------- Exportar Excel ----------
 function exportarExcel() {
   const datos = (datosPacientes || []).map(p => ({
     Sede: p.sede,
@@ -689,7 +702,7 @@ if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
 
 [filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
 
-// ---------- Funciones Expuestas ----------
+// ---------- ASIGNACIÓN A WINDOW (Crítico para eventos onClick/onChange en línea) ----------
 window.cambiarEstado = cambiarEstado;
 window.abrirModal = abrirModal;
 window.confirmarEliminar = confirmarEliminar;
