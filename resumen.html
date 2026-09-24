@@ -2,20 +2,91 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resumen de Pacientes</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .paginacion { margin-top: 15px; text-align: center; }
-    .paginacion button { margin: 0 5px; padding: 5px 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f8f9fa;
+    }
+    h1 {
+      color: #008080;
+      margin-bottom: 20px;
+    }
+    .filtros-container {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      background: #fff;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .filtros-container label {
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .filtros-container input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-left: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #008080;
+      color: white;
+    }
+
+    /* Paginación estilo Cuadritos */
+    .paginacion-container {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+    .pag-quad {
+      padding: 6px 12px;
+      border: 1px solid #008080;
+      background-color: #fff;
+      color: #008080;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .pag-quad.activa {
+      background-color: #008080;
+      color: #fff;
+    }
+    .pag-quad:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #ccc;
+      color: #888;
+    }
   </style>
 </head>
 <body>
-  <h1>Resumen de Pacientes</h1>
 
-  <label>Filtrar por sede: <input type="text" id="filtroSede"></label>
-  <label>Filtrar por fecha: <input type="date" id="filtroFecha"></label>
+  <h1>📊 Resumen de Pacientes</h1>
+
+  <div class="filtros-container">
+    <label>Filtrar por sede: <input type="text" id="filtroSede" placeholder="Escribe la sede..."></label>
+    <label>Filtrar por fecha: <input type="date" id="filtroFecha"></label>
+  </div>
 
   <table>
     <thead>
@@ -32,32 +103,26 @@
     <tbody id="tablaResumen"></tbody>
   </table>
 
-  <div class="paginacion" id="paginacion"></div>
+  <!-- Contenedor de Cuadritos de Paginación -->
+  <div class="paginacion-container" id="paginacion"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-      authDomain: "estado-pacientes.firebaseapp.com",
-      databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
-      projectId: "estado-pacientes",
-      storageBucket: "estado-pacientes.appspot.com",
-      messagingSenderId: "515522648971",
-      appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-      measurementId: "G-C9STJV4J6K"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  <!-- Código Modular Firebase v9 (Compatible con tu firebase-config.js actual) -->
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
     const tablaResumen = document.getElementById('tablaResumen');
     const filtroSede = document.getElementById('filtroSede');
     const filtroFecha = document.getElementById('filtroFecha');
-    const paginacion = document.getElementById('paginacion');
-    let pacientes = [], paginaActual = 1, pacientesPorPagina = 50;
+    const paginacionContainer = document.getElementById('paginacion');
 
+    let pacientes = [];
+    let paginaActual = 1;
+    const pacientesPorPagina = 15; // Ajustado para ver paginación fácil
+
+    // 1. Cargar datos en Realtime
     function cargarPacientes() {
-      db.ref('pacientes').on('value', snapshot => {
+      onValue(ref(db, 'pacientes'), snapshot => {
         pacientes = [];
         snapshot.forEach(child => {
           const paciente = child.val();
@@ -68,63 +133,105 @@
       });
     }
 
+    // 2. Filtrar, Ordenar y Mostrar
     function mostrarResumen() {
-      let filtrados = pacientes;
+      let filtrados = pacientes.slice();
       const sede = filtroSede.value.trim().toLowerCase();
       const fecha = filtroFecha.value;
 
-      if (sede) filtrados = filtrados.filter(p => p.sede.toLowerCase().includes(sede));
-      if (fecha) filtrados = filtrados.filter(p => p.fechaModificacion?.startsWith(fecha));
+      if (sede) filtrados = filtrados.filter(p => (p.sede || '').toLowerCase().includes(sede));
+      if (fecha) filtrados = filtrados.filter(p => (p.fechaModificacion || '').startsWith(fecha));
 
-      const ordenEstado = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4 };
+      // Prioridad por estado y luego por fecha descendente
+      const ordenEstado = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4, 'Entregado': 5 };
       filtrados.sort((a, b) => {
         const estadoA = ordenEstado[a.estado] || 99;
         const estadoB = ordenEstado[b.estado] || 99;
         if (estadoA !== estadoB) return estadoA - estadoB;
-        return new Date(b.fechaModificacion || '2000-01-01') - new Date(a.fechaModificacion || '2000-01-01');
+        return (b.fechaModificacion || '').localeCompare(a.fechaModificacion || '');
       });
 
-      const totalPaginas = Math.ceil(filtrados.length / pacientesPorPagina);
-      if (paginaActual > totalPaginas) paginaActual = totalPaginas || 1;
+      // Paginación
+      const totalPaginas = Math.ceil(filtrados.length / pacientesPorPagina) || 1;
+      if (paginaActual > totalPaginas) paginaActual = 1;
+
       const inicio = (paginaActual - 1) * pacientesPorPagina;
       const fin = inicio + pacientesPorPagina;
-
       const pagina = filtrados.slice(inicio, fin);
+
       tablaResumen.innerHTML = '';
 
+      if (pagina.length === 0) {
+        tablaResumen.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">No se encontraron registros.</td></tr>';
+        renderizarPaginacion(0);
+        return;
+      }
+
+      // Dibujar filas con los colores originales que tenías
       pagina.forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${p.sede}</td>
-          <td>${p.apellidos}</td>
-          <td>${p.nombres}</td>
-          <td>${p.estudios}</td>
-          <td>${p.cant}</td>
-          <td>${p.estado}</td>
-          <td>${p.fechaModificacion || ''}</td>
+          <td><strong>${p.sede || ''}</strong></td>
+          <td>${p.apellidos || ''}</td>
+          <td>${p.nombres || ''}</td>
+          <td>${p.estudios || ''}</td>
+          <td style="text-align:center;">${p.cant || ''}</td>
+          <td><strong>${p.estado || 'En espera'}</strong></td>
+          <td>${p.fechaModificacion ? p.fechaModificacion.replace('T', ' ') : ''}</td>
         `;
+
+        // Colores según estado originales
         tr.style.backgroundColor =
           p.estado === 'En espera' ? '#ffe5e5' :
           p.estado === 'En atención' ? '#fff5cc' :
-          p.estado === 'Programado' ? '#cce5ff' : '#d5f5d5';
+          p.estado === 'Programado' ? '#e1bee7' :
+          p.estado === 'Atendido' ? '#d5f5d5' : '#f0f0f0';
+
         tablaResumen.appendChild(tr);
       });
 
-      paginacion.innerHTML = '';
+      renderizarPaginacion(totalPaginas);
+    }
+
+    // 3. Renderizar Cuadritos Numerados
+    function renderizarPaginacion(totalPaginas) {
+      paginacionContainer.innerHTML = '';
+      if (totalPaginas <= 1) return;
+
+      // Botón Anterior (‹)
+      const btnAnt = document.createElement("button");
+      btnAnt.className = "pag-quad";
+      btnAnt.innerText = "‹";
+      btnAnt.disabled = paginaActual === 1;
+      btnAnt.onclick = () => { paginaActual--; mostrarResumen(); };
+      paginacionContainer.appendChild(btnAnt);
+
+      // Botones Numerados (1, 2, 3...)
       for (let i = 1; i <= totalPaginas; i++) {
         const btn = document.createElement('button');
+        btn.className = `pag-quad ${i === paginaActual ? 'activa' : ''}`;
         btn.textContent = i;
-        if (i === paginaActual) btn.disabled = true;
         btn.addEventListener('click', () => {
           paginaActual = i;
           mostrarResumen();
         });
-        paginacion.appendChild(btn);
+        paginacionContainer.appendChild(btn);
       }
+
+      // Botón Siguiente (›)
+      const btnSig = document.createElement("button");
+      btnSig.className = "pag-quad";
+      btnSig.innerText = "›";
+      btnSig.disabled = paginaActual === totalPaginas;
+      btnSig.onclick = () => { paginaActual++; mostrarResumen(); };
+      paginacionContainer.appendChild(btnSig);
     }
 
-    filtroSede.addEventListener('input', mostrarResumen);
-    filtroFecha.addEventListener('input', mostrarResumen);
+    // Escuchadores de eventos
+    filtroSede.addEventListener('input', () => { paginaActual = 1; mostrarResumen(); });
+    filtroFecha.addEventListener('input', () => { paginaActual = 1; mostrarResumen(); });
+
+    // Inicializar
     cargarPacientes();
   </script>
 </body>
