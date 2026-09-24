@@ -1,125 +1,167 @@
-// admin.js (módulos v9)
-import { db } from "./firebase.js";
-import {
-  ref,
-  push,
-  onValue,
-  update,
-  remove,
-  get,
-  child
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+// Variable global para controlar la paginación del resumen
+let paginaResumenActual = 1;
+const pacientesPorPaginaResumen = 15;
 
-/* DOM */
-const formSede = document.getElementById("formSede");
-const listaSedes = document.getElementById("listaSedes");
-const inputNombre = document.getElementById("sedeNombre");
+// Navegación entre pestañas
+function mostrarSeccion(nombreSeccion) {
+  // Ocultar todas las secciones
+  const secciones = document.querySelectorAll('.seccion');
+  secciones.forEach(sec => sec.style.display = 'none');
 
-/* Agregar sede */
-if (formSede) {
-  formSede.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nombre = (inputNombre.value || "").trim();
-    if (!nombre) return alert("Ingresa nombre de sede.");
+  // Mostrar la sección activa
+  const seccionActiva = document.getElementById(nombreSeccion);
+  if (seccionActiva) {
+    seccionActiva.style.display = 'block';
+  }
+
+  // Cargar datos al abrir la pestaña Resumen
+  if (nombreSeccion === 'resumen') {
+    cargarModuloResumen();
+  }
+}
+
+// Cargar y filtrar los datos de la pestaña Resumen
+function cargarModuloResumen() {
+  const tablaResumen = document.getElementById('tabla-resumen');
+  const filtroSede = document.getElementById('filtroSedeResumen');
+  const filtroFecha = document.getElementById('filtroFechaResumen');
+
+  if (!tablaResumen) return;
+
+  // Obtener pacientes de las variables globales comunes o LocalStorage/Firestore
+  let lista = window.pacientes || window.datosPacientes || window.listaPacientes || [];
+
+  if ((!lista || lista.length === 0) && localStorage.getItem('pacientes')) {
     try {
-      await push(ref(db, "sedes"), { nombre, createdAt: Date.now() });
-      inputNombre.value = "";
-    } catch (err) {
-      console.error("Error al guardar sede:", err);
-      alert("Error al guardar sede: " + (err.message || err));
+      lista = JSON.parse(localStorage.getItem('pacientes')) || [];
+    } catch (e) {
+      lista = [];
     }
+  }
+
+  // Filtros de búsqueda
+  const sedeVal = (filtroSede && filtroSede.value || '').trim().toLowerCase();
+  const fechaVal = (filtroFecha && filtroFecha.value) || '';
+
+  let filtrados = lista.filter(p => {
+    const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
+    const fechaPac = p.fechaModificacion || p.fecha || p.fechaIngreso || '';
+    const coincideFecha = !fechaVal || fechaPac.startsWith(fechaVal);
+    return coincideSede && coincideFecha;
   });
+
+  // Ordenar por Estado
+  const ordenEstado = {
+    'En espera': 1,
+    'En atención': 2,
+    'Programado': 3,
+    'Atendido': 4,
+    'Entregado': 5
+  };
+
+  filtrados.sort((a, b) => {
+    const estA = ordenEstado[a.estado] || 99;
+    const estB = ordenEstado[b.estado] || 99;
+    if (estA !== estB) return estA - estB;
+    const fechaA = a.fechaModificacion || a.fecha || '';
+    const fechaB = b.fechaModificacion || b.fecha || '';
+    return fechaB.localeCompare(fechaA);
+  });
+
+  // Paginación
+  const totalPaginas = Math.ceil(filtrados.length / pacientesPorPaginaResumen) || 1;
+  if (paginaResumenActual > totalPaginas) paginaResumenActual = 1;
+
+  const inicio = (paginaResumenActual - 1) * pacientesPorPaginaResumen;
+  const pagina = filtrados.slice(inicio, inicio + pacientesPorPaginaResumen);
+
+  tablaResumen.innerHTML = '';
+
+  if (pagina.length === 0) {
+    tablaResumen.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:20px; color:#888;">
+          No hay registros de pacientes disponibles.
+        </td>
+      </tr>`;
+    renderizarPaginacionResumen(0);
+    return;
+  }
+
+  // Dibujar filas de la tabla
+  pagina.forEach(p => {
+    const tr = document.createElement('tr');
+
+    // Colores por estado
+    let bg = '#ffffff';
+    if (p.estado === 'En espera') bg = '#ffe5e5';
+    else if (p.estado === 'En atención') bg = '#fff5cc';
+    else if (p.estado === 'Programado') bg = '#e1bee7';
+    else if (p.estado === 'Atendido') bg = '#d5f5d5';
+    else if (p.estado === 'Entregado') bg = '#f0f0f0';
+
+    tr.style.backgroundColor = bg;
+
+    const fechaTexto = p.fechaModificacion || p.fecha || p.fechaIngreso || '-';
+
+    tr.innerHTML = `
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.sede || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.nombres || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.estudios || p.estudio || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || 1}</td>
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.estado || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto.replace('T', ' ')}</td>
+    `;
+    tablaResumen.appendChild(tr);
+  });
+
+  renderizarPaginacionResumen(totalPaginas);
 }
 
-/* Renderizar lista en tiempo real */
-function renderSedes(snapshot) {
-  listaSedes.innerHTML = "";
-  if (!snapshot || !snapshot.exists()) return;
-  snapshot.forEach((childSnap) => {
-    const key = childSnap.key;
-    const data = childSnap.val() || {};
-    const nombre = data.nombre || "";
+// Renderizar botones numéricos de paginación
+function renderizarPaginacionResumen(totalPaginas) {
+  const pagContainer = document.getElementById('paginacionResumen');
+  if (!pagContainer) return;
+  pagContainer.innerHTML = '';
+  if (totalPaginas <= 1) return;
 
-    const li = document.createElement("li");
-    li.style.display = "flex";
-    li.style.justifyContent = "space-between";
-    li.style.alignItems = "center";
-
-    const span = document.createElement("div");
-    span.className = "sede-nombre";
-    span.textContent = nombre;
-
-    const actions = document.createElement("div");
-    actions.className = "sede-actions";
-
-    const btnEdit = document.createElement("button");
-    btnEdit.className = "edit";
-    btnEdit.textContent = "✏️";
-    btnEdit.title = "Editar";
-    btnEdit.addEventListener("click", () => editarSede(key, nombre));
-
-    const btnDel = document.createElement("button");
-    btnDel.className = "del";
-    btnDel.textContent = "🗑";
-    btnDel.title = "Eliminar";
-    btnDel.addEventListener("click", () => eliminarSede(key, nombre));
-
-    actions.appendChild(btnEdit);
-    actions.appendChild(btnDel);
-
-    li.appendChild(span);
-    li.appendChild(actions);
-
-    listaSedes.appendChild(li);
-  });
-}
-
-/* Escuchar sedes */
-onValue(ref(db, "sedes"), (snap) => renderSedes(snap), (err) => {
-  console.error("Error escuchando sedes:", err);
-});
-
-/* Editar sede */
-async function editarSede(id, currentName) {
-  const nuevo = prompt("Editar nombre de la sede:", currentName);
-  if (!nuevo) return;
-  const trimmed = nuevo.trim();
-  if (!trimmed) return alert("Nombre inválido.");
-  try {
-    await update(ref(db, `sedes/${id}`), { nombre: trimmed, updatedAt: Date.now() });
-  } catch (err) {
-    console.error("Error editando sede:", err);
-    alert("Error al editar sede: " + (err.message || err));
+  for (let i = 1; i <= totalPaginas; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      background: ${i === paginaResumenActual ? '#3d0a11' : '#fff'};
+      color: ${i === paginaResumenActual ? '#fff' : '#333'};
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: ${i === paginaResumenActual ? 'bold' : 'normal'};
+    `;
+    btn.onclick = () => {
+      paginaResumenActual = i;
+      cargarModuloResumen();
+    };
+    pagContainer.appendChild(btn);
   }
 }
 
-/* Eliminar sede */
-async function eliminarSede(id, currentName) {
-  const ok = confirm(`Eliminar sede "${currentName}" ? (Se recomienda inactivar en producción)`);
-  if (!ok) return;
-  try {
-    await remove(ref(db, `sedes/${id}`));
-  } catch (err) {
-    console.error("Error eliminando sede:", err);
-    alert("Error al eliminar sede: " + (err.message || err));
-  }
-}
+// Escuchadores de eventos para los filtros
+document.addEventListener('DOMContentLoaded', () => {
+  const filtroSede = document.getElementById('filtroSedeResumen');
+  const filtroFecha = document.getElementById('filtroFechaResumen');
 
-/* Helper: cargar sedes en un select (si otro módulo lo necesita) */
-export async function cargarSedesEnSelect(selectId) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  sel.innerHTML = `<option value="">Seleccione</option>`;
-  try {
-    const snap = await get(child(ref(db), "sedes"));
-    if (!snap.exists()) return;
-    snap.forEach(childSnap => {
-      const opt = document.createElement("option");
-      opt.value = childSnap.key;
-      opt.textContent = (childSnap.val() || {}).nombre || "";
-      sel.appendChild(opt);
+  if (filtroSede) {
+    filtroSede.addEventListener('input', () => {
+      paginaResumenActual = 1;
+      cargarModuloResumen();
     });
-  } catch (e) {
-    console.error("Error cargando sedes para select:", e);
   }
-}
+
+  if (filtroFecha) {
+    filtroFecha.addEventListener('change', () => {
+      paginaResumenActual = 1;
+      cargarModuloResumen();
+    });
+  }
+});
