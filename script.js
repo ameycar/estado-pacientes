@@ -4,6 +4,36 @@ import {
   ref, onValue, push, update, remove, set
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
+// ---------- Función Helper: Hora Oficial de Perú (America/Lima) ----------
+function obtenerFechaHoraPeru() {
+  const ahora = new Date();
+  const opciones = { 
+    timeZone: 'America/Lima', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit',
+    hour12: false 
+  };
+  const partes = new Intl.DateTimeFormat('en-CA', opciones).formatToParts(ahora);
+  const getPart = (type) => partes.find(p => p.type === type).value;
+  return `${getPart('year')}-${getPart('month')}-${getPart('day')}T${getPart('hour')}:${getPart('minute')}:${getPart('second')}`;
+}
+
+// Formateador visual para mostrar en la interfaz (DD/MM/YYYY HH:mm)
+function formatearFechaVista(fechaRaw) {
+  if (!fechaRaw) return '';
+  let str = String(fechaRaw);
+  if (str.includes('T')) {
+    const [fecha, hora] = str.split('T');
+    const [yyyy, mm, dd] = fecha.split('-');
+    return `${dd}/${mm}/${yyyy} ${hora.substring(0, 5)}`;
+  }
+  return str;
+}
+
 // ---------- Constantes y DOM ----------
 const ADMIN_PASS = '1234'; // Contraseña de administrador
 const formulario = document.getElementById('formulario');
@@ -198,7 +228,9 @@ if (formulario) {
     const precio = document.getElementById('precio').value.trim();
     const pf = document.getElementById('pf').value.trim();
     const estado = 'En espera';
-    const fechaModificacion = new Date().toISOString().slice(0, 16);
+
+    // ASIGNACIÓN DE FECHA OFICIAL EN HORA PERUANA (America/Lima)
+    const fechaModificacion = obtenerFechaHoraPeru();
 
     if (estudiosArr.includes('Eco pb')) {
       const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
@@ -331,6 +363,9 @@ function mostrarPacientesPagina() {
       ? `<input type="checkbox" ${p.informe === 'SI' ? 'checked' : ''} onclick="editarConClaveCheckbox(event,'${p.key}','informe', this)">`
       : `<div style="width:60px; text-align:center;">${p.informe === 'SI' ? 'SI' : ''}</div>`;
 
+    // FORMATEAR FECHA PARA MOSTRAR LIMPIA EN LA TABLA
+    const fechaTextoLimpia = formatearFechaVista(p.fechaModificacion);
+
     const estadoSelect = `
       <select onchange="cambiarEstado('${p.key}', this.value)" ${ (p.estado === 'Entregado') ? 'disabled' : '' } >
         <option ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
@@ -339,7 +374,7 @@ function mostrarPacientesPagina() {
         <option ${p.estado === 'Atendido' ? 'selected' : ''}>Atendido</option>
         <option ${p.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
       </select>
-      <div style="font-size:10px; color:var(--muted);">${p.fechaModificacion || ''}</div>
+      <div style="font-size:10px; color:var(--muted); margin-top:2px;">${fechaTextoLimpia}</div>
     `;
 
     const accionEliminar = `<button class="btn small danger" onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
@@ -458,23 +493,15 @@ function cambiarEstado(key, nuevoEstado) {
     return;
   }
 
-    const fechaModificacion = new Intl.DateTimeFormat('sv-SE', { 
-    timeZone: 'America/Lima', 
-    year: 'numeric', 
-    month: '2-digit', 
-    day: '2-digit', 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit' 
-  }).format(new Date()).replace(' ', 'T');
+  // OBTENER FECHA ACTUALIZADA EN ZONA HORARIA DE PERÚ
+  const fechaModificacion = obtenerFechaHoraPeru();
 
   if (nuevoEstado === 'En atención') {
     const turno = {
       nombre: actual.nombres + ' ' + actual.apellidos,
       sede: actual.sede,
       estudio: actual.estudios,
-      hora: new Date().toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })
-
+      hora: new Date().toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' })
     };
     set(ref(db, `turnoActual/${keyify(actual.sede)}`), turno);
     set(ref(db, 'turnoActual_global'), turno);
@@ -497,7 +524,7 @@ function llamarOtraVez(key) {
     nombre: actual.nombres + ' ' + actual.apellidos,
     sede: actual.sede,
     estudio: actual.estudios,
-    hora: new Date().toLocaleTimeString()
+    hora: new Date().toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' })
   };
   set(ref(db, `turnoActual/${keyify(actual.sede)}`), turno);
   set(ref(db, 'turnoActual_global'), turno);
@@ -641,7 +668,9 @@ function guardarEntregaDesdeModal() {
   }
 
   const dataURL = canvas.toDataURL('image/png');
-  const fechaModificacion = new Date().toISOString().slice(0, 16);
+  
+  // FECHA EN HORA PERUANA AL ENTREGAR
+  const fechaModificacion = obtenerFechaHoraPeru();
 
   update(ref(db, 'pacientes/' + firmaActualPaciente), {
     estado: 'Entregado',
@@ -705,7 +734,7 @@ function exportarExcel() {
     CD: p.cd,
     Informe: p.informe,
     Entregado: p.estado === 'Entregado' ? 'Sí' : 'No',
-    Fecha: p.fechaModificacion
+    Fecha: formatearFechaVista(p.fechaModificacion)
   }));
   const worksheet = XLSX.utils.json_to_sheet(datos);
   const workbook = XLSX.utils.book_new();
