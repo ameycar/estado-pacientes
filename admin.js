@@ -1,3 +1,118 @@
+// Función principal para obtener datos y llenar el Resumen
+async function cargarModuloResumen() {
+  const tablaResumen = document.getElementById('tabla-resumen');
+  const filtroSede = document.getElementById('filtroSedeResumen');
+  const filtroFecha = document.getElementById('filtroFechaResumen');
+
+  if (!tablaResumen) return;
+
+  tablaResumen.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align:center; padding:20px; color:#666;">
+        Cargando pacientes desde la base de datos...
+      </td>
+    </tr>`;
+
+  let lista = [];
+
+  try {
+    // Intentar leer directo de la colección de Firebase / Firestore
+    if (typeof db !== 'undefined') {
+      const snapshot = await db.collection('pacientes').get();
+      snapshot.forEach(doc => {
+        lista.push({ id: doc.id, ...doc.data() });
+      });
+    } else if (window.pacientes && window.pacientes.length > 0) {
+      lista = window.pacientes;
+    }
+  } catch (error) {
+    console.error("Error al cargar pacientes:", error);
+  }
+
+  // Filtros de búsqueda
+  const sedeVal = (filtroSede && filtroSede.value || '').trim().toLowerCase();
+  const fechaVal = (filtroFecha && filtroFecha.value) || '';
+
+  let filtrados = lista.filter(p => {
+    const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
+    const fechaPac = p.fechaModificacion || p.fecha || p.fechaIngreso || p.creadoEn || '';
+    const coincideFecha = !fechaVal || String(fechaPac).startsWith(fechaVal);
+    return coincideSede && coincideFecha;
+  });
+
+  // Ordenar por Estado
+  const ordenEstado = {
+    'En espera': 1,
+    'En atención': 2,
+    'Programado': 3,
+    'Atendido': 4,
+    'Entregado': 5
+  };
+
+  filtrados.sort((a, b) => {
+    const estA = ordenEstado[a.estado] || 99;
+    const estB = ordenEstado[b.estado] || 99;
+    if (estA !== estB) return estA - estB;
+    const fechaA = String(a.fechaModificacion || a.fecha || '');
+    const fechaB = String(b.fechaModificacion || b.fecha || '');
+    return fechaB.localeCompare(fechaA);
+  });
+
+  // Paginación
+  const totalPaginas = Math.ceil(filtrados.length / pacientesPorPaginaResumen) || 1;
+  if (paginaResumenActual > totalPaginas) paginaResumenActual = 1;
+
+  const inicio = (paginaResumenActual - 1) * pacientesPorPaginaResumen;
+  const pagina = filtrados.slice(inicio, inicio + pacientesPorPaginaResumen);
+
+  tablaResumen.innerHTML = '';
+
+  if (pagina.length === 0) {
+    tablaResumen.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:20px; color:#888;">
+          No se encontraron registros de pacientes.
+        </td>
+      </tr>`;
+    renderizarPaginacionResumen(0);
+    return;
+  }
+
+  // Renderizar filas
+  pagina.forEach(p => {
+    const tr = document.createElement('tr');
+
+    let bg = '#ffffff';
+    if (p.estado === 'En espera') bg = '#ffe5e5';
+    else if (p.estado === 'En atención') bg = '#fff5cc';
+    else if (p.estado === 'Programado') bg = '#e1bee7';
+    else if (p.estado === 'Atendido') bg = '#d5f5d5';
+    else if (p.estado === 'Entregado') bg = '#f0f0f0';
+
+    tr.style.backgroundColor = bg;
+
+    let fechaTexto = p.fechaModificacion || p.fecha || p.fechaIngreso || '-';
+    if (typeof fechaTexto === 'object' && fechaTexto.toDate) {
+      fechaTexto = fechaTexto.toDate().toISOString().replace('T', ' ').substring(0, 16);
+    } else {
+      fechaTexto = String(fechaTexto).replace('T', ' ').substring(0, 16);
+    }
+
+    tr.innerHTML = `
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.sede || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || p.apellido || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.nombres || p.nombre || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.estudios || p.estudio || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || p.cantidad || 1}</td>
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.estado || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto}</td>
+    `;
+    tablaResumen.appendChild(tr);
+  });
+
+  renderizarPaginacionResumen(totalPaginas);
+}
+
 // Variable global para controlar la paginación del resumen
 let paginaResumenActual = 1;
 const pacientesPorPaginaResumen = 15;
