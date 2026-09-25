@@ -4,34 +4,60 @@ const pacientesPorPaginaResumen = 15;
 
 // Navegación entre pestañas
 function mostrarSeccion(nombreSeccion) {
-  // Ocultar todas las secciones
   const secciones = document.querySelectorAll('.seccion');
   secciones.forEach(sec => sec.style.display = 'none');
 
-  // Mostrar la sección activa
   const seccionActiva = document.getElementById(nombreSeccion);
   if (seccionActiva) {
     seccionActiva.style.display = 'block';
   }
 
-  // Cargar datos al abrir la pestaña Resumen
   if (nombreSeccion === 'resumen') {
     cargarModuloResumen();
   }
 }
 
-// Cargar y filtrar los datos de la pestaña Resumen
-function cargarModuloResumen() {
+// Función principal para obtener datos y llenar el Resumen
+async function cargarModuloResumen() {
   const tablaResumen = document.getElementById('tabla-resumen');
   const filtroSede = document.getElementById('filtroSedeResumen');
   const filtroFecha = document.getElementById('filtroFechaResumen');
 
   if (!tablaResumen) return;
 
-  // Obtener pacientes de las variables globales comunes o LocalStorage/Firestore
-  let lista = window.pacientes || window.datosPacientes || window.listaPacientes || [];
+  // Mensaje visual de carga
+  tablaResumen.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align:center; padding:20px; color:#666;">
+        Cargando pacientes...
+      </td>
+    </tr>`;
 
-  if ((!lista || lista.length === 0) && localStorage.getItem('pacientes')) {
+  let lista = [];
+
+  // 1. Intentar obtener de variables globales existentes
+  if (Array.isArray(window.pacientes) && window.pacientes.length > 0) {
+    lista = window.pacientes;
+  } else if (Array.isArray(window.datosPacientes) && window.datosPacientes.length > 0) {
+    lista = window.datosPacientes;
+  } 
+  // 2. Intentar llamar a funciones de carga de Firebase/Firestore si existen en el proyecto
+  else if (typeof window.obtenerPacientes === 'function') {
+    try { lista = await window.obtenerPacientes(); } catch(e) {}
+  } else if (typeof window.cargarPacientes === 'function') {
+    try { lista = await window.cargarPacientes(); } catch(e) {}
+  } 
+  // 3. Consultar directamente a Firestore si el SDK está cargado
+  else if (typeof db !== 'undefined' && db.collection) {
+    try {
+      const snapshot = await db.collection('pacientes').get();
+      lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+      console.error("Error al consultar Firestore directamente:", e);
+    }
+  }
+  // 4. Fallback a LocalStorage si existiera copia local
+  else if (localStorage.getItem('pacientes')) {
     try {
       lista = JSON.parse(localStorage.getItem('pacientes')) || [];
     } catch (e) {
@@ -39,13 +65,16 @@ function cargarModuloResumen() {
     }
   }
 
+  // Guardar copia global para no re-consultar innecesariamente
+  window.pacientes = lista;
+
   // Filtros de búsqueda
   const sedeVal = (filtroSede && filtroSede.value || '').trim().toLowerCase();
   const fechaVal = (filtroFecha && filtroFecha.value) || '';
 
   let filtrados = lista.filter(p => {
     const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
-    const fechaPac = p.fechaModificacion || p.fecha || p.fechaIngreso || '';
+    const fechaPac = p.fechaModificacion || p.fecha || p.fechaIngreso || p.creadoEn || '';
     const coincideFecha = !fechaVal || fechaPac.startsWith(fechaVal);
     return coincideSede && coincideFecha;
   });
@@ -81,7 +110,7 @@ function cargarModuloResumen() {
     tablaResumen.innerHTML = `
       <tr>
         <td colspan="7" style="text-align:center; padding:20px; color:#888;">
-          No hay registros de pacientes disponibles.
+          No se encontraron registros de pacientes.
         </td>
       </tr>`;
     renderizarPaginacionResumen(0);
@@ -102,16 +131,22 @@ function cargarModuloResumen() {
 
     tr.style.backgroundColor = bg;
 
-    const fechaTexto = p.fechaModificacion || p.fecha || p.fechaIngreso || '-';
+    // Formatear fecha
+    let fechaTexto = p.fechaModificacion || p.fecha || p.fechaIngreso || '-';
+    if (typeof fechaTexto === 'object' && fechaTexto.toDate) {
+      fechaTexto = fechaTexto.toDate().toISOString().replace('T', ' ').substring(0, 16);
+    } else {
+      fechaTexto = String(fechaTexto).replace('T', ' ').substring(0, 16);
+    }
 
     tr.innerHTML = `
       <td style="padding:8px; border:1px solid #ddd;"><strong>${p.sede || '-'}</strong></td>
-      <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || '-'}</td>
-      <td style="padding:8px; border:1px solid #ddd;">${p.nombres || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || p.apellido || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.nombres || p.nombre || '-'}</td>
       <td style="padding:8px; border:1px solid #ddd;">${p.estudios || p.estudio || '-'}</td>
-      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || 1}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || p.cantidad || 1}</td>
       <td style="padding:8px; border:1px solid #ddd;"><strong>${p.estado || '-'}</strong></td>
-      <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto.replace('T', ' ')}</td>
+      <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto}</td>
     `;
     tablaResumen.appendChild(tr);
   });
@@ -119,7 +154,7 @@ function cargarModuloResumen() {
   renderizarPaginacionResumen(totalPaginas);
 }
 
-// Renderizar botones numéricos de paginación
+// Renderizar botones de paginación
 function renderizarPaginacionResumen(totalPaginas) {
   const pagContainer = document.getElementById('paginacionResumen');
   if (!pagContainer) return;
