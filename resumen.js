@@ -6,10 +6,11 @@ const tablaResumen = document.getElementById('tabla-resumen');
 const filtroSede = document.getElementById('filtroSede');
 const filtroFecha = document.getElementById('filtroFecha');
 const paginacionDiv = document.getElementById('paginacion');
+const contadorEl = document.getElementById('contadorResumenEnEspera');
 
 let pacientesOriginal = [];
 let paginaActual = 1;
-const pacientesPorPagina = 50;
+const pacientesPorPagina = 15;
 let pacientesFiltrados = [];
 
 // ---------- Cargar Pacientes en Tiempo Real ----------
@@ -22,18 +23,25 @@ function cargarPacientes() {
       pacientesOriginal.push(paciente);
     });
 
-    aplicarFiltros(true); // Reinicia a la página 1 al recibir datos nuevos
+    actualizarContadorGlobal();
+    aplicarFiltros(true);
   }, error => {
     console.error("Error al cargar pacientes en resumen:", error);
   });
 }
 
+// Actualizar contador total de pacientes en espera
+function actualizarContadorGlobal() {
+  if (contadorEl) {
+    const totalEnEspera = pacientesOriginal.filter(p => p.estado === 'En espera').length;
+    contadorEl.textContent = totalEnEspera;
+  }
+}
+
 // ---------- Aplicar Filtros y Ordenamiento ----------
 function aplicarFiltros(reiniciarPagina = false) {
-  if (!filtroSede || !filtroFecha) return;
-
-  const sedeFiltro = filtroSede.value.trim().toLowerCase();
-  const fechaFiltro = filtroFecha.value;
+  const sedeFiltro = filtroSede ? filtroSede.value.trim().toLowerCase() : '';
+  const fechaFiltro = filtroFecha ? filtroFecha.value : '';
 
   pacientesFiltrados = pacientesOriginal.slice();
 
@@ -60,10 +68,10 @@ function aplicarFiltros(reiniciarPagina = false) {
 
     if (estadoA !== estadoB) return estadoA - estadoB;
 
-    const fechaA = new Date(a.fechaModificacion || '2000-01-01T00:00:00');
-    const fechaB = new Date(b.fechaModificacion || '2000-01-01T00:00:00');
+    const fechaA = String(a.fechaModificacion || '');
+    const fechaB = String(b.fechaModificacion || '');
 
-    return fechaB - fechaA; // Los más recientes primero
+    return fechaB.localeCompare(fechaA);
   });
 
   if (reiniciarPagina) paginaActual = 1;
@@ -91,34 +99,34 @@ function mostrarPacientesPaginados() {
 
   pacientesPagina.forEach(p => {
     const tr = document.createElement('tr');
+    
+    // Formatear fecha para la vista (DD/MM/YYYY HH:mm)
+    let fechaTexto = p.fechaModificacion || p.fecha || '-';
+    if (fechaTexto.includes('T')) {
+      const [fecha, hora] = fechaTexto.split('T');
+      const [yyyy, mm, dd] = fecha.split('-');
+      fechaTexto = `${dd}/${mm}/${yyyy} ${hora.substring(0, 5)}`;
+    }
+
     tr.innerHTML = `
       <td><strong>${p.sede || ''}</strong></td>
       <td>${p.apellidos || ''}</td>
       <td>${p.nombres || ''}</td>
       <td>${p.estudios || ''}</td>
-      <td style="text-align:center;">${p.cant || ''}</td>
-      <td><strong>${p.estado || ''}</strong></td>
-      <td style="font-size: 12px;">${p.fechaModificacion ? p.fechaModificacion.replace('T', ' ') : ''}</td>
+      <td style="text-align:center;">${p.cant || 1}</td>
+      <td><strong>${p.estado || 'En espera'}</strong></td>
+      <td style="font-size: 12px;">${fechaTexto}</td>
     `;
 
     // Asignación de colores según estado
     tr.style.backgroundColor =
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
-      p.estado === 'Programado' ? '#cce5ff' :
+      p.estado === 'Programado' ? '#e1bee7' :
       p.estado === 'Atendido' ? '#d5f5d5' : '#f0f0f0';
 
     tablaResumen.appendChild(tr);
   });
-// Actualizar contador numérico de pacientes en espera
-const contadorEl = document.getElementById('contadorResumenEnEspera');
-if (contadorEl) {
-  const lista = (typeof pacientesFiltrados !== 'undefined') ? pacientesFiltrados : (window.pacientes || []);
-  const totalEnEspera = lista.filter(p => p.estado === 'En espera').length;
-  contadorEl.textContent = totalEnEspera;
-}
-
-}
 
   renderizarPaginacion(totalPaginas);
 }
@@ -130,25 +138,33 @@ function renderizarPaginacion(totalPaginas) {
 
   if (totalPaginas <= 1) return;
 
+  // Botón Anterior
+  const btnAnt = document.createElement("button");
+  btnAnt.className = "pag-quad";
+  btnAnt.innerText = "‹";
+  btnAnt.disabled = paginaActual === 1;
+  btnAnt.onclick = () => { paginaActual--; mostrarPacientesPaginados(); };
+  paginacionDiv.appendChild(btnAnt);
+
+  // Cuadritos Numerados
   for (let i = 1; i <= totalPaginas; i++) {
     const btn = document.createElement('button');
     btn.textContent = i;
-    btn.style.margin = '0 2px';
-    btn.style.padding = '5px 10px';
-    btn.disabled = i === paginaActual;
-    
-    if (i === paginaActual) {
-      btn.style.fontWeight = 'bold';
-      btn.style.backgroundColor = '#008080';
-      btn.style.color = '#fff';
-    }
-
+    btn.className = `pag-quad ${i === paginaActual ? 'activa' : ''}`;
     btn.addEventListener('click', () => {
       paginaActual = i;
       mostrarPacientesPaginados();
     });
     paginacionDiv.appendChild(btn);
   }
+
+  // Botón Siguiente
+  const btnSig = document.createElement("button");
+  btnSig.className = "pag-quad";
+  btnSig.innerText = "›";
+  btnSig.disabled = paginaActual === totalPaginas;
+  btnSig.onclick = () => { paginaActual++; mostrarPacientesPaginados(); };
+  paginacionDiv.appendChild(btnSig);
 }
 
 // ---------- Event Listeners de Filtros ----------
