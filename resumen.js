@@ -110,12 +110,14 @@ function mostrarPacientesPaginados() {
 
     tablaResumen.appendChild(tr);
   });
-// Actualizar contador numérico de pacientes "En espera"
+// Actualizar contador numérico de pacientes en espera
 const contadorEl = document.getElementById('contadorResumenEnEspera');
 if (contadorEl) {
-  // Cuenta cuántos pacientes en la lista actual tienen el estado 'En espera'
-  const totalEnEspera = (listaPacientesResumen || []).filter(p => p.estado === 'En espera').length;
+  const lista = (typeof pacientesFiltrados !== 'undefined') ? pacientesFiltrados : (window.pacientes || []);
+  const totalEnEspera = lista.filter(p => p.estado === 'En espera').length;
   contadorEl.textContent = totalEnEspera;
+}
+
 }
 
   renderizarPaginacion(totalPaginas);
