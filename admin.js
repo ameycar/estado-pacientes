@@ -1,8 +1,10 @@
-// Variable global para controlar la paginación del resumen
+// admin.js (Resumen de Pacientes)
+
 let paginaResumenActual = 1;
 const pacientesPorPaginaResumen = 15;
+let listaPacientesResumen = [];
 
-// Navegación entre pestañas
+// Navegación entre pestañas del Admin
 function mostrarSeccion(nombreSeccion) {
   const secciones = document.querySelectorAll('.seccion');
   secciones.forEach(sec => sec.style.display = 'none');
@@ -17,57 +19,74 @@ function mostrarSeccion(nombreSeccion) {
   }
 }
 
-// Cargar y filtrar los datos de la pestaña Resumen
+// Cargar pacientes desde Firebase/Variables Globales
 async function cargarModuloResumen() {
+  const tablaResumen = document.getElementById('tabla-resumen');
+  if (!tablaResumen) return;
+
+  // Si ya tenemos datos precargados, aplicamos filtros de inmediato
+  if (window.pacientes && window.pacientes.length > 0) {
+    listaPacientesResumen = window.pacientes;
+    renderizarTablaResumen();
+    return;
+  }
+
+  tablaResumen.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align:center; padding:20px; color:#666;">
+        Cargando resumen de pacientes...
+      </td>
+    </tr>`;
+
+  try {
+    // 1. Si db está disponible (Firebase v8 o v9 en global)
+    if (typeof db !== 'undefined' && db.collection) {
+      const snapshot = await db.collection('pacientes').get();
+      const docs = [];
+      snapshot.forEach(doc => docs.push({ key: doc.id, ...doc.data() }));
+      listaPacientesResumen = docs;
+    } 
+    // 2. Si viene de LocalStorage
+    else if (localStorage.getItem('pacientes')) {
+      listaPacientesResumen = JSON.parse(localStorage.getItem('pacientes')) || [];
+    }
+    
+    window.pacientes = listaPacientesResumen;
+    renderizarTablaResumen();
+  } catch (error) {
+    console.error("Error al cargar resumen:", error);
+    renderizarTablaResumen();
+  }
+}
+
+// Renderizar filas con Filtros y Paginación
+function renderizarTablaResumen() {
   const tablaResumen = document.getElementById('tabla-resumen');
   const filtroSede = document.getElementById('filtroSedeResumen');
   const filtroFecha = document.getElementById('filtroFechaResumen');
 
   if (!tablaResumen) return;
 
-  tablaResumen.innerHTML = `
-    <tr>
-      <td colspan="7" style="text-align:center; padding:20px; color:#666;">
-        Cargando pacientes desde la base de datos...
-      </td>
-    </tr>`;
-
-  let lista = [];
-
-  try {
-    // 1. Intentar consultar directamente a Firestore
-    if (typeof db !== 'undefined' && db.collection) {
-      const snapshot = await db.collection('pacientes').get();
-      snapshot.forEach(doc => {
-        lista.push({ id: doc.id, ...doc.data() });
-      });
-    } 
-    // 2. Si no hay db directa, verificar variables globales o funciones de ayuda
-    else if (Array.isArray(window.pacientes) && window.pacientes.length > 0) {
-      lista = window.pacientes;
-    } else if (typeof window.obtenerPacientes === 'function') {
-      lista = await window.obtenerPacientes();
-    } else if (localStorage.getItem('pacientes')) {
-      lista = JSON.parse(localStorage.getItem('pacientes')) || [];
-    }
-  } catch (error) {
-    console.error("Error al consultar la base de datos:", error);
-  }
-
-  window.pacientes = lista;
-
-  // Filtros de búsqueda
   const sedeVal = (filtroSede && filtroSede.value || '').trim().toLowerCase();
   const fechaVal = (filtroFecha && filtroFecha.value) || '';
 
-  let filtrados = lista.filter(p => {
+  // Filtrado
+  let filtrados = (listaPacientesResumen || []).filter(p => {
     const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
-    const fechaPac = p.fechaModificacion || p.fecha || p.fechaIngreso || p.creadoEn || '';
-    const coincideFecha = !fechaVal || String(fechaPac).startsWith(fechaVal);
+
+    // Normalizar la fecha del paciente (YYYY-MM-DD)
+    let fechaPacStr = '';
+    const fechaRaw = p.fechaModificacion || p.fecha || p.fechaIngreso || '';
+    if (fechaRaw) {
+      fechaPacStr = String(fechaRaw).substring(0, 10); // Toma "2026-09-25"
+    }
+
+    const coincideFecha = !fechaVal || fechaPacStr === fechaVal;
+
     return coincideSede && coincideFecha;
   });
 
-  // Ordenar por Estado
+  // Ordenamiento por Estado y luego por Fecha descendente
   const ordenEstado = {
     'En espera': 1,
     'En atención': 2,
@@ -80,6 +99,7 @@ async function cargarModuloResumen() {
     const estA = ordenEstado[a.estado] || 99;
     const estB = ordenEstado[b.estado] || 99;
     if (estA !== estB) return estA - estB;
+
     const fechaA = String(a.fechaModificacion || a.fecha || '');
     const fechaB = String(b.fechaModificacion || b.fecha || '');
     return fechaB.localeCompare(fechaA);
@@ -105,7 +125,7 @@ async function cargarModuloResumen() {
     return;
   }
 
-  // Dibujar filas de la tabla
+  // Generar filas
   pagina.forEach(p => {
     const tr = document.createElement('tr');
 
@@ -119,12 +139,12 @@ async function cargarModuloResumen() {
 
     tr.style.backgroundColor = bg;
 
-    // Formatear fecha
-    let fechaTexto = p.fechaModificacion || p.fecha || p.fechaIngreso || '-';
-    if (typeof fechaTexto === 'object' && fechaTexto.toDate) {
-      fechaTexto = fechaTexto.toDate().toISOString().replace('T', ' ').substring(0, 16);
-    } else {
-      fechaTexto = String(fechaTexto).replace('T', ' ').substring(0, 16);
+    // Formatear fecha para la vista (DD/MM/YYYY HH:mm)
+    let fechaTexto = p.fechaModificacion || p.fecha || '-';
+    if (fechaTexto.includes('T')) {
+      const [f, h] = fechaTexto.split('T');
+      const [yyyy, mm, dd] = f.split('-');
+      fechaTexto = `${dd}/${mm}/${yyyy} ${h.substring(0, 5)}`;
     }
 
     tr.innerHTML = `
@@ -132,7 +152,7 @@ async function cargarModuloResumen() {
       <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || p.apellido || '-'}</td>
       <td style="padding:8px; border:1px solid #ddd;">${p.nombres || p.nombre || '-'}</td>
       <td style="padding:8px; border:1px solid #ddd;">${p.estudios || p.estudio || '-'}</td>
-      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || p.cantidad || 1}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || 1}</td>
       <td style="padding:8px; border:1px solid #ddd;"><strong>${p.estado || '-'}</strong></td>
       <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto}</td>
     `;
@@ -142,7 +162,7 @@ async function cargarModuloResumen() {
   renderizarPaginacionResumen(totalPaginas);
 }
 
-// Renderizar botones de paginación
+// Botones de Paginación
 function renderizarPaginacionResumen(totalPaginas) {
   const pagContainer = document.getElementById('paginacionResumen');
   if (!pagContainer) return;
@@ -163,28 +183,35 @@ function renderizarPaginacionResumen(totalPaginas) {
     `;
     btn.onclick = () => {
       paginaResumenActual = i;
-      cargarModuloResumen();
+      renderizarTablaResumen();
     };
     pagContainer.appendChild(btn);
   }
 }
 
-// Escuchadores de eventos para los filtros
+// Listeners de los filtros
 document.addEventListener('DOMContentLoaded', () => {
   const filtroSede = document.getElementById('filtroSedeResumen');
   const filtroFecha = document.getElementById('filtroFechaResumen');
 
+  // Inicializar filtro de fecha libre
+  if (filtroFecha) filtroFecha.value = '';
+
   if (filtroSede) {
     filtroSede.addEventListener('input', () => {
       paginaResumenActual = 1;
-      cargarModuloResumen();
+      renderizarTablaResumen();
     });
   }
 
   if (filtroFecha) {
     filtroFecha.addEventListener('change', () => {
       paginaResumenActual = 1;
-      cargarModuloResumen();
+      renderizarTablaResumen();
     });
   }
 });
+
+// Asignar funciones globales
+window.mostrarSeccion = mostrarSeccion;
+window.cargarModuloResumen = cargarModuloResumen;
