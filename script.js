@@ -458,14 +458,23 @@ function cambiarEstado(key, nuevoEstado) {
     return;
   }
 
-  const fechaModificacion = new Date().toISOString().slice(0, 16);
+    const fechaModificacion = new Intl.DateTimeFormat('sv-SE', { 
+    timeZone: 'America/Lima', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+  }).format(new Date()).replace(' ', 'T');
 
   if (nuevoEstado === 'En atención') {
     const turno = {
       nombre: actual.nombres + ' ' + actual.apellidos,
       sede: actual.sede,
       estudio: actual.estudios,
-      hora: new Date().toLocaleTimeString()
+      hora: new Date().toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })
+
     };
     set(ref(db, `turnoActual/${keyify(actual.sede)}`), turno);
     set(ref(db, 'turnoActual_global'), turno);
