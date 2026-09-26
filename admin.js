@@ -1,125 +1,224 @@
-// admin.js (módulos v9)
-import { db } from "./firebase.js";
-import {
-  ref,
-  push,
-  onValue,
-  update,
-  remove,
-  get,
-  child
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+// admin.js (Resumen de Pacientes)
 
-/* DOM */
-const formSede = document.getElementById("formSede");
-const listaSedes = document.getElementById("listaSedes");
-const inputNombre = document.getElementById("sedeNombre");
+let paginaResumenActual = 1;
+const pacientesPorPaginaResumen = 15;
+let listaPacientesResumen = [];
 
-/* Agregar sede */
-if (formSede) {
-  formSede.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nombre = (inputNombre.value || "").trim();
-    if (!nombre) return alert("Ingresa nombre de sede.");
-    try {
-      await push(ref(db, "sedes"), { nombre, createdAt: Date.now() });
-      inputNombre.value = "";
-    } catch (err) {
-      console.error("Error al guardar sede:", err);
-      alert("Error al guardar sede: " + (err.message || err));
+// Navegación entre pestañas del Admin
+function mostrarSeccion(nombreSeccion) {
+  const secciones = document.querySelectorAll('.seccion');
+  secciones.forEach(sec => sec.style.display = 'none');
+
+  const seccionActiva = document.getElementById(nombreSeccion);
+  if (seccionActiva) {
+    seccionActiva.style.display = 'block';
+  }
+
+  if (nombreSeccion === 'resumen') {
+    cargarModuloResumen();
+  }
+}
+
+// Cargar pacientes desde Firebase/Variables Globales
+async function cargarModuloResumen() {
+  const tablaResumen = document.getElementById('tabla-resumen');
+  if (!tablaResumen) return;
+
+  // Si ya tenemos datos precargados, aplicamos filtros de inmediato
+  if (window.pacientes && window.pacientes.length > 0) {
+    listaPacientesResumen = window.pacientes;
+    renderizarTablaResumen();
+    return;
+  }
+
+  tablaResumen.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align:center; padding:20px; color:#666;">
+        Cargando resumen de pacientes...
+      </td>
+    </tr>`;
+
+  try {
+    // 1. Si db está disponible (Firebase v8 o v9 en global)
+    if (typeof db !== 'undefined' && db.collection) {
+      const snapshot = await db.collection('pacientes').get();
+      const docs = [];
+      snapshot.forEach(doc => docs.push({ key: doc.id, ...doc.data() }));
+      listaPacientesResumen = docs;
+    } 
+    // 2. Si viene de LocalStorage
+    else if (localStorage.getItem('pacientes')) {
+      listaPacientesResumen = JSON.parse(localStorage.getItem('pacientes')) || [];
     }
-  });
+    
+    window.pacientes = listaPacientesResumen;
+    renderizarTablaResumen();
+  } catch (error) {
+    console.error("Error al cargar resumen:", error);
+    renderizarTablaResumen();
+  }
 }
 
-/* Renderizar lista en tiempo real */
-function renderSedes(snapshot) {
-  listaSedes.innerHTML = "";
-  if (!snapshot || !snapshot.exists()) return;
-  snapshot.forEach((childSnap) => {
-    const key = childSnap.key;
-    const data = childSnap.val() || {};
-    const nombre = data.nombre || "";
+// Renderizar filas con Filtros, Contador y Paginación
+function renderizarTablaResumen() {
+  const tablaResumen = document.getElementById('tabla-resumen');
+  const filtroSede = document.getElementById('filtroSedeResumen');
+  const filtroFecha = document.getElementById('filtroFechaResumen');
+  const contadorEl = document.getElementById('contadorResumenEnEspera');
 
-    const li = document.createElement("li");
-    li.style.display = "flex";
-    li.style.justifyContent = "space-between";
-    li.style.alignItems = "center";
+  if (!tablaResumen) return;
 
-    const span = document.createElement("div");
-    span.className = "sede-nombre";
-    span.textContent = nombre;
+  // 1. ACTUALIZAR EL CONTADOR DE PACIENTES EN ESPERA (GLOBAL)
+  if (contadorEl) {
+    const totalEnEspera = (listaPacientesResumen || []).filter(p => p.estado === 'En espera').length;
+    contadorEl.textContent = totalEnEspera;
+  }
 
-    const actions = document.createElement("div");
-    actions.className = "sede-actions";
+  const sedeVal = (filtroSede && filtroSede.value || '').trim().toLowerCase();
+  const fechaVal = (filtroFecha && filtroFecha.value) || '';
 
-    const btnEdit = document.createElement("button");
-    btnEdit.className = "edit";
-    btnEdit.textContent = "✏️";
-    btnEdit.title = "Editar";
-    btnEdit.addEventListener("click", () => editarSede(key, nombre));
+  // 2. FILTRADO POR SEDE Y FECHA
+  let filtrados = (listaPacientesResumen || []).filter(p => {
+    const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
 
-    const btnDel = document.createElement("button");
-    btnDel.className = "del";
-    btnDel.textContent = "🗑";
-    btnDel.title = "Eliminar";
-    btnDel.addEventListener("click", () => eliminarSede(key, nombre));
+    // Normalizar la fecha del paciente (YYYY-MM-DD)
+    let fechaPacStr = '';
+    const fechaRaw = p.fechaModificacion || p.fecha || p.fechaIngreso || '';
+    if (fechaRaw) {
+      fechaPacStr = String(fechaRaw).substring(0, 10);
+    }
 
-    actions.appendChild(btnEdit);
-    actions.appendChild(btnDel);
+    const coincideFecha = !fechaVal || fechaPacStr === fechaVal;
 
-    li.appendChild(span);
-    li.appendChild(actions);
-
-    listaSedes.appendChild(li);
+    return coincideSede && coincideFecha;
   });
+
+  // 3. ORDENAMIENTO POR ESTADO Y LUEGO POR FECHA DESCENDENTE
+  const ordenEstado = {
+    'En espera': 1,
+    'En atención': 2,
+    'Programado': 3,
+    'Atendido': 4,
+    'Entregado': 5
+  };
+
+  filtrados.sort((a, b) => {
+    const estA = ordenEstado[a.estado] || 99;
+    const estB = ordenEstado[b.estado] || 99;
+    if (estA !== estB) return estA - estB;
+
+    const fechaA = String(a.fechaModificacion || a.fecha || '');
+    const fechaB = String(b.fechaModificacion || b.fecha || '');
+    return fechaB.localeCompare(fechaA);
+  });
+
+  // 4. PAGINACIÓN
+  const totalPaginas = Math.ceil(filtrados.length / pacientesPorPaginaResumen) || 1;
+  if (paginaResumenActual > totalPaginas) paginaResumenActual = 1;
+
+  const inicio = (paginaResumenActual - 1) * pacientesPorPaginaResumen;
+  const pagina = filtrados.slice(inicio, inicio + pacientesPorPaginaResumen);
+
+  tablaResumen.innerHTML = '';
+
+  if (pagina.length === 0) {
+    tablaResumen.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:20px; color:#888;">
+          No se encontraron registros de pacientes.
+        </td>
+      </tr>`;
+    renderizarPaginacionResumen(0);
+    return;
+  }
+
+  // 5. GENERAR FILAS EN LA TABLA
+  pagina.forEach(p => {
+    const tr = document.createElement('tr');
+
+    // Colores por estado
+    let bg = '#ffffff';
+    if (p.estado === 'En espera') bg = '#ffe5e5';
+    else if (p.estado === 'En atención') bg = '#fff5cc';
+    else if (p.estado === 'Programado') bg = '#e1bee7';
+    else if (p.estado === 'Atendido') bg = '#d5f5d5';
+    else if (p.estado === 'Entregado') bg = '#f0f0f0';
+
+    tr.style.backgroundColor = bg;
+
+    // Formatear fecha para la vista (DD/MM/YYYY HH:mm)
+    let fechaTexto = p.fechaModificacion || p.fecha || '-';
+    if (fechaTexto.includes('T')) {
+      const [f, h] = fechaTexto.split('T');
+      const [yyyy, mm, dd] = f.split('-');
+      fechaTexto = `${dd}/${mm}/${yyyy} ${h.substring(0, 5)}`;
+    }
+
+    tr.innerHTML = `
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.sede || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || p.apellido || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.nombres || p.nombre || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.estudios || p.estudio || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || 1}</td>
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.estado || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto}</td>
+    `;
+    tablaResumen.appendChild(tr);
+  });
+
+  renderizarPaginacionResumen(totalPaginas);
 }
 
-/* Escuchar sedes */
-onValue(ref(db, "sedes"), (snap) => renderSedes(snap), (err) => {
-  console.error("Error escuchando sedes:", err);
+// Botones de Paginación
+function renderizarPaginacionResumen(totalPaginas) {
+  const pagContainer = document.getElementById('paginacionResumen');
+  if (!pagContainer) return;
+  pagContainer.innerHTML = '';
+  if (totalPaginas <= 1) return;
+
+  for (let i = 1; i <= totalPaginas; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      background: ${i === paginaResumenActual ? '#3d0a11' : '#fff'};
+      color: ${i === paginaResumenActual ? '#fff' : '#333'};
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: ${i === paginaResumenActual ? 'bold' : 'normal'};
+    `;
+    btn.onclick = () => {
+      paginaResumenActual = i;
+      renderizarTablaResumen();
+    };
+    pagContainer.appendChild(btn);
+  }
+}
+
+// Listeners de los filtros
+document.addEventListener('DOMContentLoaded', () => {
+  const filtroSede = document.getElementById('filtroSedeResumen');
+  const filtroFecha = document.getElementById('filtroFechaResumen');
+
+  // Inicializar filtro de fecha libre
+  if (filtroFecha) filtroFecha.value = '';
+
+  if (filtroSede) {
+    filtroSede.addEventListener('input', () => {
+      paginaResumenActual = 1;
+      renderizarTablaResumen();
+    });
+  }
+
+  if (filtroFecha) {
+    filtroFecha.addEventListener('change', () => {
+      paginaResumenActual = 1;
+      renderizarTablaResumen();
+    });
+  }
 });
 
-/* Editar sede */
-async function editarSede(id, currentName) {
-  const nuevo = prompt("Editar nombre de la sede:", currentName);
-  if (!nuevo) return;
-  const trimmed = nuevo.trim();
-  if (!trimmed) return alert("Nombre inválido.");
-  try {
-    await update(ref(db, `sedes/${id}`), { nombre: trimmed, updatedAt: Date.now() });
-  } catch (err) {
-    console.error("Error editando sede:", err);
-    alert("Error al editar sede: " + (err.message || err));
-  }
-}
-
-/* Eliminar sede */
-async function eliminarSede(id, currentName) {
-  const ok = confirm(`Eliminar sede "${currentName}" ? (Se recomienda inactivar en producción)`);
-  if (!ok) return;
-  try {
-    await remove(ref(db, `sedes/${id}`));
-  } catch (err) {
-    console.error("Error eliminando sede:", err);
-    alert("Error al eliminar sede: " + (err.message || err));
-  }
-}
-
-/* Helper: cargar sedes en un select (si otro módulo lo necesita) */
-export async function cargarSedesEnSelect(selectId) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  sel.innerHTML = `<option value="">Seleccione</option>`;
-  try {
-    const snap = await get(child(ref(db), "sedes"));
-    if (!snap.exists()) return;
-    snap.forEach(childSnap => {
-      const opt = document.createElement("option");
-      opt.value = childSnap.key;
-      opt.textContent = (childSnap.val() || {}).nombre || "";
-      sel.appendChild(opt);
-    });
-  } catch (e) {
-    console.error("Error cargando sedes para select:", e);
-  }
-}
+// Asignar funciones globales
+window.mostrarSeccion = mostrarSeccion;
+window.cargarModuloResumen = cargarModuloResumen;

@@ -2,20 +2,100 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resumen de Pacientes</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .paginacion { margin-top: 15px; text-align: center; }
-    .paginacion button { margin: 0 5px; padding: 5px 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f8f9fa;
+    }
+    h1 {
+      color: #008080;
+      margin-bottom: 20px;
+    }
+    .filtros-container {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      background: #fff;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+    }
+    .filtros-container label {
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .filtros-container input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-left: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #008080;
+      color: white;
+    }
+
+    /* Paginación estilo Cuadritos */
+    .paginacion-container {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+    .pag-quad {
+      padding: 6px 12px;
+      border: 1px solid #008080;
+      background-color: #fff;
+      color: #008080;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .pag-quad.activa {
+      background-color: #008080;
+      color: #fff;
+    }
+    .pag-quad:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #ccc;
+      color: #888;
+    }
   </style>
 </head>
 <body>
-  <h1>Resumen de Pacientes</h1>
 
-  <label>Filtrar por sede: <input type="text" id="filtroSede"></label>
-  <label>Filtrar por fecha: <input type="date" id="filtroFecha"></label>
+  <!-- Contador de Pacientes en Espera -->
+  <div style="margin-bottom: 15px; font-weight: bold; font-size: 15px; color: #3d0a11; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e0e0e0; display: inline-block;">
+    Pacientes en espera: 
+    <span id="contadorResumenEnEspera" style="background: #ffe5e5; color: #d32f2f; padding: 3px 10px; border-radius: 4px; border: 1px solid #ffb3b3; font-size: 17px; margin-left: 5px;">
+      0
+    </span>
+  </div>
+
+  <h1>📊 Resumen de Pacientes</h1>
+
+  <div class="filtros-container">
+    <label>Filtrar por sede: <input type="text" id="filtroSede" placeholder="Escribe la sede..."></label>
+    <label>Filtrar por fecha: <input type="date" id="filtroFecha"></label>
+  </div>
 
   <table>
     <thead>
@@ -24,108 +104,18 @@
         <th>Apellidos</th>
         <th>Nombres</th>
         <th>Estudios</th>
-        <th>Cant</th>
+        <th style="text-align:center;">Cant</th>
         <th>Estado</th>
         <th>Fecha</th>
       </tr>
     </thead>
-    <tbody id="tablaResumen"></tbody>
+    <tbody id="tabla-resumen"></tbody>
   </table>
 
-  <div class="paginacion" id="paginacion"></div>
+  <!-- Contenedor de Cuadritos de Paginación -->
+  <div class="paginacion-container" id="paginacion"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-      authDomain: "estado-pacientes.firebaseapp.com",
-      databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
-      projectId: "estado-pacientes",
-      storageBucket: "estado-pacientes.appspot.com",
-      messagingSenderId: "515522648971",
-      appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-      measurementId: "G-C9STJV4J6K"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const tablaResumen = document.getElementById('tablaResumen');
-    const filtroSede = document.getElementById('filtroSede');
-    const filtroFecha = document.getElementById('filtroFecha');
-    const paginacion = document.getElementById('paginacion');
-    let pacientes = [], paginaActual = 1, pacientesPorPagina = 50;
-
-    function cargarPacientes() {
-      db.ref('pacientes').on('value', snapshot => {
-        pacientes = [];
-        snapshot.forEach(child => {
-          const paciente = child.val();
-          paciente.key = child.key;
-          pacientes.push(paciente);
-        });
-        mostrarResumen();
-      });
-    }
-
-    function mostrarResumen() {
-      let filtrados = pacientes;
-      const sede = filtroSede.value.trim().toLowerCase();
-      const fecha = filtroFecha.value;
-
-      if (sede) filtrados = filtrados.filter(p => p.sede.toLowerCase().includes(sede));
-      if (fecha) filtrados = filtrados.filter(p => p.fechaModificacion?.startsWith(fecha));
-
-      const ordenEstado = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4 };
-      filtrados.sort((a, b) => {
-        const estadoA = ordenEstado[a.estado] || 99;
-        const estadoB = ordenEstado[b.estado] || 99;
-        if (estadoA !== estadoB) return estadoA - estadoB;
-        return new Date(b.fechaModificacion || '2000-01-01') - new Date(a.fechaModificacion || '2000-01-01');
-      });
-
-      const totalPaginas = Math.ceil(filtrados.length / pacientesPorPagina);
-      if (paginaActual > totalPaginas) paginaActual = totalPaginas || 1;
-      const inicio = (paginaActual - 1) * pacientesPorPagina;
-      const fin = inicio + pacientesPorPagina;
-
-      const pagina = filtrados.slice(inicio, fin);
-      tablaResumen.innerHTML = '';
-
-      pagina.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${p.sede}</td>
-          <td>${p.apellidos}</td>
-          <td>${p.nombres}</td>
-          <td>${p.estudios}</td>
-          <td>${p.cant}</td>
-          <td>${p.estado}</td>
-          <td>${p.fechaModificacion || ''}</td>
-        `;
-        tr.style.backgroundColor =
-          p.estado === 'En espera' ? '#ffe5e5' :
-          p.estado === 'En atención' ? '#fff5cc' :
-          p.estado === 'Programado' ? '#cce5ff' : '#d5f5d5';
-        tablaResumen.appendChild(tr);
-      });
-
-      paginacion.innerHTML = '';
-      for (let i = 1; i <= totalPaginas; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        if (i === paginaActual) btn.disabled = true;
-        btn.addEventListener('click', () => {
-          paginaActual = i;
-          mostrarResumen();
-        });
-        paginacion.appendChild(btn);
-      }
-    }
-
-    filtroSede.addEventListener('input', mostrarResumen);
-    filtroFecha.addEventListener('input', mostrarResumen);
-    cargarPacientes();
-  </script>
+  <!-- Importar únicamente el módulo JS externo -->
+  <script type="module" src="resumen.js"></script>
 </body>
 </html>

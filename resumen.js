@@ -1,30 +1,21 @@
-// Configuración Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-  authDomain: "estado-pacientes.firebaseapp.com",
-  databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
-  projectId: "estado-pacientes",
-  storageBucket: "estado-pacientes.appspot.com",
-  messagingSenderId: "515522648971",
-  appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-  measurementId: "G-C9STJV4J6K"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// resumen.js (Firebase v9)
+import { db } from "./firebase-config.js";
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
 const tablaResumen = document.getElementById('tabla-resumen');
 const filtroSede = document.getElementById('filtroSede');
 const filtroFecha = document.getElementById('filtroFecha');
 const paginacionDiv = document.getElementById('paginacion');
+const contadorEl = document.getElementById('contadorResumenEnEspera');
 
 let pacientesOriginal = [];
 let paginaActual = 1;
-const pacientesPorPagina = 50;
+const pacientesPorPagina = 15;
 let pacientesFiltrados = [];
 
+// ---------- 1. Cargar Pacientes en Tiempo Real ----------
 function cargarPacientes() {
-  db.ref('pacientes').on('value', snapshot => {
+  onValue(ref(db, 'pacientes'), snapshot => {
     pacientesOriginal = [];
     snapshot.forEach(childSnapshot => {
       const paciente = childSnapshot.val();
@@ -32,30 +23,43 @@ function cargarPacientes() {
       pacientesOriginal.push(paciente);
     });
 
-    aplicarFiltros(true); // Se reinicia a página 1 al cargar
+    actualizarContadorEnEspera();
+    aplicarFiltros(true);
+  }, error => {
+    console.error("Error al cargar pacientes en resumen:", error);
   });
 }
 
-function aplicarFiltros(reiniciarPagina = false) {
-  const sedeFiltro = filtroSede.value.trim().toLowerCase();
-  const fechaFiltro = filtroFecha.value;
+// ---------- 2. Contador de Pacientes en Espera ----------
+function actualizarContadorEnEspera() {
+  if (contadorEl) {
+    const totalEnEspera = pacientesOriginal.filter(p => p.estado === 'En espera').length;
+    contadorEl.textContent = totalEnEspera;
+  }
+}
 
-  pacientesFiltrados = pacientesOriginal;
+// ---------- 3. Aplicar Filtros y Ordenamiento ----------
+function aplicarFiltros(reiniciarPagina = false) {
+  const sedeFiltro = filtroSede ? filtroSede.value.trim().toLowerCase() : '';
+  const fechaFiltro = filtroFecha ? filtroFecha.value : '';
+
+  pacientesFiltrados = pacientesOriginal.slice();
 
   if (sedeFiltro) {
-    pacientesFiltrados = pacientesFiltrados.filter(p => p.sede.toLowerCase().includes(sedeFiltro));
+    pacientesFiltrados = pacientesFiltrados.filter(p => (p.sede || '').toLowerCase().includes(sedeFiltro));
   }
 
   if (fechaFiltro) {
     pacientesFiltrados = pacientesFiltrados.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
   }
 
-  // Orden personalizado
+  // Orden personalizado por estado y fecha descendente
   const ordenEstado = {
     'En espera': 1,
     'En atención': 2,
     'Programado': 3,
-    'Atendido': 4
+    'Atendido': 4,
+    'Entregado': 5
   };
 
   pacientesFiltrados.sort((a, b) => {
@@ -64,41 +68,62 @@ function aplicarFiltros(reiniciarPagina = false) {
 
     if (estadoA !== estadoB) return estadoA - estadoB;
 
-    const fechaA = new Date(a.fechaModificacion || '2000-01-01T00:00:00');
-    const fechaB = new Date(b.fechaModificacion || '2000-01-01T00:00:00');
+    const fechaA = String(a.fechaModificacion || '');
+    const fechaB = String(b.fechaModificacion || '');
 
-    return fechaB - fechaA;
+    return fechaB.localeCompare(fechaA);
   });
 
   if (reiniciarPagina) paginaActual = 1;
   mostrarPacientesPaginados();
 }
 
+// ---------- 4. Renderizado de la Tabla ----------
 function mostrarPacientesPaginados() {
-  const totalPaginas = Math.ceil(pacientesFiltrados.length / pacientesPorPagina);
-  if (paginaActual > totalPaginas) paginaActual = 1;
+  if (!tablaResumen) return;
+
+  const totalPaginas = Math.ceil(pacientesFiltrados.length / pacientesPorPagina) || 1;
+  if (paginaActual > totalPaginas) paginaActual = totalPaginas;
 
   const inicio = (paginaActual - 1) * pacientesPorPagina;
   const fin = inicio + pacientesPorPagina;
   const pacientesPagina = pacientesFiltrados.slice(inicio, fin);
 
   tablaResumen.innerHTML = '';
+
+  if (pacientesPagina.length === 0) {
+    tablaResumen.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #777;">No hay registros disponibles.</td></tr>';
+    renderizarPaginacion(0);
+    return;
+  }
+
   pacientesPagina.forEach(p => {
     const tr = document.createElement('tr');
+
+    // Formatear la fecha limpia (DD/MM/YYYY HH:mm)
+    let fechaTexto = p.fechaModificacion || p.fecha || '-';
+    if (fechaTexto.includes('T')) {
+      const [fecha, hora] = fechaTexto.split('T');
+      const [yyyy, mm, dd] = fecha.split('-');
+      fechaTexto = `${dd}/${mm}/${yyyy} ${hora.substring(0, 5)}`;
+    }
+
     tr.innerHTML = `
-      <td>${p.sede}</td>
-      <td>${p.apellidos}</td>
-      <td>${p.nombres}</td>
-      <td>${p.estudios}</td>
-      <td>${p.cant}</td>
-      <td>${p.estado}</td>
-      <td style="font-size: 12px;">${p.fechaModificacion || ''}</td>
+      <td><strong>${p.sede || ''}</strong></td>
+      <td>${p.apellidos || ''}</td>
+      <td>${p.nombres || ''}</td>
+      <td>${p.estudios || ''}</td>
+      <td style="text-align:center;">${p.cant || 1}</td>
+      <td><strong>${p.estado || 'En espera'}</strong></td>
+      <td style="font-size: 12px;">${fechaTexto}</td>
     `;
+
+    // Asignación de colores según estado
     tr.style.backgroundColor =
       p.estado === 'En espera' ? '#ffe5e5' :
       p.estado === 'En atención' ? '#fff5cc' :
-      p.estado === 'Programado' ? '#cce5ff' :
-      '#d5f5d5';
+      p.estado === 'Programado' ? '#e1bee7' :
+      p.estado === 'Atendido' ? '#d5f5d5' : '#f0f0f0';
 
     tablaResumen.appendChild(tr);
   });
@@ -106,24 +131,50 @@ function mostrarPacientesPaginados() {
   renderizarPaginacion(totalPaginas);
 }
 
+// ---------- 5. Controles de Paginación ----------
 function renderizarPaginacion(totalPaginas) {
+  if (!paginacionDiv) return;
   paginacionDiv.innerHTML = '';
+
   if (totalPaginas <= 1) return;
 
+  // Botón Anterior
+  const btnAnt = document.createElement("button");
+  btnAnt.className = "pag-quad";
+  btnAnt.innerText = "‹";
+  btnAnt.disabled = paginaActual === 1;
+  btnAnt.onclick = () => { paginaActual--; mostrarPacientesPaginados(); };
+  paginacionDiv.appendChild(btnAnt);
+
+  // Cuadritos Numerados
   for (let i = 1; i <= totalPaginas; i++) {
     const btn = document.createElement('button');
     btn.textContent = i;
-    btn.style.margin = '0 2px';
-    btn.disabled = i === paginaActual;
+    btn.className = `pag-quad ${i === paginaActual ? 'activa' : ''}`;
     btn.addEventListener('click', () => {
       paginaActual = i;
-      mostrarPacientesPaginados(); // Ya no reaplica filtros
+      mostrarPacientesPaginados();
     });
     paginacionDiv.appendChild(btn);
   }
+
+  // Botón Siguiente
+  const btnSig = document.createElement("button");
+  btnSig.className = "pag-quad";
+  btnSig.innerText = "›";
+  btnSig.disabled = paginaActual === totalPaginas;
+  btnSig.onclick = () => { paginaActual++; mostrarPacientesPaginados(); };
+  paginacionDiv.appendChild(btnSig);
 }
 
-filtroSede.addEventListener('input', () => aplicarFiltros(true));
-filtroFecha.addEventListener('input', () => aplicarFiltros(true));
+// ---------- 6. Event Listeners de Filtros ----------
+if (filtroSede) {
+  filtroSede.addEventListener('input', () => aplicarFiltros(true));
+}
 
+if (filtroFecha) {
+  filtroFecha.addEventListener('input', () => aplicarFiltros(true));
+}
+
+// ---------- Inicialización ----------
 cargarPacientes();
