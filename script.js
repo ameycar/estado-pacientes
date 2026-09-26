@@ -17,6 +17,10 @@ const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
+// Variables para Módulo Resumen
+let paginaResumenActual = 1;
+const pacientesPorPaginaResumen = 15;
+
 let datosPacientes = [];
 let firmaActualPaciente = null;
 let pendingSelectForEntrega = null;
@@ -132,6 +136,7 @@ function cargarPacientes() {
     });
     datosPacientes = pacientes;
     aplicarFiltros();
+    renderizarTablaResumen();
   });
 }
 
@@ -236,6 +241,139 @@ function mostrarPacientes(pacientes) {
   });
 
   contador.textContent = `Pacientes en espera: ${enEspera}`;
+}
+
+// ---------- FUNCIONES MÓDULO RESUMEN ----------
+function renderizarTablaResumen() {
+  const tablaResumen = document.getElementById('tabla-resumen');
+  const filtroSedeR = document.getElementById('filtroSedeResumen');
+  const filtroFechaR = document.getElementById('filtroFechaResumen');
+  const contadorEl = document.getElementById('contadorResumenEnEspera');
+
+  if (!tablaResumen) return;
+
+  // 1. Actualizar el contador de pacientes en espera
+  if (contadorEl) {
+    const totalEnEspera = (datosPacientes || []).filter(p => p.estado === 'En espera').length;
+    contadorEl.textContent = totalEnEspera;
+  }
+
+  const sedeVal = (filtroSedeR && filtroSedeR.value || '').trim().toLowerCase();
+  const fechaVal = (filtroFechaR && filtroFechaR.value) || '';
+
+  // 2. Filtrado por Sede y Fecha
+  let filtrados = (datosPacientes || []).filter(p => {
+    const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
+
+    let fechaPacStr = '';
+    const fechaRaw = p.fechaModificacion || p.fecha || p.fechaIngreso || '';
+    if (fechaRaw) {
+      fechaPacStr = String(fechaRaw).substring(0, 10);
+    }
+
+    const coincideFecha = !fechaVal || fechaPacStr === fechaVal;
+
+    return coincideSede && coincideFecha;
+  });
+
+  // 3. Ordenamiento por Estado y luego por Fecha descendente
+  const ordenEstado = {
+    'En espera': 1,
+    'En atención': 2,
+    'Programado': 3,
+    'Atendido': 4,
+    'Entregado': 5
+  };
+
+  filtrados.sort((a, b) => {
+    const estA = ordenEstado[a.estado] || 99;
+    const estB = ordenEstado[b.estado] || 99;
+    if (estA !== estB) return estA - estB;
+
+    const fechaA = String(a.fechaModificacion || a.fecha || '');
+    const fechaB = String(b.fechaModificacion || b.fecha || '');
+    return fechaB.localeCompare(fechaA);
+  });
+
+  // 4. Paginación
+  const totalPaginas = Math.ceil(filtrados.length / pacientesPorPaginaResumen) || 1;
+  if (paginaResumenActual > totalPaginas) paginaResumenActual = 1;
+
+  const inicio = (paginaResumenActual - 1) * pacientesPorPaginaResumen;
+  const pagina = filtrados.slice(inicio, inicio + pacientesPorPaginaResumen);
+
+  tablaResumen.innerHTML = '';
+
+  if (pagina.length === 0) {
+    tablaResumen.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:20px; color:#888;">
+          No se encontraron registros de pacientes.
+        </td>
+      </tr>`;
+    renderizarPaginacionResumen(0);
+    return;
+  }
+
+  // 5. Generar filas en la tabla y formatear fecha a DD/MM/YYYY HH:mm
+  pagina.forEach(p => {
+    const tr = document.createElement('tr');
+
+    let bg = '#ffffff';
+    if (p.estado === 'En espera') bg = '#ffe5e5';
+    else if (p.estado === 'En atención') bg = '#fff5cc';
+    else if (p.estado === 'Programado') bg = '#e1bee7';
+    else if (p.estado === 'Atendido') bg = '#d5f5d5';
+    else if (p.estado === 'Entregado') bg = '#f0f0f0';
+
+    tr.style.backgroundColor = bg;
+
+    let fechaTexto = p.fechaModificacion || p.fecha || '-';
+    if (fechaTexto.includes('T')) {
+      const [f, h] = fechaTexto.split('T');
+      const [yyyy, mm, dd] = f.split('-');
+      fechaTexto = `${dd}/${mm}/${yyyy} ${h.substring(0, 5)}`;
+    }
+
+    tr.innerHTML = `
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.sede || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || p.apellido || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.nombres || p.nombre || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${p.estudios || p.estudio || '-'}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || 1}</td>
+      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.estado || '-'}</strong></td>
+      <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto}</td>
+    `;
+    tablaResumen.appendChild(tr);
+  });
+
+  renderizarPaginacionResumen(totalPaginas);
+}
+
+function renderizarPaginacionResumen(totalPaginas) {
+  const pagContainer = document.getElementById('paginacionResumen');
+  if (!pagContainer) return;
+  pagContainer.innerHTML = '';
+  if (totalPaginas <= 1) return;
+
+  for (let i = 1; i <= totalPaginas; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      background: ${i === paginaResumenActual ? '#3d0a11' : '#fff'};
+      color: ${i === paginaResumenActual ? '#fff' : '#333'};
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: ${i === paginaResumenActual ? 'bold' : 'normal'};
+    `;
+    btn.onclick = () => {
+      paginaResumenActual = i;
+      renderizarTablaResumen();
+    };
+    pagContainer.appendChild(btn);
+  }
 }
 
 // ---------- editar con clave (placas) ----------
@@ -557,8 +695,28 @@ if (btnSaveEntrega) btnSaveEntrega.addEventListener('click', guardarEntregaDesde
 if (btnCancelEntrega) btnCancelEntrega.addEventListener('click', () => { cerrarModal(); });
 if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
 
-// ---------- Listeners filtros ----------
+// ---------- Listeners filtros del panel principal ----------
 [filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
+
+// ---------- Listeners filtros del resumen ----------
+document.addEventListener('DOMContentLoaded', () => {
+  const filtroSedeR = document.getElementById('filtroSedeResumen');
+  const filtroFechaR = document.getElementById('filtroFechaResumen');
+
+  if (filtroSedeR) {
+    filtroSedeR.addEventListener('input', () => {
+      paginaResumenActual = 1;
+      renderizarTablaResumen();
+    });
+  }
+
+  if (filtroFechaR) {
+    filtroFechaR.addEventListener('change', () => {
+      paginaResumenActual = 1;
+      renderizarTablaResumen();
+    });
+  }
+});
 
 // ---------- Exponer funciones para handlers inline ----------
 window.cambiarEstado = cambiarEstado;
