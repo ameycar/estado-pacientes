@@ -59,18 +59,25 @@ async function cargarModuloResumen() {
   }
 }
 
-// Renderizar filas con Filtros y Paginación
+// Renderizar filas con Filtros, Contador y Paginación
 function renderizarTablaResumen() {
   const tablaResumen = document.getElementById('tabla-resumen');
   const filtroSede = document.getElementById('filtroSedeResumen');
   const filtroFecha = document.getElementById('filtroFechaResumen');
+  const contadorEl = document.getElementById('contadorResumenEnEspera');
 
   if (!tablaResumen) return;
+
+  // 1. ACTUALIZAR EL CONTADOR DE PACIENTES EN ESPERA (GLOBAL)
+  if (contadorEl) {
+    const totalEnEspera = (listaPacientesResumen || []).filter(p => p.estado === 'En espera').length;
+    contadorEl.textContent = totalEnEspera;
+  }
 
   const sedeVal = (filtroSede && filtroSede.value || '').trim().toLowerCase();
   const fechaVal = (filtroFecha && filtroFecha.value) || '';
 
-  // Filtrado
+  // 2. FILTRADO POR SEDE Y FECHA
   let filtrados = (listaPacientesResumen || []).filter(p => {
     const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
 
@@ -78,7 +85,7 @@ function renderizarTablaResumen() {
     let fechaPacStr = '';
     const fechaRaw = p.fechaModificacion || p.fecha || p.fechaIngreso || '';
     if (fechaRaw) {
-      fechaPacStr = String(fechaRaw).substring(0, 10); // Toma "2026-09-25"
+      fechaPacStr = String(fechaRaw).substring(0, 10);
     }
 
     const coincideFecha = !fechaVal || fechaPacStr === fechaVal;
@@ -86,7 +93,7 @@ function renderizarTablaResumen() {
     return coincideSede && coincideFecha;
   });
 
-  // Ordenamiento por Estado y luego por Fecha descendente
+  // 3. ORDENAMIENTO POR ESTADO Y LUEGO POR FECHA DESCENDENTE
   const ordenEstado = {
     'En espera': 1,
     'En atención': 2,
@@ -105,7 +112,7 @@ function renderizarTablaResumen() {
     return fechaB.localeCompare(fechaA);
   });
 
-  // Paginación
+  // 4. PAGINACIÓN
   const totalPaginas = Math.ceil(filtrados.length / pacientesPorPaginaResumen) || 1;
   if (paginaResumenActual > totalPaginas) paginaResumenActual = 1;
 
@@ -125,7 +132,7 @@ function renderizarTablaResumen() {
     return;
   }
 
-  // Generar filas
+  // 5. GENERAR FILAS EN LA TABLA
   pagina.forEach(p => {
     const tr = document.createElement('tr');
 
