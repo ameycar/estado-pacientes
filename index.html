@@ -109,6 +109,52 @@
     <tbody id="tabla-pacientes"></tbody>
   </table>
 
+  <!-- SECCIÓN RESUMEN -->
+  <section id="resumen" class="seccion" style="max-width:1100px; margin-top: 30px;">
+    <h2>Resumen de Pacientes</h2>
+
+    <!-- Contador de Pacientes en Espera -->
+    <div style="margin-bottom: 15px; font-weight: bold; font-size: 15px; color: #3d0a11; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e0e0e0; display: inline-block;">
+      Pacientes en espera: 
+      <span id="contadorResumenEnEspera" style="background: #ffe5e5; color: #d32f2f; padding: 3px 10px; border-radius: 4px; border: 1px solid #ffb3b3; font-size: 17px; margin-left: 5px;">
+        0
+      </span>
+    </div>
+
+    <!-- Filtros del Resumen -->
+    <div style="display: flex; gap: 15px; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #ddd; flex-wrap: wrap;">
+      <label><strong>Filtrar por sede:</strong><br> 
+        <input type="text" id="filtroSedeResumen" placeholder="Escribe la sede..." style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
+      </label>
+      <label><strong>Filtrar por fecha:</strong><br> 
+        <input type="date" id="filtroFechaResumen" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
+      </label>
+    </div>
+
+    <!-- Tabla Resumen -->
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; background: white;">
+        <thead>
+          <tr style="background-color: #f2f2f2;">
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Sede</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Apellidos</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Nombres</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estudios</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:center;">Cant</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estado</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Fecha Modificación</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-resumen">
+          <!-- Se llena dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación Resumen -->
+    <div id="paginacionResumen" style="margin-top: 15px; display: flex; justify-content: center; gap: 6px;"></div>
+  </section>
+
   <!-- MODAL: entrega (placas/cd/informe + firma) -->
   <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
     <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
