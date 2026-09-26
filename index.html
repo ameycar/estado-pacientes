@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Estado de Pacientes</title>
+  <title>Estado de Pacientes - Panel Administrativo</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
   <script>
-    // (Opcional) control simple de sesión — si quieres forzar login activa la redirección
-    const usuario = localStorage.getItem("user"); // ahora guardamos objeto JSON en 'user'
+    const usuario = localStorage.getItem("user");
     // if (!usuario) { window.location.href = 'login.html'; }
   </script>
 
@@ -20,10 +19,11 @@
     <button onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 
+  <!-- FORMULARIO DE REGISTRO -->
   <form id="formulario">
     <label for="sede">Sede:</label>
     <select id="sede" required>
-      <!-- las sedes se cargarán desde Firebase (sede activas) -->
+      <!-- Carga dinámicamente desde Firebase -->
     </select>
 
     <label for="apellidos">Apellidos:</label>
@@ -34,7 +34,6 @@
 
     <label for="estudios">Estudios:</label>
     <select id="estudios" multiple required>
-      <!-- LISTA COMPLETA (no tocar) -->
       <option value="Consulta Medicina">Consulta Medicina</option>
       <option value="eco">eco</option>
       <option value="Reevaluación">Reevaluación</option>
@@ -79,39 +78,51 @@
     <button type="submit">Registrar</button>
   </form>
 
-  <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
+  <!-- CONTADOR DE PACIENTES EN ESPERA -->
+  <div id="contador" style="margin-top: 20px; font-weight: bold;">Pacientes en espera: 0</div>
 
-  <div id="filtros" style="margin-top: 20px;">
-    <label for="filtroSede">Filtrar por sede:</label>
-    <input type="text" id="filtroSede" placeholder="Sede...">
-
-    <label for="filtroNombre">Filtrar por nombre/apellido:</label>
-    <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
-
-    <label for="filtroEstudio">Filtrar por estudio:</label>
-    <input type="text" id="filtroEstudio" placeholder="Estudio...">
-
-    <label for="filtroFecha">Filtrar por fecha:</label>
-    <input type="date" id="filtroFecha">
-
+  <!-- FILTROS DE BÚSQUEDA -->
+  <div id="filtros" style="margin-top: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+    <label for="filtroSede">Sede: <input type="text" id="filtroSede" placeholder="Buscar sede..."></label>
+    <label for="filtroNombre">Nombre/Apellido: <input type="text" id="filtroNombre" placeholder="Buscar por nombre..."></label>
+    <label for="filtroEstudio">Estudio: <input type="text" id="filtroEstudio" placeholder="Buscar estudio..."></label>
+    <label for="filtroFecha">Fecha: <input type="date" id="filtroFecha"></label>
     <button onclick="exportarExcel()">Exportar a Excel</button>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
-        <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
-        <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
-        <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-pacientes"></tbody>
-  </table>
+  <!-- TABLA PRINCIPAL DE ADMINISTRACIÓN -->
+  <div style="overflow-x: auto; margin-top: 15px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Sede</th>
+          <th>Apellidos</th>
+          <th>Nombres</th>
+          <th>Estudios</th>
+          <th style="width:50px">Cant</th>
+          <th>Precio</th>
+          <th>PF</th>
+          <th>Estado</th>
+          <th style="width:60px">Placas</th>
+          <th style="width:50px">CD</th>
+          <th style="width:60px">Informe</th>
+          <th style="width:80px">Entregado</th>
+          <th style="width:100px">Firma</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-pacientes">
+        <!-- Los datos se generan dinámicamente -->
+      </tbody>
+    </table>
+  </div>
 
-  <!-- MODAL: entrega (placas/cd/informe + firma) -->
+  <!-- CUADROS DE PAGINACIÓN -->
+  <div id="paginacionTabla" style="margin: 20px 0; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;"></div>
+
+  <!-- MODAL DE ENTREGA Y FIRMA -->
   <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
-    <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
+    <div style="background:white; padding:20px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
       <h3 style="margin-top:0;">Finalizar Entrega</h3>
 
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
@@ -149,9 +160,7 @@
     </div>
   </div>
 
-  <!-- script principal (modular) -->
   <script type="module" src="./script.js"></script>
-
   <script>
     function cerrarSesion() {
       localStorage.removeItem('user');
