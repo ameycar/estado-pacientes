@@ -6,6 +6,41 @@
   <title>Resumen de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    /* Ajustes de legibilidad y espaciado en la tabla */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+}
+
+th {
+  background-color: #1e293b; /* Azul Oscuro */
+  color: #ffffff;
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a !important; /* Texto bien visible */
+  font-weight: 500;
+}
+
+/* Centrar columna de Cantidad */
+#tabla-resumen td:nth-child(5),
+th:nth-child(5) {
+  text-align: center;
+}
+
+/* Efecto al pasar el cursor sobre la fila */
+#tabla-resumen tr:hover {
+  filter: brightness(0.96);
+  transition: filter 0.2s ease;
+}
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f4f6f9;
