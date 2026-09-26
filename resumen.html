@@ -1,133 +1,173 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Resumen de Pacientes</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <style>
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .paginacion { margin-top: 15px; text-align: center; }
-    .paginacion button { margin: 0 5px; padding: 5px 10px; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      color: #1e293b;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    h1 {
+      color: #6b0f1a; /* Rojo Vino */
+      margin-top: 0;
+      font-size: 26px;
+      border-bottom: 2px solid #6b0f1a;
+      padding-bottom: 10px;
+    }
+    .tarjeta-contador {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background-color: #1e293b; /* Azul Oscuro */
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    .badge-espera {
+      background-color: #b91c1c; /* Rojo vivo */
+      color: #ffffff;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 16px;
+    }
+    .filtros-box {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+    }
+    .filtros-box label {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .filtros-box input {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .tabla-container {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      background-color: #1e293b; /* Azul Oscuro */
+      color: #ffffff;
+      padding: 12px;
+      text-align: left;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    /* Filas por estado */
+    tr.estado-espera { background-color: #fef2f2; }
+    tr.estado-atencion { background-color: #fefce8; }
+    tr.estado-programado { background-color: #eff6ff; }
+    tr.estado-atendido { background-color: #f0fdf4; }
+
+    .paginacion {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 20px;
+    }
+    .paginacion button {
+      padding: 6px 14px;
+      border: 1px solid #cbd5e1;
+      background-color: #ffffff;
+      color: #1e293b;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .paginacion button.active {
+      background-color: #6b0f1a; /* Rojo Vino */
+      color: #ffffff;
+      border-color: #6b0f1a;
+    }
   </style>
+
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Resumen de Pacientes</h1>
+  <div class="container">
+    <h1>Resumen de Pacientes</h1>
 
-  <label>Filtrar por sede: <input type="text" id="filtroSede"></label>
-  <label>Filtrar por fecha: <input type="date" id="filtroFecha"></label>
-<!-- CONTADOR DE PACIENTES EN ESPERA -->
-  <div id="contador" style="margin-top: 20px; font-weight: bold;">Pacientes en espera: 0</div>
+    <!-- Contador de pacientes en espera -->
+    <div class="tarjeta-contador">
+      Pacientes en espera: <span id="contadorEspera" class="badge-espera">0</span>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Sede</th>
-        <th>Apellidos</th>
-        <th>Nombres</th>
-        <th>Estudios</th>
-        <th>Cant</th>
-        <th>Estado</th>
-        <th>Fecha</th>
-      </tr>
-    </thead>
-    <tbody id="tablaResumen"></tbody>
-  </table>
+    <!-- Filtros -->
+    <div class="filtros-box">
+      <label>
+        Filtrar por sede:
+        <input type="text" id="filtroSede" placeholder="Escribe la sede...">
+      </label>
+      <label>
+        Filtrar por fecha:
+        <input type="date" id="filtroFecha">
+      </label>
+    </div>
 
-  <div class="paginacion" id="paginacion"></div>
+    <!-- Tabla -->
+    <div class="tabla-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Sede</th>
+            <th>Apellidos</th>
+            <th>Nombres</th>
+            <th>Estudios</th>
+            <th style="text-align: center;">Cant</th>
+            <th>Estado</th>
+            <th>Fecha Modificación</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-resumen">
+          <!-- Datos dinámicos -->
+        </tbody>
+      </table>
+    </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAX2VYw2XVs6DGsw38rCFaSbk3VuUA60y4",
-      authDomain: "estado-pacientes.firebaseapp.com",
-      databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com",
-      projectId: "estado-pacientes",
-      storageBucket: "estado-pacientes.appspot.com",
-      messagingSenderId: "515522648971",
-      appId: "1:515522648971:web:d7b6e9cde4a7d36181ad8e",
-      measurementId: "G-C9STJV4J6K"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    <!-- Paginación -->
+    <div id="paginacion" class="paginacion"></div>
+  </div>
 
-    const tablaResumen = document.getElementById('tablaResumen');
-    const filtroSede = document.getElementById('filtroSede');
-    const filtroFecha = document.getElementById('filtroFecha');
-    const paginacion = document.getElementById('paginacion');
-    let pacientes = [], paginaActual = 1, pacientesPorPagina = 50;
-
-    function cargarPacientes() {
-      db.ref('pacientes').on('value', snapshot => {
-        pacientes = [];
-        snapshot.forEach(child => {
-          const paciente = child.val();
-          paciente.key = child.key;
-          pacientes.push(paciente);
-        });
-        mostrarResumen();
-      });
-    }
-
-    function mostrarResumen() {
-      let filtrados = pacientes;
-      const sede = filtroSede.value.trim().toLowerCase();
-      const fecha = filtroFecha.value;
-
-      if (sede) filtrados = filtrados.filter(p => p.sede.toLowerCase().includes(sede));
-      if (fecha) filtrados = filtrados.filter(p => p.fechaModificacion?.startsWith(fecha));
-
-      const ordenEstado = { 'En espera': 1, 'En atención': 2, 'Programado': 3, 'Atendido': 4 };
-      filtrados.sort((a, b) => {
-        const estadoA = ordenEstado[a.estado] || 99;
-        const estadoB = ordenEstado[b.estado] || 99;
-        if (estadoA !== estadoB) return estadoA - estadoB;
-        return new Date(b.fechaModificacion || '2000-01-01') - new Date(a.fechaModificacion || '2000-01-01');
-      });
-
-      const totalPaginas = Math.ceil(filtrados.length / pacientesPorPagina);
-      if (paginaActual > totalPaginas) paginaActual = totalPaginas || 1;
-      const inicio = (paginaActual - 1) * pacientesPorPagina;
-      const fin = inicio + pacientesPorPagina;
-
-      const pagina = filtrados.slice(inicio, fin);
-      tablaResumen.innerHTML = '';
-
-      pagina.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${p.sede}</td>
-          <td>${p.apellidos}</td>
-          <td>${p.nombres}</td>
-          <td>${p.estudios}</td>
-          <td>${p.cant}</td>
-          <td>${p.estado}</td>
-          <td>${p.fechaModificacion || ''}</td>
-        `;
-        tr.style.backgroundColor =
-          p.estado === 'En espera' ? '#ffe5e5' :
-          p.estado === 'En atención' ? '#fff5cc' :
-          p.estado === 'Programado' ? '#cce5ff' : '#d5f5d5';
-        tablaResumen.appendChild(tr);
-      });
-
-      paginacion.innerHTML = '';
-      for (let i = 1; i <= totalPaginas; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        if (i === paginaActual) btn.disabled = true;
-        btn.addEventListener('click', () => {
-          paginaActual = i;
-          mostrarResumen();
-        });
-        paginacion.appendChild(btn);
-      }
-    }
-
-    filtroSede.addEventListener('input', mostrarResumen);
-    filtroFecha.addEventListener('input', mostrarResumen);
-    cargarPacientes();
-  </script>
+  <script src="resumen.js"></script>
 </body>
 </html>
