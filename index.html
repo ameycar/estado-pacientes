@@ -9,7 +9,8 @@
 </head>
 <body>
   <script>
-    const usuario = localStorage.getItem("user");
+    // (Opcional) control simple de sesión — si quieres forzar login activa la redirección
+    const usuario = localStorage.getItem("user"); // ahora guardamos objeto JSON en 'user'
     // if (!usuario) { window.location.href = 'login.html'; }
   </script>
 
@@ -22,7 +23,7 @@
   <form id="formulario">
     <label for="sede">Sede:</label>
     <select id="sede" required>
-      <!-- Carga desde Firebase -->
+      <!-- las sedes se cargarán desde Firebase (sede activas) -->
     </select>
 
     <label for="apellidos">Apellidos:</label>
@@ -33,6 +34,7 @@
 
     <label for="estudios">Estudios:</label>
     <select id="estudios" multiple required>
+      <!-- LISTA COMPLETA (no tocar) -->
       <option value="Consulta Medicina">Consulta Medicina</option>
       <option value="eco">eco</option>
       <option value="Reevaluación">Reevaluación</option>
@@ -107,7 +109,7 @@
     <tbody id="tabla-pacientes"></tbody>
   </table>
 
-  <!-- MODAL ENTREGA -->
+  <!-- MODAL: entrega (placas/cd/informe + firma) -->
   <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
     <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
       <h3 style="margin-top:0;">Finalizar Entrega</h3>
@@ -147,7 +149,9 @@
     </div>
   </div>
 
+  <!-- script principal (modular) -->
   <script type="module" src="./script.js"></script>
+
   <script>
     function cerrarSesion() {
       localStorage.removeItem('user');
