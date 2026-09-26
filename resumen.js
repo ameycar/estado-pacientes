@@ -13,7 +13,7 @@ let paginaActual = 1;
 const pacientesPorPagina = 15;
 let pacientesFiltrados = [];
 
-// ---------- Cargar Pacientes en Tiempo Real ----------
+// ---------- 1. Cargar Pacientes en Tiempo Real ----------
 function cargarPacientes() {
   onValue(ref(db, 'pacientes'), snapshot => {
     pacientesOriginal = [];
@@ -23,22 +23,22 @@ function cargarPacientes() {
       pacientesOriginal.push(paciente);
     });
 
-    actualizarContadorGlobal();
+    actualizarContadorEnEspera();
     aplicarFiltros(true);
   }, error => {
     console.error("Error al cargar pacientes en resumen:", error);
   });
 }
 
-// Actualizar contador total de pacientes en espera
-function actualizarContadorGlobal() {
+// ---------- 2. Contador de Pacientes en Espera ----------
+function actualizarContadorEnEspera() {
   if (contadorEl) {
     const totalEnEspera = pacientesOriginal.filter(p => p.estado === 'En espera').length;
     contadorEl.textContent = totalEnEspera;
   }
 }
 
-// ---------- Aplicar Filtros y Ordenamiento ----------
+// ---------- 3. Aplicar Filtros y Ordenamiento ----------
 function aplicarFiltros(reiniciarPagina = false) {
   const sedeFiltro = filtroSede ? filtroSede.value.trim().toLowerCase() : '';
   const fechaFiltro = filtroFecha ? filtroFecha.value : '';
@@ -78,7 +78,7 @@ function aplicarFiltros(reiniciarPagina = false) {
   mostrarPacientesPaginados();
 }
 
-// ---------- Renderizado de la Tabla ----------
+// ---------- 4. Renderizado de la Tabla ----------
 function mostrarPacientesPaginados() {
   if (!tablaResumen) return;
 
@@ -99,8 +99,8 @@ function mostrarPacientesPaginados() {
 
   pacientesPagina.forEach(p => {
     const tr = document.createElement('tr');
-    
-    // Formatear fecha para la vista (DD/MM/YYYY HH:mm)
+
+    // Formatear la fecha limpia (DD/MM/YYYY HH:mm)
     let fechaTexto = p.fechaModificacion || p.fecha || '-';
     if (fechaTexto.includes('T')) {
       const [fecha, hora] = fechaTexto.split('T');
@@ -131,7 +131,7 @@ function mostrarPacientesPaginados() {
   renderizarPaginacion(totalPaginas);
 }
 
-// ---------- Controles de Paginación ----------
+// ---------- 5. Controles de Paginación ----------
 function renderizarPaginacion(totalPaginas) {
   if (!paginacionDiv) return;
   paginacionDiv.innerHTML = '';
@@ -167,7 +167,7 @@ function renderizarPaginacion(totalPaginas) {
   paginacionDiv.appendChild(btnSig);
 }
 
-// ---------- Event Listeners de Filtros ----------
+// ---------- 6. Event Listeners de Filtros ----------
 if (filtroSede) {
   filtroSede.addEventListener('input', () => aplicarFiltros(true));
 }
