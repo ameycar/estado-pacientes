@@ -14,214 +14,121 @@
       color: #1e293b;
     }
 
-    /* ENCABEZADO Y NAVEGACIÓN */
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 24px;
-      background-color: #6b0f1a; /* Rojo Vino */
+      padding: 12px 18px;
+      background-color: #3d0a11;
       color: white;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     .header-title {
       font-weight: 700;
-      font-size: 18px;
+      font-size: 16px;
     }
 
     nav a {
-      color: #e2e8f0;
+      margin-right: 12px;
+      color: #fff;
       text-decoration: none;
       font-weight: 600;
       font-size: 14px;
-      padding: 6px 12px;
-      border-radius: 6px;
-      margin-left: 6px;
-      transition: background-color 0.2s ease, color 0.2s ease;
+      padding: 6px 10px;
+      border-radius: 4px;
     }
 
-    nav a:hover,
-    nav a.active {
+    nav a:hover, nav a.active {
       background-color: rgba(255, 255, 255, 0.2);
-      color: #ffffff;
     }
 
     main {
-      padding: 24px;
-      max-width: 1200px;
+      padding: 18px;
+      max-width: 1100px;
       margin: 0 auto;
     }
 
-    /* SECCIONES Y TARJETAS */
     .seccion {
       background: #ffffff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border: 1px solid #e0e0e0;
     }
 
     h2 {
-      color: #1e293b;
       margin-top: 0;
-      font-size: 22px;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
+      color: #3d0a11;
+      font-size: 20px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 8px;
     }
 
-    /* BOTÓN DENTRO DE SECCIÓN PACIENTES */
-    .btn-pacientes {
-      display: inline-block;
-      background-color: #1e293b;
-      color: #ffffff !important;
-      text-decoration: none;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: background 0.2s ease;
-    }
-
-    .btn-pacientes:hover {
-      background-color: #6b0f1a;
-    }
-
-    /* FILTROS Y CONTADOR EN RESUMEN */
-    .tarjeta-contador {
+    /* ESTILOS DE RESUMEN Y TABLAS */
+    .contador-box {
       margin-bottom: 15px;
-      font-weight: 600;
-      font-size: 15px;
-      color: #ffffff;
-      background: #1e293b;
-      padding: 10px 18px;
-      border-radius: 8px;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .badge-espera {
-      background: #b91c1c;
-      color: #ffffff;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 16px;
       font-weight: bold;
+      font-size: 15px;
+      color: #3d0a11;
+      background: #ffffff;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      display: inline-block;
     }
 
-    .filtros-box {
+    .badge-contador {
+      background: #ffe5e5;
+      color: #d32f2f;
+      padding: 3px 10px;
+      border-radius: 4px;
+      border: 1px solid #ffb3b3;
+      font-size: 17px;
+      margin-left: 5px;
+    }
+
+    .filtros-container {
       display: flex;
       gap: 15px;
-      margin-bottom: 20px;
-      background: #f8fafc;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      flex-wrap: wrap;
-    }
-
-    .filtros-box label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #0f172a;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .filtros-box input {
-      padding: 8px 12px;
-      border: 1px solid #cbd5e1;
+      margin-bottom: 15px;
+      background: #f9f9f9;
+      padding: 12px;
       border-radius: 6px;
-      font-size: 14px;
-    }
-
-    /* TABLAS GENERALES */
-    .tabla-container {
-      overflow-x: auto;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid #ddd;
+      flex-wrap: wrap;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
       font-size: 14px;
     }
 
     th {
-      background-color: #1e293b;
-      color: #ffffff;
-      padding: 12px 14px;
+      background-color: #f2f2f2;
       text-align: left;
-      font-weight: 600;
     }
 
-    td {
-      padding: 10px 14px;
-      border-bottom: 1px solid #e2e8f0;
-      color: #0f172a !important;
-      font-weight: 500;
-    }
-
-    /* Estilos para filas por estado en Resumen */
-    #tabla-resumen tr.estado-espera { background-color: #fef2f2; }
-    #tabla-resumen tr.estado-atencion { background-color: #fefce8; }
-    #tabla-resumen tr.estado-programado { background-color: #eff6ff; }
-    #tabla-resumen tr.estado-atendido { background-color: #f0fdf4; }
-
-    /* FORMULARIOS Y BOTONES */
-    input[type="text"], input[type="date"] {
+    .btn-submit {
       padding: 8px 12px;
-      border: 1px solid #cbd5e1;
       border-radius: 6px;
-      font-size: 14px;
-    }
-
-    .btn-guardar {
-      padding: 8px 16px;
-      border-radius: 6px;
-      background: #6b0f1a;
+      background: #3d0a11;
       color: white;
       border: none;
       cursor: pointer;
-      font-weight: 600;
-      transition: background 0.2s;
-    }
-
-    .btn-guardar:hover {
-      background: #4a0a12;
-    }
-
-    /* PAGINACIÓN */
-    .paginacion {
-      margin-top: 20px;
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .paginacion button {
-      padding: 6px 12px;
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-      color: #1e293b;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .paginacion button.active {
-      background-color: #6b0f1a;
-      color: #ffffff;
-      border-color: #6b0f1a;
     }
   </style>
 </head>
 <body>
 
-  <!-- ENCABEZADO / MENÚ PRINCIPAL -->
+  <!-- HEADER -->
   <header>
     <div class="header-title">Estado de Pacientes — Admin</div>
     <nav>
@@ -233,41 +140,31 @@
   </header>
 
   <main>
-    <!-- 1. SECCIÓN PACIENTES -->
+    <!-- SECCIÓN PACIENTES -->
     <section id="pacientes" class="seccion" style="display:block;">
       <h2>Pacientes</h2>
-      <p style="color: #64748b; margin-bottom: 20px;">Gestión de admisión, registro y estados dinámicos de los pacientes.</p>
-      <p>
-        <a href="index.html" target="_blank" class="btn-pacientes">
-          📋 Abrir módulo Pacientes (index.html)
-        </a>
-      </p>
+      <p><a href="index.html" target="_blank" style="color:#3d0a11; font-weight:bold;">Abrir módulo Pacientes (index.html)</a></p>
     </section>
 
-    <!-- 2. SECCIÓN RESUMEN -->
+    <!-- SECCIÓN RESUMEN -->
     <section id="resumen" class="seccion" style="display:none; max-width:1100px;">
       <h2>Resumen de Pacientes</h2>
 
-      <!-- Contador de Pacientes en Espera -->
-      <div class="tarjeta-contador">
+      <div class="contador-box">
         Pacientes en espera: 
-        <span id="contadorResumenEnEspera" class="badge-espera">0</span>
+        <span id="contadorResumenEnEspera" class="badge-contador">0</span>
       </div>
 
-      <!-- Filtros -->
-      <div class="filtros-box">
-        <label>
-          Filtrar por sede:
-          <input type="text" id="filtroSedeResumen" placeholder="Escribe la sede...">
+      <div class="filtros-container">
+        <label><strong>Filtrar por sede:</strong><br> 
+          <input type="text" id="filtroSedeResumen" placeholder="Escribe la sede..." style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
         </label>
-        <label>
-          Filtrar por fecha:
-          <input type="date" id="filtroFechaResumen">
+        <label><strong>Filtrar por fecha:</strong><br> 
+          <input type="date" id="filtroFechaResumen" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
         </label>
       </div>
 
-      <!-- Tabla de Resumen -->
-      <div class="tabla-container">
+      <div style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
@@ -281,28 +178,27 @@
             </tr>
           </thead>
           <tbody id="tabla-resumen">
-            <!-- Se llena dinámicamente desde admin.js -->
+            <!-- Se llena dinámicamente desde admin.js / resumen.js -->
           </tbody>
         </table>
       </div>
 
-      <!-- Paginación de Resumen -->
-      <div id="paginacionResumen" class="paginacion"></div>
+      <div id="paginacionResumen" style="margin-top: 15px; display: flex; justify-content: center; gap: 6px;"></div>
     </section>
 
-    <!-- 3. SECCIÓN SEDES -->
+    <!-- SECCIÓN SEDES -->
     <section id="sedes" class="seccion" style="display:none; max-width:900px;">
       <h2>Sedes</h2>
-      <form id="form-sede" style="display:flex; gap:12px; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
-        <input id="sedeNombre" placeholder="Nombre de la sede" required>
-        <input id="sedeDireccion" placeholder="Dirección (opcional)">
-        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+      <form id="form-sede" style="display:flex; gap:8px; align-items:center; margin-bottom:15px; flex-wrap:wrap;">
+        <input id="sedeNombre" placeholder="Nombre de la sede" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+        <input id="sedeDireccion" placeholder="Dirección (opcional)" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+        <label style="display:flex; align-items:center; gap:6px;">
           <input id="sedeActiva" type="checkbox" checked> Activa
         </label>
-        <button type="submit" class="btn-guardar">Guardar Sede</button>
+        <button type="submit" class="btn-submit">Guardar</button>
       </form>
 
-      <div class="tabla-container">
+      <div style="overflow-x: auto;">
         <table id="tabla-sedes">
           <thead>
             <tr>
@@ -319,14 +215,13 @@
       </div>
     </section>
 
-    <!-- 4. SECCIÓN USUARIOS -->
+    <!-- SECCIÓN USUARIOS -->
     <section id="usuarios" class="seccion" style="display:none; max-width:900px;">
       <h2>Usuarios</h2>
-      <p style="color: #64748b;">Gestión de usuarios, roles y permisos de acceso al sistema.</p>
+      <p>Gestión de usuarios y accesos.</p>
       
-      <!-- Aquí puedes desplegar tu tabla o formulario de usuarios -->
       <div id="contenedor-usuarios">
-        <p><i>Cargando lista de usuarios...</i></p>
+        <!-- Tabla o lista de usuarios vinculada a admin.js -->
       </div>
     </section>
   </main>
@@ -334,28 +229,24 @@
   <!-- SDKs de Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
+  
   <!-- Configuración de Firebase -->
   <script src="firebase-config.js"></script>
 
   <!-- Script principal del Admin -->
   <script src="admin.js"></script>
 
-  <!-- Función auxiliar para el cambio visual de pestañas -->
+  <!-- Lógica de navegación entre pestañas -->
   <script>
     function mostrarSeccion(idSeccion) {
-      // Ocultar todas las secciones
       document.querySelectorAll('.seccion').forEach(sec => sec.style.display = 'none');
-      // Quitar clase activa de los enlaces del nav
       document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
 
-      // Mostrar la sección seleccionada
       const seccionActiva = document.getElementById(idSeccion);
       if (seccionActiva) {
         seccionActiva.style.display = 'block';
       }
 
-      // Marcar el enlace nav como activo
       const navActivo = document.getElementById('nav-' + idSeccion);
       if (navActivo) {
         navActivo.classList.add('active');
