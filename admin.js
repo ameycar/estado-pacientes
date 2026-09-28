@@ -7,13 +7,29 @@ import {
   update,
   remove,
   get,
-  child
+  child,
+  set
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-/* DOM */
+/* ==========================================
+   DOM - ELEMENTOS PARA SEDES
+   ========================================== */
 const formSede = document.getElementById("formSede");
 const listaSedes = document.getElementById("listaSedes");
 const inputNombre = document.getElementById("sedeNombre");
+
+/* ==========================================
+   DOM - ELEMENTOS PARA USUARIOS
+   ========================================== */
+const formUsuario = document.getElementById("formUsuario");
+const inputEmail = document.getElementById("usuarioEmail");
+const selectRol = document.getElementById("usuarioRol");
+const selectSedeUsuario = document.getElementById("usuarioSede");
+const listaUsuarios = document.getElementById("listaUsuarios");
+
+/* ==========================================
+   PASO 1: GESTIÓN DE SEDES
+   ========================================== */
 
 /* Agregar sede */
 if (formSede) {
@@ -31,10 +47,12 @@ if (formSede) {
   });
 }
 
-/* Renderizar lista en tiempo real */
+/* Renderizar lista de sedes en tiempo real */
 function renderSedes(snapshot) {
+  if (!listaSedes) return;
   listaSedes.innerHTML = "";
   if (!snapshot || !snapshot.exists()) return;
+
   snapshot.forEach((childSnap) => {
     const key = childSnap.key;
     const data = childSnap.val() || {};
@@ -74,8 +92,11 @@ function renderSedes(snapshot) {
   });
 }
 
-/* Escuchar sedes */
-onValue(ref(db, "sedes"), (snap) => renderSedes(snap), (err) => {
+/* Escuchar sedes en tiempo real */
+onValue(ref(db, "sedes"), (snap) => {
+  renderSedes(snap);
+  actualizarSelectSedesUsuarios(snap);
+}, (err) => {
   console.error("Error escuchando sedes:", err);
 });
 
@@ -105,11 +126,11 @@ async function eliminarSede(id, currentName) {
   }
 }
 
-/* Helper: cargar sedes en un select (si otro módulo lo necesita) */
+/* Helper: cargar sedes en un select genérico */
 export async function cargarSedesEnSelect(selectId) {
   const sel = document.getElementById(selectId);
   if (!sel) return;
-  sel.innerHTML = `<option value="">Seleccione</option>`;
+  sel.innerHTML = `<option value="">Seleccione Sede</option>`;
   try {
     const snap = await get(child(ref(db), "sedes"));
     if (!snap.exists()) return;
@@ -121,5 +142,128 @@ export async function cargarSedesEnSelect(selectId) {
     });
   } catch (e) {
     console.error("Error cargando sedes para select:", e);
+  }
+}
+
+
+/* ==========================================
+   PASO 2: GESTIÓN DE USUARIOS Y ROLES POR SEDE
+   ========================================== */
+
+/**
+ * Mantiene actualizado automáticamente el <select> de sedes en el formulario de usuarios
+ */
+function actualizarSelectSedesUsuarios(snapshot) {
+  if (!selectSedeUsuario) return;
+  selectSedeUsuario.innerHTML = '<option value="">Seleccione Sede</option>';
+  
+  // Opción para administradores
+  const optAdmin = document.createElement("option");
+  optAdmin.value = "TODAS";
+  optAdmin.textContent = "TODAS (Acceso Total Admin)";
+  selectSedeUsuario.appendChild(optAdmin);
+
+  if (!snapshot || !snapshot.exists()) return;
+
+  snapshot.forEach((childSnap) => {
+    const key = childSnap.key;
+    const data = childSnap.val() || {};
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = data.nombre || key;
+    selectSedeUsuario.appendChild(opt);
+  });
+}
+
+/* Registrar / Asignar Sede a un Usuario */
+if (formUsuario) {
+  formUsuario.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = (inputEmail.value || "").trim().toLowerCase();
+    const rol = selectRol ? selectRol.value : "sede";
+    const sedeId = selectSedeUsuario ? selectSedeUsuario.value : "";
+
+    if (!email) return alert("Ingresa el correo del usuario.");
+    if (!sedeId) return alert("Selecciona la sede asignada para este usuario.");
+
+    // Sanitizar el email para usarlo como clave en Realtime Database (reemplazar puntos)
+    const emailKey = email.replace(/\./g, "_at_");
+
+    try {
+      await set(ref(db, `usuarios/${emailKey}`), {
+        email: email,
+        rol: rol,
+        sedeId: sedeId,
+        updatedAt: Date.now()
+      });
+
+      alert(`Usuario ${email} configurado correctamente.`);
+      inputEmail.value = "";
+      if (selectSedeUsuario) selectSedeUsuario.value = "";
+    } catch (err) {
+      console.error("Error guardando usuario:", err);
+      alert("Error guardando usuario: " + (err.message || err));
+    }
+  });
+}
+
+/* Escuchar y renderizar lista de usuarios */
+if (listaUsuarios) {
+  onValue(ref(db, "usuarios"), async (snapUsuarios) => {
+    listaUsuarios.innerHTML = "";
+    if (!snapUsuarios.exists()) return;
+
+    // Obtener sedes para mapear IDs a Nombres
+    const snapSedes = await get(child(ref(db), "sedes"));
+    const sedesMap = {};
+    if (snapSedes.exists()) {
+      snapSedes.forEach(s => {
+        sedesMap[s.key] = (s.val() || {}).nombre || s.key;
+      });
+    }
+    sedesMap["TODAS"] = "TODAS (Acceso Total)";
+
+    snapUsuarios.forEach((childSnap) => {
+      const userKey = childSnap.key;
+      const data = childSnap.val() || {};
+      const email = data.email || userKey;
+      const rol = data.rol || "operador";
+      const sedeId = data.sedeId || "";
+      const nombreSede = sedesMap[sedeId] || "Sin asignación";
+
+      const li = document.createElement("li");
+      li.style.display = "flex";
+      li.style.justifyContent = "space-between";
+      li.style.alignItems = "center";
+
+      const info = document.createElement("div");
+      info.innerHTML = `<strong>${email}</strong> <br><small>Rol: ${rol} | Sede: ${nombreSede}</small>`;
+
+      const actions = document.createElement("div");
+
+      const btnDel = document.createElement("button");
+      btnDel.className = "del";
+      btnDel.textContent = "🗑";
+      btnDel.title = "Eliminar permiso";
+      btnDel.addEventListener("click", () => eliminarUsuario(userKey, email));
+
+      actions.appendChild(btnDel);
+      li.appendChild(info);
+      li.appendChild(actions);
+
+      listaUsuarios.appendChild(li);
+    });
+  });
+}
+
+/* Eliminar configuración de usuario */
+async function eliminarUsuario(userKey, email) {
+  const ok = confirm(`¿Quitar configuración y permisos para ${email}?`);
+  if (!ok) return;
+  try {
+    await remove(ref(db, `usuarios/${userKey}`));
+  } catch (err) {
+    console.error("Error eliminando usuario:", err);
+    alert("Error al eliminar usuario: " + (err.message || err));
   }
 }
