@@ -11,7 +11,8 @@
     <div style="font-weight:700">Estado de Pacientes — Admin</div>
     <nav>
       <a href="#" onclick="mostrarSeccion('pacientes')" style="margin-right:12px; color:#fff; text-decoration:none;">Pacientes</a>
-      <a href="#" onclick="mostrarSeccion('resumen')" style="margin-right:12px; color:#fff; text-decoration:none;">Resumen</a>
+      <!-- Enlace directo al módulo Resumen de la sala de espera -->
+      <a href="resumen.html" target="_blank" style="margin-right:12px; color:#fff; text-decoration:none;">Resumen</a>
       <a href="#" onclick="mostrarSeccion('sedes')" style="color:#fff; text-decoration:none;">Sedes</a>
       <a href="#" onclick="mostrarSeccion('usuarios')" style="color:#fff; text-decoration:none; margin-left:12px;">Usuarios</a>
     </nav>
@@ -24,52 +25,6 @@
       <p><a href="index.html" target="_blank">Abrir módulo Pacientes (index.html)</a></p>
     </section>
 
-    <!-- SECCIÓN RESUMEN -->
-    <section id="resumen" class="seccion" style="display:none; max-width:1100px;">
-      <h2>Resumen de Pacientes</h2>
-
-      <!-- Contador de Pacientes en Espera -->
-      <div style="margin-bottom: 15px; font-weight: bold; font-size: 15px; color: #3d0a11; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e0e0e0; display: inline-block;">
-        Pacientes en espera: 
-        <span id="contadorResumenEnEspera" style="background: #ffe5e5; color: #d32f2f; padding: 3px 10px; border-radius: 4px; border: 1px solid #ffb3b3; font-size: 17px; margin-left: 5px;">
-          0
-        </span>
-      </div>
-
-      <!-- Filtros -->
-      <div style="display: flex; gap: 15px; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #ddd; flex-wrap: wrap;">
-        <label><strong>Filtrar por sede:</strong><br> 
-          <input type="text" id="filtroSedeResumen" placeholder="Escribe la sede..." style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
-        </label>
-        <label><strong>Filtrar por fecha:</strong><br> 
-          <input type="date" id="filtroFechaResumen" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
-        </label>
-      </div>
-
-      <!-- Tabla -->
-      <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; background: white;">
-          <thead>
-            <tr style="background-color: #f2f2f2;">
-              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Sede</th>
-              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Apellidos</th>
-              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Nombres</th>
-              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estudios</th>
-              <th style="padding:8px; border:1px solid #ddd; text-align:center;">Cant</th>
-              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estado</th>
-              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Fecha Modificación</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-resumen">
-            <!-- Se llena dinámicamente -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Paginación -->
-      <div id="paginacionResumen" style="margin-top: 15px; display: flex; justify-content: center; gap: 6px;"></div>
-    </section>
-
     <!-- SECCIÓN SEDES -->
     <section id="sedes" class="seccion" style="display:none; max-width:900px;">
       <h2>Sedes</h2>
@@ -79,7 +34,8 @@
         <label style="display:flex; align-items:center; gap:6px;">
           <input id="sedeActiva" type="checkbox" checked> Activa
         </label>
-        <button type="submit" style="padding:8px 12px; border-radius:6px; background:#3d0a11; color:white; border:none; cursor:pointer;">Guardar</button>
+        <!-- type="button" para evitar que recargue la página y se borre el estado -->
+        <button type="button" id="btnGuardarSede" style="padding:8px 12px; border-radius:6px; background:#3d0a11; color:white; border:none; cursor:pointer;">Guardar</button>
       </form>
 
       <table id="tabla-sedes" style="width:100%; border-collapse:collapse;">
@@ -112,14 +68,12 @@
   <!-- Script principal del Admin -->
   <script src="admin.js"></script>
 
-  <!-- LÓGICA PARA CAMBIAR DE SECCIÓN (NAVEGACIÓN) -->
+  <!-- Lógica de Navegación SPA -->
   <script>
     function mostrarSeccion(idSeccion) {
-      // Oculta todas las secciones
       const secciones = document.querySelectorAll('.seccion');
       secciones.forEach(sec => sec.style.display = 'none');
 
-      // Muestra solo la sección seleccionada
       const seccionSeleccionada = document.getElementById(idSeccion);
       if (seccionSeleccionada) {
         seccionSeleccionada.style.display = 'block';
