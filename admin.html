@@ -111,5 +111,20 @@
 
   <!-- Script principal del Admin -->
   <script src="admin.js"></script>
+
+  <!-- LÓGICA PARA CAMBIAR DE SECCIÓN (NAVEGACIÓN) -->
+  <script>
+    function mostrarSeccion(idSeccion) {
+      // Oculta todas las secciones
+      const secciones = document.querySelectorAll('.seccion');
+      secciones.forEach(sec => sec.style.display = 'none');
+
+      // Muestra solo la sección seleccionada
+      const seccionSeleccionada = document.getElementById(idSeccion);
+      if (seccionSeleccionada) {
+        seccionSeleccionada.style.display = 'block';
+      }
+    }
+  </script>
 </body>
 </html>
