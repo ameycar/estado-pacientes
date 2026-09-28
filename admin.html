@@ -5,157 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f6f9;
-      color: #1e293b;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 18px;
-      background-color: #3d0a11;
-      color: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    .header-title {
-      font-weight: 700;
-      font-size: 16px;
-    }
-
-    nav a {
-      margin-right: 12px;
-      color: #fff;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 14px;
-      padding: 6px 10px;
-      border-radius: 4px;
-    }
-
-    nav a:hover, nav a.active {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    main {
-      padding: 18px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .seccion {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      border: 1px solid #e0e0e0;
-    }
-
-    h2 {
-      margin-top: 0;
-      color: #3d0a11;
-      font-size: 20px;
-      border-bottom: 2px solid #e0e0e0;
-      padding-bottom: 8px;
-    }
-
-    /* ESTILOS DE RESUMEN Y TABLAS */
-    .contador-box {
-      margin-bottom: 15px;
-      font-weight: bold;
-      font-size: 15px;
-      color: #3d0a11;
-      background: #ffffff;
-      padding: 10px 14px;
-      border-radius: 6px;
-      border: 1px solid #e0e0e0;
-      display: inline-block;
-    }
-
-    .badge-contador {
-      background: #ffe5e5;
-      color: #d32f2f;
-      padding: 3px 10px;
-      border-radius: 4px;
-      border: 1px solid #ffb3b3;
-      font-size: 17px;
-      margin-left: 5px;
-    }
-
-    .filtros-container {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 15px;
-      background: #f9f9f9;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      flex-wrap: wrap;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-    }
-
-    th, td {
-      padding: 8px;
-      border: 1px solid #ddd;
-      font-size: 14px;
-    }
-
-    th {
-      background-color: #f2f2f2;
-      text-align: left;
-    }
-
-    .btn-submit {
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: #3d0a11;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-  </style>
 </head>
 <body>
-
-  <!-- HEADER -->
-  <header>
-    <div class="header-title">Estado de Pacientes — Admin</div>
+  <header style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background-color:#3d0a11; color:white;">
+    <div style="font-weight:700">Estado de Pacientes — Admin</div>
     <nav>
-      <a href="#" id="nav-pacientes" class="active" onclick="mostrarSeccion('pacientes')">Pacientes</a>
-      <a href="#" id="nav-resumen" onclick="mostrarSeccion('resumen')">Resumen</a>
-      <a href="#" id="nav-sedes" onclick="mostrarSeccion('sedes')">Sedes</a>
-      <a href="#" id="nav-usuarios" onclick="mostrarSeccion('usuarios')">Usuarios</a>
+      <a href="#" onclick="mostrarSeccion('pacientes')" style="margin-right:12px; color:#fff; text-decoration:none;">Pacientes</a>
+      <a href="#" onclick="mostrarSeccion('resumen')" style="margin-right:12px; color:#fff; text-decoration:none;">Resumen</a>
+      <a href="#" onclick="mostrarSeccion('sedes')" style="color:#fff; text-decoration:none;">Sedes</a>
+      <a href="#" onclick="mostrarSeccion('usuarios')" style="color:#fff; text-decoration:none; margin-left:12px;">Usuarios</a>
     </nav>
   </header>
 
-  <main>
+  <main style="padding:18px;">
     <!-- SECCIÓN PACIENTES -->
     <section id="pacientes" class="seccion" style="display:block;">
       <h2>Pacientes</h2>
-      <p><a href="index.html" target="_blank" style="color:#3d0a11; font-weight:bold;">Abrir módulo Pacientes (index.html)</a></p>
+      <p><a href="index.html" target="_blank">Abrir módulo Pacientes (index.html)</a></p>
     </section>
 
     <!-- SECCIÓN RESUMEN -->
     <section id="resumen" class="seccion" style="display:none; max-width:1100px;">
       <h2>Resumen de Pacientes</h2>
 
-      <div class="contador-box">
+      <!-- Contador de Pacientes en Espera -->
+      <div style="margin-bottom: 15px; font-weight: bold; font-size: 15px; color: #3d0a11; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e0e0e0; display: inline-block;">
         Pacientes en espera: 
-        <span id="contadorResumenEnEspera" class="badge-contador">0</span>
+        <span id="contadorResumenEnEspera" style="background: #ffe5e5; color: #d32f2f; padding: 3px 10px; border-radius: 4px; border: 1px solid #ffb3b3; font-size: 17px; margin-left: 5px;">
+          0
+        </span>
       </div>
 
-      <div class="filtros-container">
+      <!-- Filtros -->
+      <div style="display: flex; gap: 15px; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #ddd; flex-wrap: wrap;">
         <label><strong>Filtrar por sede:</strong><br> 
           <input type="text" id="filtroSedeResumen" placeholder="Escribe la sede..." style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
         </label>
@@ -164,65 +46,59 @@
         </label>
       </div>
 
+      <!-- Tabla -->
       <div style="overflow-x: auto;">
-        <table>
+        <table style="width: 100%; border-collapse: collapse; background: white;">
           <thead>
-            <tr>
-              <th>Sede</th>
-              <th>Apellidos</th>
-              <th>Nombres</th>
-              <th>Estudios</th>
-              <th style="text-align:center;">Cant</th>
-              <th>Estado</th>
-              <th>Fecha Modificación</th>
+            <tr style="background-color: #f2f2f2;">
+              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Sede</th>
+              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Apellidos</th>
+              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Nombres</th>
+              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estudios</th>
+              <th style="padding:8px; border:1px solid #ddd; text-align:center;">Cant</th>
+              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estado</th>
+              <th style="padding:8px; border:1px solid #ddd; text-align:left;">Fecha Modificación</th>
             </tr>
           </thead>
           <tbody id="tabla-resumen">
-            <!-- Se llena dinámicamente desde admin.js / resumen.js -->
+            <!-- Se llena dinámicamente -->
           </tbody>
         </table>
       </div>
 
+      <!-- Paginación -->
       <div id="paginacionResumen" style="margin-top: 15px; display: flex; justify-content: center; gap: 6px;"></div>
     </section>
 
     <!-- SECCIÓN SEDES -->
     <section id="sedes" class="seccion" style="display:none; max-width:900px;">
       <h2>Sedes</h2>
-      <form id="form-sede" style="display:flex; gap:8px; align-items:center; margin-bottom:15px; flex-wrap:wrap;">
+      <form id="form-sede" style="display:flex; gap:8px; align-items:center; margin-bottom:15px;">
         <input id="sedeNombre" placeholder="Nombre de la sede" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
         <input id="sedeDireccion" placeholder="Dirección (opcional)" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
         <label style="display:flex; align-items:center; gap:6px;">
           <input id="sedeActiva" type="checkbox" checked> Activa
         </label>
-        <button type="submit" class="btn-submit">Guardar</button>
+        <button type="submit" style="padding:8px 12px; border-radius:6px; background:#3d0a11; color:white; border:none; cursor:pointer;">Guardar</button>
       </form>
 
-      <div style="overflow-x: auto;">
-        <table id="tabla-sedes">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Dirección</th>
-              <th style="text-align:center;">Activa</th>
-              <th style="text-align:center;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Se llena dinámicamente desde admin.js -->
-          </tbody>
-        </table>
-      </div>
+      <table id="tabla-sedes" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f2f2f2;">
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Nombre</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Dirección</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:center;">Activa</th>
+            <th style="padding:8px; border:1px solid #ddd; text-align:center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
     <!-- SECCIÓN USUARIOS -->
     <section id="usuarios" class="seccion" style="display:none; max-width:900px;">
       <h2>Usuarios</h2>
       <p>Gestión de usuarios y accesos.</p>
-      
-      <div id="contenedor-usuarios">
-        <!-- Tabla o lista de usuarios vinculada a admin.js -->
-      </div>
     </section>
   </main>
 
@@ -235,23 +111,5 @@
 
   <!-- Script principal del Admin -->
   <script src="admin.js"></script>
-
-  <!-- Lógica de navegación entre pestañas -->
-  <script>
-    function mostrarSeccion(idSeccion) {
-      document.querySelectorAll('.seccion').forEach(sec => sec.style.display = 'none');
-      document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-
-      const seccionActiva = document.getElementById(idSeccion);
-      if (seccionActiva) {
-        seccionActiva.style.display = 'block';
-      }
-
-      const navActivo = document.getElementById('nav-' + idSeccion);
-      if (navActivo) {
-        navActivo.classList.add('active');
-      }
-    }
-  </script>
 </body>
 </html>
