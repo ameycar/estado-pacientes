@@ -420,7 +420,7 @@ function cambiarEstado(key, nuevoEstado) {
     return;
   }
   if (actual.estado === 'Atendido' && nuevoEstado !== 'Entregado') {
-    alert('Una vez ATENDIDO solo puede avanzar a su casa.');
+    alert('Una vez ATENDIDO solo puede avanzar a su casa a dormir.');
     aplicarFiltros();
     return;
   }
