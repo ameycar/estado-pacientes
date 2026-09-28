@@ -17,9 +17,9 @@ const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
-// Variables para Módulo Resumen
-let paginaResumenActual = 1;
-const pacientesPorPaginaResumen = 15;
+// Variables para Paginación de Tabla Principal
+let paginaActual = 1;
+const pacientesPorPagina = 50;
 
 let datosPacientes = [];
 let firmaActualPaciente = null;
@@ -57,7 +57,6 @@ function loadSedesToSelect() {
       select.appendChild(opt);
     });
 
-    // Si el usuario pertenece a una sede, se fija y se inhabilita el select
     if (currentUser && currentUser.role && currentUser.role !== 'admin') {
       select.value = currentUser.sede || select.value;
       select.disabled = true;
@@ -136,7 +135,6 @@ function cargarPacientes() {
     });
     datosPacientes = pacientes;
     aplicarFiltros();
-    renderizarTablaResumen();
   });
 }
 
@@ -154,20 +152,33 @@ function aplicarFiltros() {
   if (estudioFiltro) pacientes = pacientes.filter(p => (p.estudios || '').toLowerCase().includes(estudioFiltro));
   if (fechaFiltro) pacientes = pacientes.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
 
+  paginaActual = 1; // Reiniciar a primera página al filtrar
   mostrarPacientes(pacientes);
 }
 
 // ---------- Mostrar pacientes ----------
 function mostrarPacientes(pacientes) {
+  // Ordenar: Los últimos editados/modificados van arriba primero
   pacientes.sort((a, b) => {
-    const order = { 'En espera': 1, 'Programado': 2, 'En atención': 3, 'Atendido': 4, 'Entregado': 5 };
-    return (order[a.estado] || 0) - (order[b.estado] || 0);
+    const fechaA = String(a.fechaModificacion || a.fecha || '');
+    const fechaB = String(b.fechaModificacion || b.fecha || '');
+    return fechaB.localeCompare(fechaA);
   });
 
   if (tablaPacientes) tablaPacientes.innerHTML = '';
-  let enEspera = 0;
+  
+  // Contador global de en espera (antes de paginar)
+  const enEspera = pacientes.filter(p => p.estado === 'En espera').length;
+  if (contador) contador.textContent = `Pacientes en espera: ${enEspera}`;
 
-  pacientes.forEach(p => {
+  // Paginación
+  const totalPaginas = Math.ceil(pacientes.length / pacientesPorPagina) || 1;
+  if (paginaActual > totalPaginas) paginaActual = 1;
+
+  const inicio = (paginaActual - 1) * pacientesPorPagina;
+  const pacientesPagina = pacientes.slice(inicio, inicio + pacientesPorPagina);
+
+  pacientesPagina.forEach(p => {
     const tr = document.createElement('tr');
     tr.classList.add("fila-paciente");
 
@@ -179,7 +190,6 @@ function mostrarPacientes(pacientes) {
 
     const requierePlacas = /TEM|RM|RX|Mamografia/i.test(p.estudios || '');
 
-    // Firma: mostrar imagen si existe o botón para firmar si falta
     let firmaHTML = '';
     if (p.firma) {
       firmaHTML = `<img src="${p.firma}" alt="Firma" class="firma-img">`;
@@ -187,12 +197,10 @@ function mostrarPacientes(pacientes) {
       firmaHTML = `<button onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
     }
 
-    // Placas
     const placasHTML = (requierePlacas && p.estado === 'Entregado')
       ? `<input type="number" min="0" value="${p.placas || ''}" onclick="editarConClave(event,'${p.key}','placas', this)" readonly style="width:60px; text-align:center;"/>`
       : (p.placas ? `<div style="width:60px; text-align:center;">${p.placas}</div>` : '');
 
-    // CD / Informe
     const cdChecked = p.cd === 'SI' ? 'checked' : '';
     const cdHTML = (p.estado === 'Entregado')
       ? `<input type="checkbox" ${cdChecked} onclick="editarConClaveCheckbox(event,'${p.key}','cd', this)">`
@@ -202,7 +210,6 @@ function mostrarPacientes(pacientes) {
       ? `<input type="checkbox" ${p.informe === 'SI' ? 'checked' : ''} onclick="editarConClaveCheckbox(event,'${p.key}','informe', this)">`
       : `<div style="width:60px; text-align:center;">${p.informe === 'SI' ? 'SI' : ''}</div>`;
 
-    // Estado (select)
     const estadoSelect = `
       <select onchange="cambiarEstado('${p.key}', this.value)" ${ (p.estado === 'Entregado') ? 'disabled' : '' } >
         <option ${p.estado === 'En espera' ? 'selected' : ''}>En espera</option>
@@ -236,119 +243,28 @@ function mostrarPacientes(pacientes) {
     `;
 
     if (tablaPacientes) tablaPacientes.appendChild(tr);
-    if (p.estado === 'En espera') enEspera++;
   });
 
-  if (contador) contador.textContent = `Pacientes en espera: ${enEspera}`;
+  renderizarPaginacion(pacientes.length, totalPaginas, pacientes);
 }
 
-// ---------- FUNCIONES MÓDULO RESUMEN ----------
-function renderizarTablaResumen() {
-  const tablaResumen = document.getElementById('tabla-resumen');
-  const filtroSedeR = document.getElementById('filtroSedeResumen');
-  const filtroFechaR = document.getElementById('filtroFechaResumen');
-  const contadorEl = document.getElementById('contadorResumenEnEspera');
-
-  if (!tablaResumen) return;
-
-  if (contadorEl) {
-    const totalEnEspera = (datosPacientes || []).filter(p => p.estado === 'En espera').length;
-    contadorEl.textContent = totalEnEspera;
+// ---------- Renderizar Paginación si supera 50 registros ----------
+function renderizarPaginacion(totalRegistros, totalPaginas, pacientes) {
+  let pagContainer = document.getElementById('paginacion-tabla');
+  
+  if (!pagContainer) {
+    pagContainer = document.createElement('div');
+    pagContainer.id = 'paginacion-tabla';
+    pagContainer.style.cssText = 'display:flex; gap:5px; justify-content:center; margin:15px 0;';
+    if (tablaPacientes && tablaPacientes.parentNode) {
+      tablaPacientes.parentNode.insertBefore(pagContainer, tablaPacientes.nextSibling);
+    }
   }
 
-  const sedeVal = (filtroSedeR && filtroSedeR.value || '').trim().toLowerCase();
-  const fechaVal = (filtroFechaR && filtroFechaR.value) || '';
-
-  let filtrados = (datosPacientes || []).filter(p => {
-    const coincideSede = !sedeVal || (p.sede || '').toLowerCase().includes(sedeVal);
-
-    let fechaPacStr = '';
-    const fechaRaw = p.fechaModificacion || p.fecha || p.fechaIngreso || '';
-    if (fechaRaw) {
-      fechaPacStr = String(fechaRaw).substring(0, 10);
-    }
-
-    const coincideFecha = !fechaVal || fechaPacStr === fechaVal;
-
-    return coincideSede && coincideFecha;
-  });
-
-  const ordenEstado = {
-    'En espera': 1,
-    'En atención': 2,
-    'Programado': 3,
-    'Atendido': 4,
-    'Entregado': 5
-  };
-
-  filtrados.sort((a, b) => {
-    const estA = ordenEstado[a.estado] || 99;
-    const estB = ordenEstado[b.estado] || 99;
-    if (estA !== estB) return estA - estB;
-
-    const fechaA = String(a.fechaModificacion || a.fecha || '');
-    const fechaB = String(b.fechaModificacion || b.fecha || '');
-    return fechaB.localeCompare(fechaA);
-  });
-
-  const totalPaginas = Math.ceil(filtrados.length / pacientesPorPaginaResumen) || 1;
-  if (paginaResumenActual > totalPaginas) paginaResumenActual = 1;
-
-  const inicio = (paginaResumenActual - 1) * pacientesPorPaginaResumen;
-  const pagina = filtrados.slice(inicio, inicio + pacientesPorPaginaResumen);
-
-  tablaResumen.innerHTML = '';
-
-  if (pagina.length === 0) {
-    tablaResumen.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align:center; padding:20px; color:#888;">
-          No se encontraron registros de pacientes.
-        </td>
-      </tr>`;
-    renderizarPaginacionResumen(0);
-    return;
-  }
-
-  pagina.forEach(p => {
-    const tr = document.createElement('tr');
-
-    let bg = '#ffffff';
-    if (p.estado === 'En espera') bg = '#ffe5e5';
-    else if (p.estado === 'En atención') bg = '#fff5cc';
-    else if (p.estado === 'Programado') bg = '#e1bee7';
-    else if (p.estado === 'Atendido') bg = '#d5f5d5';
-    else if (p.estado === 'Entregado') bg = '#f0f0f0';
-
-    tr.style.backgroundColor = bg;
-
-    let fechaTexto = p.fechaModificacion || p.fecha || '-';
-    if (fechaTexto.includes('T')) {
-      const [f, h] = fechaTexto.split('T');
-      const [yyyy, mm, dd] = f.split('-');
-      fechaTexto = `${dd}/${mm}/${yyyy} ${h.substring(0, 5)}`;
-    }
-
-    tr.innerHTML = `
-      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.sede || '-'}</strong></td>
-      <td style="padding:8px; border:1px solid #ddd;">${p.apellidos || p.apellido || '-'}</td>
-      <td style="padding:8px; border:1px solid #ddd;">${p.nombres || p.nombre || '-'}</td>
-      <td style="padding:8px; border:1px solid #ddd;">${p.estudios || p.estudio || '-'}</td>
-      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${p.cant || 1}</td>
-      <td style="padding:8px; border:1px solid #ddd;"><strong>${p.estado || '-'}</strong></td>
-      <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${fechaTexto}</td>
-    `;
-    tablaResumen.appendChild(tr);
-  });
-
-  renderizarPaginacionResumen(totalPaginas);
-}
-
-function renderizarPaginacionResumen(totalPaginas) {
-  const pagContainer = document.getElementById('paginacionResumen');
-  if (!pagContainer) return;
   pagContainer.innerHTML = '';
-  if (totalPaginas <= 1) return;
+
+  // Solo mostrar paginación si supera los 50 registros
+  if (totalRegistros <= pacientesPorPagina) return;
 
   for (let i = 1; i <= totalPaginas; i++) {
     const btn = document.createElement('button');
@@ -356,15 +272,15 @@ function renderizarPaginacionResumen(totalPaginas) {
     btn.style.cssText = `
       padding: 6px 12px;
       border: 1px solid #ccc;
-      background: ${i === paginaResumenActual ? '#3d0a11' : '#fff'};
-      color: ${i === paginaResumenActual ? '#fff' : '#333'};
+      background: ${i === paginaActual ? '#3d0a11' : '#fff'};
+      color: ${i === paginaActual ? '#fff' : '#333'};
       border-radius: 4px;
       cursor: pointer;
-      font-weight: ${i === paginaResumenActual ? 'bold' : 'normal'};
+      font-weight: ${i === paginaActual ? 'bold' : 'normal'};
     `;
     btn.onclick = () => {
-      paginaResumenActual = i;
-      renderizarTablaResumen();
+      paginaActual = i;
+      mostrarPacientes(pacientes);
     };
     pagContainer.appendChild(btn);
   }
@@ -420,7 +336,7 @@ function cambiarEstado(key, nuevoEstado) {
     return;
   }
   if (actual.estado === 'Atendido' && nuevoEstado !== 'Entregado') {
-    alert('Una vez ATENDIDO solo puede avanzar a su casa a dormir.');
+    alert('Una vez ATENDIDO solo puede avanzar a ENTREGADO.');
     aplicarFiltros();
     return;
   }
@@ -538,7 +454,6 @@ function getPosicion(evt) {
   }
 }
 
-// Eventos para dibujo (Mouse + Touch)
 if (canvas && ctx) {
   canvas.addEventListener('mousedown', e => {
     dibujando = true;
@@ -694,26 +609,6 @@ if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
 
 // ---------- Listeners filtros del panel principal ----------
 [filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
-
-// ---------- Listeners filtros del resumen ----------
-document.addEventListener('DOMContentLoaded', () => {
-  const filtroSedeR = document.getElementById('filtroSedeResumen');
-  const filtroFechaR = document.getElementById('filtroFechaResumen');
-
-  if (filtroSedeR) {
-    filtroSedeR.addEventListener('input', () => {
-      paginaResumenActual = 1;
-      renderizarTablaResumen();
-    });
-  }
-
-  if (filtroFechaR) {
-    filtroFechaR.addEventListener('change', () => {
-      paginaResumenActual = 1;
-      renderizarTablaResumen();
-    });
-  }
-});
 
 // ---------- Exponer funciones para handlers inline ----------
 window.cambiarEstado = cambiarEstado;
