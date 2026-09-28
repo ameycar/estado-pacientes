@@ -25,6 +25,15 @@ let datosPacientes = [];
 let firmaActualPaciente = null;
 let pendingSelectForEntrega = null;
 
+// Prioridad de estados para el ordenamiento
+const ordenEstados = {
+  'En espera': 1,
+  'En atención': 2,
+  'Atendido': 3,
+  'Programado': 4,
+  'Entregado': 5
+};
+
 // Usuario logueado (object) guardado en localStorage como 'user'
 const currentUser = (() => {
   try { return JSON.parse(localStorage.getItem('user') || 'null'); }
@@ -158,8 +167,17 @@ function aplicarFiltros() {
 
 // ---------- Mostrar pacientes ----------
 function mostrarPacientes(pacientes) {
-  // Ordenar: Los últimos editados/modificados van arriba primero
+  // Ordenamiento compuesto:
+  // 1° Por Estado: En espera -> En atención -> Atendido -> Programado -> Entregado
+  // 2° Por Fecha de modificación (descendente): los últimos editados quedan arriba dentro de su grupo
   pacientes.sort((a, b) => {
+    const ordenA = ordenEstados[a.estado] || 99;
+    const ordenB = ordenEstados[b.estado] || 99;
+
+    if (ordenA !== ordenB) {
+      return ordenA - ordenB;
+    }
+
     const fechaA = String(a.fechaModificacion || a.fecha || '');
     const fechaB = String(b.fechaModificacion || b.fecha || '');
     return fechaB.localeCompare(fechaA);
@@ -167,7 +185,7 @@ function mostrarPacientes(pacientes) {
 
   if (tablaPacientes) tablaPacientes.innerHTML = '';
   
-  // Contador global de en espera (antes de paginar)
+  // Contador de en espera
   const enEspera = pacientes.filter(p => p.estado === 'En espera').length;
   if (contador) contador.textContent = `Pacientes en espera: ${enEspera}`;
 
@@ -248,7 +266,7 @@ function mostrarPacientes(pacientes) {
   renderizarPaginacion(pacientes.length, totalPaginas, pacientes);
 }
 
-// ---------- Renderizar Paginación si supera 50 registros ----------
+// ---------- Renderizar Paginación ----------
 function renderizarPaginacion(totalRegistros, totalPaginas, pacientes) {
   let pagContainer = document.getElementById('paginacion-tabla');
   
@@ -263,7 +281,7 @@ function renderizarPaginacion(totalRegistros, totalPaginas, pacientes) {
 
   pagContainer.innerHTML = '';
 
-  // Solo mostrar paginación si supera los 50 registros
+  // Solo renderizar botones de página si supera los 50 registros
   if (totalRegistros <= pacientesPorPagina) return;
 
   for (let i = 1; i <= totalPaginas; i++) {
@@ -295,7 +313,8 @@ function editarConClave(evt, key, campo, inputEl) {
     inputEl.focus();
     const blurHandler = () => {
       const nuevoValor = inputEl.value;
-      update(ref(db, 'pacientes/' + key), { [campo]: nuevoValor });
+      const fechaModificacion = new Date().toISOString().slice(0, 16);
+      update(ref(db, 'pacientes/' + key), { [campo]: nuevoValor, fechaModificacion });
       inputEl.setAttribute('readonly', 'true');
       inputEl.removeEventListener('blur', blurHandler);
     };
@@ -313,16 +332,12 @@ function editarConClaveCheckbox(evt, key, campo, checkboxEl) {
   if (pass === ADMIN_PASS) {
     const nuevoVal = (!checkboxEl.checked) ? 'SI' : 'NO';
     checkboxEl.checked = (nuevoVal === 'SI');
-    update(ref(db, 'pacientes/' + key), { [campo]: nuevoVal });
+    const fechaModificacion = new Date().toISOString().slice(0, 16);
+    update(ref(db, 'pacientes/' + key), { [campo]: nuevoVal, fechaModificacion });
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
     checkboxEl.checked = (pacienteActual[campo] === 'SI');
   }
-}
-
-// ---------- Guardar campo general ----------
-function guardarCampo(key, campo, valor) {
-  update(ref(db, 'pacientes/' + key), { [campo]: valor });
 }
 
 // ---------- Cambiar estado ----------
@@ -567,7 +582,8 @@ function guardarFirma() {
   if (!firmaActualPaciente) return;
   if (!ctx || isCanvasBlank(canvas)) { alert('Firma vacía.'); return; }
   const dataURL = canvas.toDataURL('image/png');
-  update(ref(db, 'pacientes/' + firmaActualPaciente), { firma: dataURL });
+  const fechaModificacion = new Date().toISOString().slice(0, 16);
+  update(ref(db, 'pacientes/' + firmaActualPaciente), { firma: dataURL, fechaModificacion });
   cerrarModal();
 }
 
@@ -607,10 +623,10 @@ if (btnSaveEntrega) btnSaveEntrega.addEventListener('click', guardarEntregaDesde
 if (btnCancelEntrega) btnCancelEntrega.addEventListener('click', cerrarModal);
 if (btnClearFirma) btnClearFirma.addEventListener('click', limpiarFirma);
 
-// ---------- Listeners filtros del panel principal ----------
+// ---------- Listeners filtros ----------
 [filtroSede, filtroNombre, filtroEstudio, filtroFecha].forEach(i => i && i.addEventListener('input', aplicarFiltros));
 
-// ---------- Exponer funciones para handlers inline ----------
+// ---------- Exponer funciones globales ----------
 window.cambiarEstado = cambiarEstado;
 window.abrirModal = abrirModal;
 window.confirmarEliminar = confirmarEliminar;
