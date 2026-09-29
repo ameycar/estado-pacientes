@@ -25,6 +25,9 @@ let datosPacientes = [];
 let firmaActualPaciente = null;
 let pendingSelectForEntrega = null;
 
+// Escáner QR variable global
+let html5QrcodeScanner = null;
+
 // Prioridad de estados para el ordenamiento
 const ordenEstados = {
   'En espera': 1,
@@ -44,6 +47,72 @@ const currentUser = (() => {
 function keyify(s) {
   if (!s) return 'sin_sede';
   return String(s).replace(/[^\w]/g, '_').toLowerCase();
+}
+
+// ---------- Navegación en la misma página (SPA) ----------
+function mostrarSeccion(idSeccion) {
+  document.querySelectorAll('.seccion-modulo').forEach(sec => {
+    sec.style.display = 'none';
+  });
+  const activa = document.getElementById(idSeccion);
+  if (activa) activa.style.display = 'block';
+
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
+}
+
+// ---------- Escáner QR ----------
+const btnEscaneoQR = document.getElementById('btn-escaneo-qr');
+const readerDiv = document.getElementById('reader');
+
+if (btnEscaneoQR) {
+  btnEscaneoQR.addEventListener('click', () => {
+    if (!readerDiv) return;
+    
+    if (readerDiv.style.display === 'block') {
+      readerDiv.style.display = 'none';
+      if (html5QrcodeScanner) html5QrcodeScanner.clear();
+      return;
+    }
+
+    readerDiv.style.display = 'block';
+
+    if (typeof Html5QrcodeScanner !== 'undefined') {
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+      
+      html5QrcodeScanner.render((qrCodeMessage) => {
+        try {
+          // Acepta formato JSON desde el QR
+          const datos = JSON.parse(qrCodeMessage);
+          
+          if (datos.apellidos) document.getElementById('apellidos').value = datos.apellidos;
+          if (datos.nombres) document.getElementById('nombres').value = datos.nombres;
+          if (datos.precio) document.getElementById('precio').value = datos.precio;
+          if (datos.pf) document.getElementById('pf').value = datos.pf;
+          
+          if (datos.estudios && estudiosSelect) {
+            Array.from(estudiosSelect.options).forEach(opt => {
+              opt.selected = String(datos.estudios).includes(opt.value);
+            });
+            estudiosSelect.dispatchEvent(new Event('change'));
+          }
+
+          alert("¡Datos del paciente cargados desde el QR exitosamente!");
+          html5QrcodeScanner.clear();
+          readerDiv.style.display = 'none';
+
+        } catch (e) {
+          alert("El código QR escaneado no tiene un formato válido (JSON).");
+        }
+      }, (error) => {
+        // Ignorar errores continuos de búsqueda de marco QR
+      });
+    } else {
+      alert('La librería de escaneo QR no está cargada.');
+    }
+  });
 }
 
 // ---------- Cargar sedes y popular select ----------
@@ -79,7 +148,9 @@ function loadSedesToSelect() {
 if (estudiosSelect) {
   estudiosSelect.addEventListener('change', () => {
     const seleccionados = Array.from(estudiosSelect.selectedOptions).map(o => o.value);
-    cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
+    if (cantidadEcoPbDiv) {
+      cantidadEcoPbDiv.style.display = seleccionados.includes('Eco pb') ? 'block' : 'none';
+    }
   });
 }
 
@@ -161,15 +232,12 @@ function aplicarFiltros() {
   if (estudioFiltro) pacientes = pacientes.filter(p => (p.estudios || '').toLowerCase().includes(estudioFiltro));
   if (fechaFiltro) pacientes = pacientes.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
 
-  paginaActual = 1; // Reiniciar a primera página al filtrar
+  paginaActual = 1;
   mostrarPacientes(pacientes);
 }
 
 // ---------- Mostrar pacientes ----------
 function mostrarPacientes(pacientes) {
-  // Ordenamiento compuesto:
-  // 1° Por Estado: En espera -> En atención -> Atendido -> Programado -> Entregado
-  // 2° Por Fecha de modificación (descendente): los últimos editados quedan arriba dentro de su grupo
   pacientes.sort((a, b) => {
     const ordenA = ordenEstados[a.estado] || 99;
     const ordenB = ordenEstados[b.estado] || 99;
@@ -185,11 +253,9 @@ function mostrarPacientes(pacientes) {
 
   if (tablaPacientes) tablaPacientes.innerHTML = '';
   
-  // Contador de en espera
   const enEspera = pacientes.filter(p => p.estado === 'En espera').length;
   if (contador) contador.textContent = `Pacientes en espera: ${enEspera}`;
 
-  // Paginación
   const totalPaginas = Math.ceil(pacientes.length / pacientesPorPagina) || 1;
   if (paginaActual > totalPaginas) paginaActual = 1;
 
@@ -210,7 +276,7 @@ function mostrarPacientes(pacientes) {
 
     let firmaHTML = '';
     if (p.firma) {
-      firmaHTML = `<img src="${p.firma}" alt="Firma" class="firma-img">`;
+      firmaHTML = `<img src="${p.firma}" alt="Firma" class="firma-img" style="max-height: 40px;">`;
     } else if (p.estado === 'Entregado') {
       firmaHTML = `<button onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
     }
@@ -281,7 +347,6 @@ function renderizarPaginacion(totalRegistros, totalPaginas, pacientes) {
 
   pagContainer.innerHTML = '';
 
-  // Solo renderizar botones de página si supera los 50 registros
   if (totalRegistros <= pacientesPorPagina) return;
 
   for (let i = 1; i <= totalPaginas; i++) {
@@ -637,6 +702,7 @@ window.guardarFirma = guardarFirma;
 window.limpiarFirma = limpiarFirma;
 window.guardarEntregaDesdeModal = guardarEntregaDesdeModal;
 window.exportarExcel = exportarExcel;
+window.mostrarSeccion = mostrarSeccion;
 
 // ---------- Iniciar ----------
 loadSedesToSelect();
