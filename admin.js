@@ -92,6 +92,7 @@ function renderSedes(snapshot) {
     span.innerHTML = `<strong>${nombre}</strong> ${!activo ? "<small style='color:red;'> (Inactiva)</small>" : ""}`;
 
     const actions = document.createElement("div");
+    actions.className = "sede-actions";
 
     // Botón Editar (requiere clave)
     const btnEdit = document.createElement("button");
@@ -238,11 +239,12 @@ if (formUsuario) {
         rol: rol,
         sedeId: sedeId,
         sede: nombreSedeTexto,
-        debeCambiarPassword: true, // Habilita la obligatoriedad de cambiar clave en primer acceso por privacidad
+        activo: true, // Estado activo por defecto
+        debeCambiarPassword: true, // Forzar cambio al ingresar por privacidad
         createdAt: Date.now()
       });
 
-      alert(`Usuario '${username}' registrado con éxito. Se requería cambio de contraseña en su primer inicio.`);
+      alert(`Usuario '${username}' registrado con éxito. Debe cambiar contraseña en su primer inicio.`);
       formUsuario.reset();
     } catch (err) {
       alert("Error guardando usuario: " + err.message);
@@ -253,7 +255,10 @@ if (formUsuario) {
 if (listaUsuarios) {
   onValue(ref(db, "usuarios"), async (snapUsuarios) => {
     listaUsuarios.innerHTML = "";
-    if (!snapUsuarios.exists()) return;
+    if (!snapUsuarios.exists()) {
+      listaUsuarios.innerHTML = "<li style='padding:10px; color:#666;'>No hay usuarios registrados.</li>";
+      return;
+    }
 
     const snapSedes = await get(child(ref(db), "sedes"));
     const sedesMap = {};
@@ -274,27 +279,59 @@ if (listaUsuarios) {
       const rol = data.rol || "operador";
       const sedeId = data.sedeId || "";
       const nombreSede = data.sede || sedesMap[sedeId] || "Sin asignación";
+      const activo = data.activo !== false; // Por defecto activo
 
       const li = document.createElement("li");
       li.style.display = "flex";
       li.style.justifyContent = "space-between";
       li.style.alignItems = "center";
-      li.style.padding = "8px 12px";
+      li.style.padding = "10px 12px";
       li.style.borderBottom = "1px solid #eee";
+      if (!activo) {
+        li.style.opacity = "0.5";
+        li.style.backgroundColor = "#f9f9f9";
+      }
 
       const info = document.createElement("div");
       info.innerHTML = `
-        <strong>${nombres} ${apellidos} (${username})</strong> - <small>${email}</small><br>
+        <strong>${nombres} ${apellidos} (${username})</strong> ${!activo ? "<small style='color:red;'> (Inactivo)</small>" : ""} - <small>${email}</small><br>
         <small>Rol: <b>${rol.toUpperCase()}</b> | Sede: <b>${nombreSede}</b></small>
       `;
 
       const actions = document.createElement("div");
+      actions.className = "user-actions";
+
+      // Botón Editar Usuario (Nombres, Apellidos, Rol)
+      const btnEdit = document.createElement("button");
+      btnEdit.textContent = "✏️";
+      btnEdit.title = "Editar usuario";
+      btnEdit.style.marginRight = "6px";
+      btnEdit.addEventListener("click", () => editarUsuario(userKey, data));
+
+      // Botón Cambiar / Resetear Contraseña
+      const btnResetPass = document.createElement("button");
+      btnResetPass.textContent = "🔑";
+      btnResetPass.title = "Resetear contraseña";
+      btnResetPass.style.marginRight = "6px";
+      btnResetPass.addEventListener("click", () => resetearClaveUsuario(userKey, username));
+
+      // Botón Inhabilitar / Habilitar Usuario
+      const btnToggle = document.createElement("button");
+      btnToggle.textContent = activo ? "🚫 Inhabilitar" : "✅ Activar";
+      btnToggle.style.marginRight = "6px";
+      btnToggle.addEventListener("click", () => toggleUsuario(userKey, username, activo));
+
+      // Botón Eliminar de la BD
       const btnDel = document.createElement("button");
       btnDel.textContent = "🗑";
-      btnDel.title = "Revocar usuario";
+      btnDel.title = "Eliminar de la BD";
       btnDel.addEventListener("click", () => eliminarUsuario(userKey, username));
 
+      actions.appendChild(btnEdit);
+      actions.appendChild(btnResetPass);
+      actions.appendChild(btnToggle);
       actions.appendChild(btnDel);
+
       li.appendChild(info);
       li.appendChild(actions);
 
@@ -303,11 +340,74 @@ if (listaUsuarios) {
   });
 }
 
+// Editar Datos Básicos de Usuario (Requiere clave admin)
+async function editarUsuario(userKey, dataActual) {
+  if (!verificarPasswordAdmin()) return;
+
+  const nuevosNombres = prompt("Nombres:", dataActual.nombres || "");
+  if (nuevosNombres === null) return;
+  
+  const nuevosApellidos = prompt("Apellidos:", dataActual.apellidos || "");
+  if (nuevosApellidos === null) return;
+
+  const nuevoRol = prompt("Rol (registrador, visualizador, llamador, estadistica, admin):", dataActual.rol || "registrador");
+  if (nuevoRol === null) return;
+
+  try {
+    await update(ref(db, `usuarios/${userKey}`), {
+      nombres: nuevosNombres.trim(),
+      apellidos: nuevosApellidos.trim(),
+      rol: nuevoRol.trim().toLowerCase(),
+      updatedAt: Date.now()
+    });
+    alert("Datos de usuario actualizados correctamente.");
+  } catch (err) {
+    alert("Error al actualizar usuario: " + err.message);
+  }
+}
+
+// Resetear Contraseña (Requiere clave admin)
+async function resetearClaveUsuario(userKey, username) {
+  if (!verificarPasswordAdmin()) return;
+
+  const nuevaClave = prompt(`Ingrese la nueva contraseña temporal para '${username}':`);
+  if (!nuevaClave) return;
+
+  const trimmedClave = nuevaClave.trim();
+  if (!trimmedClave) return alert("Contraseña no válida.");
+
+  try {
+    const passwordHash = await hashPassword(trimmedClave);
+    await update(ref(db, `usuarios/${userKey}`), {
+      passwordHash: passwordHash,
+      debeCambiarPassword: true, // Forzar cambio en primer acceso
+      updatedAt: Date.now()
+    });
+    alert(`Contraseña actualizada para '${username}'. Se le requerirá cambiarla al iniciar sesión.`);
+  } catch (err) {
+    alert("Error al resetear contraseña: " + err.message);
+  }
+}
+
+// Inhabilitar / Activar Usuario
+async function toggleUsuario(userKey, username, estadoActual) {
+  const accion = estadoActual ? "inhabilitar" : "activar";
+  if (!confirm(`¿Deseas ${accion} al usuario '${username}'?`)) return;
+
+  try {
+    await update(ref(db, `usuarios/${userKey}`), { activo: !estadoActual });
+  } catch (err) {
+    alert("Error al cambiar estado del usuario: " + err.message);
+  }
+}
+
+// Eliminar Usuario de la BD (Requiere clave admin)
 async function eliminarUsuario(userKey, username) {
   if (!verificarPasswordAdmin()) return;
 
-  const ok = confirm(`¿Quitar permisos y eliminar al usuario '${username}'?`);
+  const ok = confirm(`¿Está seguro de eliminar permanentemente al usuario '${username}'?\nSe recomienda únicamente inhabilitarlo.`);
   if (!ok) return;
+
   try {
     await remove(ref(db, `usuarios/${userKey}`));
   } catch (err) {
