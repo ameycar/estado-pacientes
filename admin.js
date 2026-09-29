@@ -200,6 +200,9 @@ if (formUsuario) {
     const email = (inputEmail.value || "").trim().toLowerCase();
     const rol = selectRol ? selectRol.value : "sede";
     const sedeId = selectSedeUsuario ? selectSedeUsuario.value : "";
+    
+    // Obtener el nombre del texto seleccionado en el <select>
+    const nombreSedeTexto = selectSedeUsuario ? selectSedeUsuario.options[selectSedeUsuario.selectedIndex].text : "";
 
     if (!email) return alert("Ingresa el correo del usuario.");
     if (!sedeId) return alert("Selecciona la sede asignada.");
@@ -211,6 +214,7 @@ if (formUsuario) {
         email: email,
         rol: rol,
         sedeId: sedeId,
+        sede: nombreSedeTexto, // Asigna el texto real de la sede para compatibilidad directa
         updatedAt: Date.now()
       });
 
@@ -243,7 +247,7 @@ if (listaUsuarios) {
       const email = data.email || userKey;
       const rol = data.rol || "operador";
       const sedeId = data.sedeId || "";
-      const nombreSede = sedesMap[sedeId] || "Sin asignación";
+      const nombreSede = data.sede || sedesMap[sedeId] || "Sin asignación";
 
       const li = document.createElement("li");
       li.style.display = "flex";
