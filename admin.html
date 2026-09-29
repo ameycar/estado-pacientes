@@ -124,6 +124,22 @@
       justify-content: space-between;
       align-items: center;
     }
+
+    .grid-form-usuario {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .grid-form-usuario input, .grid-form-usuario select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -167,17 +183,30 @@
     <!-- SECCIÓN USUARIOS -->
     <section id="usuarios" class="seccion" style="display:none;">
       <h2>Gestión de Usuarios</h2>
-      <form id="formUsuario" style="display:flex; gap:10px; align-items:center; margin-bottom:15px; flex-wrap:wrap;">
-        <input id="usuarioEmail" type="email" placeholder="correo@ejemplo.com" required style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; min-width:220px;">
-        <select id="usuarioRol" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
-          <option value="sede">Sede / Operador</option>
-          <option value="admin">Administrador General</option>
-        </select>
-        <select id="usuarioSede" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
-          <option value="">Seleccione Sede</option>
-        </select>
-        <button type="submit" style="padding:8px 16px; border-radius:6px; background:#3d0a11; color:white; border:none; cursor:pointer; font-weight:bold;">
-          Asignar Permiso
+      <form id="formUsuario">
+        <div class="grid-form-usuario">
+          <input id="usuarioNombres" type="text" placeholder="Nombres" required>
+          <input id="usuarioApellidos" type="text" placeholder="Apellidos" required>
+          <input id="usuarioUsername" type="text" placeholder="Nombre de usuario (Login)" required>
+          <input id="usuarioEmail" type="email" placeholder="correo@ejemplo.com" required>
+          <input id="usuarioClave" type="text" placeholder="Contraseña asignada" required>
+          
+          <select id="usuarioRol" required>
+            <option value="">Seleccione Rol / Permiso</option>
+            <option value="registrador">Registrador (Solo registro de sede)</option>
+            <option value="visualizador">Visualizador (Solo lectura pac. en espera)</option>
+            <option value="llamador">Llamador de Área (Médicos, Lab, Lic, Tech)</option>
+            <option value="estadistica">Estadística / Reportes</option>
+            <option value="admin">Administrador General</option>
+          </select>
+
+          <select id="usuarioSede" required>
+            <option value="">Seleccione Sede</option>
+          </select>
+        </div>
+
+        <button type="submit" style="padding:10px 20px; border-radius:6px; background:#3d0a11; color:white; border:none; cursor:pointer; font-weight:bold; width:100%;">
+          Crear Usuario con Permisos
         </button>
       </form>
 
