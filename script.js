@@ -17,6 +17,23 @@ const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
+// ---------- Función Helper: Fecha/Hora Perú (UTC-5) ----------
+function getFechaHoraPeru() {
+  const ahora = new Date();
+  const opciones = {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  };
+
+  const formateador = new Intl.DateTimeFormat("sv-SE", opciones);
+  return formateador.format(ahora).replace(" ", "T"); // Formato: YYYY-MM-DDTHH:mm
+}
+
 // Variables para Paginación de Tabla Principal
 let paginaActual = 1;
 const pacientesPorPagina = 50;
@@ -84,7 +101,6 @@ if (btnEscaneoQR) {
       
       html5QrcodeScanner.render((qrCodeMessage) => {
         try {
-          // Acepta formato JSON desde el QR
           const datos = JSON.parse(qrCodeMessage);
           
           if (datos.apellidos) document.getElementById('apellidos').value = datos.apellidos;
@@ -107,7 +123,7 @@ if (btnEscaneoQR) {
           alert("El código QR escaneado no tiene un formato válido (JSON).");
         }
       }, (error) => {
-        // Ignorar errores continuos de búsqueda de marco QR
+        // Ignorar errores de escaneo en bucle
       });
     } else {
       alert('La librería de escaneo QR no está cargada.');
@@ -169,7 +185,7 @@ if (formulario) {
     const precio = document.getElementById('precio').value.trim();
     const pf = document.getElementById('pf').value.trim();
     const estado = 'En espera';
-    const fechaModificacion = new Date().toISOString().slice(0, 16);
+    const fechaModificacion = getFechaHoraPeru(); // Hora Perú
 
     if (estudios.includes('Eco pb')) {
       const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
@@ -378,7 +394,7 @@ function editarConClave(evt, key, campo, inputEl) {
     inputEl.focus();
     const blurHandler = () => {
       const nuevoValor = inputEl.value;
-      const fechaModificacion = new Date().toISOString().slice(0, 16);
+      const fechaModificacion = getFechaHoraPeru(); // Hora Perú
       update(ref(db, 'pacientes/' + key), { [campo]: nuevoValor, fechaModificacion });
       inputEl.setAttribute('readonly', 'true');
       inputEl.removeEventListener('blur', blurHandler);
@@ -397,7 +413,7 @@ function editarConClaveCheckbox(evt, key, campo, checkboxEl) {
   if (pass === ADMIN_PASS) {
     const nuevoVal = (!checkboxEl.checked) ? 'SI' : 'NO';
     checkboxEl.checked = (nuevoVal === 'SI');
-    const fechaModificacion = new Date().toISOString().slice(0, 16);
+    const fechaModificacion = getFechaHoraPeru(); // Hora Perú
     update(ref(db, 'pacientes/' + key), { [campo]: nuevoVal, fechaModificacion });
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
@@ -421,14 +437,14 @@ function cambiarEstado(key, nuevoEstado) {
     return;
   }
 
-  const fechaModificacion = new Date().toISOString().slice(0, 16);
+  const fechaModificacion = getFechaHoraPeru(); // Hora Perú
 
   if (nuevoEstado === 'En atención') {
     const turno = {
       nombre: actual.nombres + ' ' + actual.apellidos,
       sede: actual.sede,
       estudio: actual.estudios,
-      hora: new Date().toLocaleTimeString()
+      hora: new Date().toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })
     };
     set(ref(db, `turnoActual/${keyify(actual.sede)}`), turno);
     set(ref(db, 'turnoActual_global'), turno);
@@ -452,7 +468,7 @@ function llamarOtraVez(key) {
     nombre: actual.nombres + ' ' + actual.apellidos,
     sede: actual.sede,
     estudio: actual.estudios,
-    hora: new Date().toLocaleTimeString()
+    hora: new Date().toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })
   };
   set(ref(db, `turnoActual/${keyify(actual.sede)}`), turno);
   set(ref(db, 'turnoActual_global'), turno);
@@ -599,7 +615,7 @@ function guardarEntregaDesdeModal() {
   }
 
   const dataURL = canvas.toDataURL('image/png');
-  const fechaModificacion = new Date().toISOString().slice(0, 16);
+  const fechaModificacion = getFechaHoraPeru(); // Hora Perú
 
   update(ref(db, 'pacientes/' + firmaActualPaciente), {
     estado: 'Entregado',
@@ -647,7 +663,7 @@ function guardarFirma() {
   if (!firmaActualPaciente) return;
   if (!ctx || isCanvasBlank(canvas)) { alert('Firma vacía.'); return; }
   const dataURL = canvas.toDataURL('image/png');
-  const fechaModificacion = new Date().toISOString().slice(0, 16);
+  const fechaModificacion = getFechaHoraPeru(); // Hora Perú
   update(ref(db, 'pacientes/' + firmaActualPaciente), { firma: dataURL, fechaModificacion });
   cerrarModal();
 }
