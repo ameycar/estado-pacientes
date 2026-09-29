@@ -21,10 +21,24 @@ const inputNombre = document.getElementById("sedeNombre");
 
 /* DOM - USUARIOS */
 const formUsuario = document.getElementById("formUsuario");
+const inputNombres = document.getElementById("usuarioNombres");
+const inputApellidos = document.getElementById("usuarioApellidos");
+const inputUsername = document.getElementById("usuarioUsername");
 const inputEmail = document.getElementById("usuarioEmail");
+const inputClave = document.getElementById("usuarioClave");
 const selectRol = document.getElementById("usuarioRol");
 const selectSedeUsuario = document.getElementById("usuarioSede");
 const listaUsuarios = document.getElementById("listaUsuarios");
+
+/* ==========================================
+   UTILIDADES - ENCRIPTACIÓN DE CONTRASEÑA
+   ========================================== */
+async function hashPassword(password) {
+  const msgUint8 = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 /* ==========================================
    1. GESTIÓN DE SEDES
@@ -184,7 +198,6 @@ function actualizarSelectSedesUsuarios(snapshot) {
   snapshot.forEach((childSnap) => {
     const key = childSnap.key;
     const data = childSnap.val() || {};
-    // Mostrar solo sedes activas en los selectores de asignación
     if (data.activo !== false) {
       const opt = document.createElement("option");
       opt.value = key;
@@ -197,30 +210,40 @@ function actualizarSelectSedesUsuarios(snapshot) {
 if (formUsuario) {
   formUsuario.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    const nombres = (inputNombres.value || "").trim();
+    const apellidos = (inputApellidos.value || "").trim();
+    const username = (inputUsername.value || "").trim().toLowerCase();
     const email = (inputEmail.value || "").trim().toLowerCase();
-    const rol = selectRol ? selectRol.value : "sede";
+    const claveRaw = (inputClave.value || "").trim();
+    const rol = selectRol ? selectRol.value : "registrador";
     const sedeId = selectSedeUsuario ? selectSedeUsuario.value : "";
-    
-    // Obtener el nombre del texto seleccionado en el <select>
     const nombreSedeTexto = selectSedeUsuario ? selectSedeUsuario.options[selectSedeUsuario.selectedIndex].text : "";
 
-    if (!email) return alert("Ingresa el correo del usuario.");
-    if (!sedeId) return alert("Selecciona la sede asignada.");
+    if (!nombres || !apellidos || !username || !email || !claveRaw || !sedeId || !rol) {
+      return alert("Complete todos los campos del formulario de registro.");
+    }
 
-    const emailKey = email.replace(/\./g, "_at_");
+    // Clave encriptada SHA-256
+    const passwordHash = await hashPassword(claveRaw);
+    const userKey = username.replace(/[^\w]/g, "_");
 
     try {
-      await set(ref(db, `usuarios/${emailKey}`), {
+      await set(ref(db, `usuarios/${userKey}`), {
+        nombres: nombres,
+        apellidos: apellidos,
+        username: username,
         email: email,
+        passwordHash: passwordHash,
         rol: rol,
         sedeId: sedeId,
-        sede: nombreSedeTexto, // Asigna el texto real de la sede para compatibilidad directa
-        updatedAt: Date.now()
+        sede: nombreSedeTexto,
+        debeCambiarPassword: true, // Habilita la obligatoriedad de cambiar clave en primer acceso por privacidad
+        createdAt: Date.now()
       });
 
-      alert(`Permiso asignado correctamente a ${email}`);
-      inputEmail.value = "";
-      if (selectSedeUsuario) selectSedeUsuario.value = "";
+      alert(`Usuario '${username}' registrado con éxito. Se requería cambio de contraseña en su primer inicio.`);
+      formUsuario.reset();
     } catch (err) {
       alert("Error guardando usuario: " + err.message);
     }
@@ -244,7 +267,10 @@ if (listaUsuarios) {
     snapUsuarios.forEach((childSnap) => {
       const userKey = childSnap.key;
       const data = childSnap.val() || {};
-      const email = data.email || userKey;
+      const nombres = data.nombres || "";
+      const apellidos = data.apellidos || "";
+      const username = data.username || userKey;
+      const email = data.email || "Sin correo";
       const rol = data.rol || "operador";
       const sedeId = data.sedeId || "";
       const nombreSede = data.sede || sedesMap[sedeId] || "Sin asignación";
@@ -257,12 +283,16 @@ if (listaUsuarios) {
       li.style.borderBottom = "1px solid #eee";
 
       const info = document.createElement("div");
-      info.innerHTML = `<strong>${email}</strong><br><small>Rol: ${rol} | Sede: ${nombreSede}</small>`;
+      info.innerHTML = `
+        <strong>${nombres} ${apellidos} (${username})</strong> - <small>${email}</small><br>
+        <small>Rol: <b>${rol.toUpperCase()}</b> | Sede: <b>${nombreSede}</b></small>
+      `;
 
       const actions = document.createElement("div");
       const btnDel = document.createElement("button");
       btnDel.textContent = "🗑";
-      btnDel.addEventListener("click", () => eliminarUsuario(userKey, email));
+      btnDel.title = "Revocar usuario";
+      btnDel.addEventListener("click", () => eliminarUsuario(userKey, username));
 
       actions.appendChild(btnDel);
       li.appendChild(info);
@@ -273,10 +303,10 @@ if (listaUsuarios) {
   });
 }
 
-async function eliminarUsuario(userKey, email) {
+async function eliminarUsuario(userKey, username) {
   if (!verificarPasswordAdmin()) return;
 
-  const ok = confirm(`¿Quitar permisos a ${email}?`);
+  const ok = confirm(`¿Quitar permisos y eliminar al usuario '${username}'?`);
   if (!ok) return;
   try {
     await remove(ref(db, `usuarios/${userKey}`));
