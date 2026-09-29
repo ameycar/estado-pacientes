@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css" />
+  
+  <!-- Librería XLSX para Exportación -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Librería para Escáner QR -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
   <script>
@@ -14,146 +18,130 @@
     // if (!usuario) { window.location.href = 'login.html'; }
   </script>
 
-  <h1>Estado de Pacientes</h1>
+  <!-- Navegación Superior para evitar redirecciones de páginas (SPA) -->
+  <header>
+    <nav class="navbar" style="display: flex; gap: 10px; padding: 10px; background-color: #3d0a11; color: white; justify-content: space-between; align-items: center;">
+      <div style="display: flex; gap: 10px;">
+        <button class="nav-btn active" onclick="mostrarSeccion('vista-pacientes')" style="padding: 8px 16px; cursor: pointer;">📋 Gestión de Pacientes</button>
+        <button class="nav-btn" onclick="mostrarSeccion('vista-reportes')" style="padding: 8px 16px; cursor: pointer;">📊 Reportes Integrados</button>
+      </div>
+      <div>
+        <button onclick="cerrarSesion()" style="padding: 6px 12px; cursor: pointer;">Cerrar sesión</button>
+      </div>
+    </nav>
+  </header>
 
-  <div style="text-align: right; margin-bottom: 10px;">
-    <button onclick="cerrarSesion()">Cerrar sesión</button>
-  </div>
+  <main style="padding: 20px;">
 
-  <form id="formulario">
-    <label for="sede">Sede:</label>
-    <select id="sede" required>
-      <!-- las sedes se cargarán desde Firebase (sede activas) -->
-    </select>
+    <!-- SECCIÓN PRINCIPAL: GESTIÓN DE PACIENTES -->
+    <section id="vista-pacientes" class="seccion-modulo">
+      <h1>Estado de Pacientes</h1>
 
-    <label for="apellidos">Apellidos:</label>
-    <input type="text" id="apellidos" required>
+      <!-- Lector de Código QR -->
+      <div id="seccion-qr" style="margin-bottom: 15px; background: #f4f4f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+        <button type="button" id="btn-escaneo-qr" style="padding: 10px 15px; font-weight: bold; cursor: pointer;">📷 Escanear QR de Boleta</button>
+        <div id="reader" style="width: 320px; display: none; margin-top: 10px; border: 1px solid #ccc;"></div>
+      </div>
 
-    <label for="nombres">Nombres:</label>
-    <input type="text" id="nombres" required>
+      <!-- Formulario de Registro -->
+      <form id="formulario">
+        <label for="sede">Sede:</label>
+        <select id="sede" required>
+          <!-- las sedes se cargarán desde Firebase (sede activas) -->
+        </select>
 
-    <label for="estudios">Estudios:</label>
-    <select id="estudios" multiple required>
-      <!-- LISTA COMPLETA (no tocar) -->
-      <option value="Consulta Medicina">Consulta Medicina</option>
-      <option value="eco">eco</option>
-      <option value="Reevaluación">Reevaluación</option>
-      <option value="Eco tv">Eco tv</option>
-      <option value="Eco doppler">Eco doppler</option>
-      <option value="Eco abdomen completo">Eco abdomen completo</option>
-      <option value="Eco renal">Eco renal</option>
-      <option value="Eco mamaria">Eco mamaria</option>
-      <option value="Eco obstetrica">Eco obstetrica</option>
-      <option value="Eco pelvica">Eco pelvica</option>
-      <option value="Eco abdomen sup">Eco abdomen sup</option>
-      <option value="Eco abdomen inf">Eco abdomen inf</option>
-      <option value="Eco pb">Eco pb</option>
-      <option value="TEM">Tomografía</option>
-      <option value="RM">Resonancia Magnética</option>
-      <option value="RX">Rayos X</option>
-      <option value="Mamografia">Mamografía</option>
-      <option value="Eco prostata">Eco prostata</option>
-      <option value="Eco genética">Eco genética</option>
-      <option value="Eco morfo">Eco morfo</option>
-      <option value="Eco 4d">Eco 4d</option>
-      <option value="Eco 5d">Eco 5d</option>
-      <option value="Eco vias urinarias">Eco vias urinarias</option>
-    </select>
+        <label for="apellidos">Apellidos:</label>
+        <input type="text" id="apellidos" required>
 
-    <div id="cantidad-eco-pb" style="display:none;">
-      <label for="ecoPbCantidad">Cantidad Eco pb:</label>
-      <select id="ecoPbCantidad">
-        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-        <option value="10">10</option>
-      </select>
-    </div>
+        <label for="nombres">Nombres:</label>
+        <input type="text" id="nombres" required>
 
-    <label for="precio">Precio:</label>
-    <input type="number" id="precio" required>
+        <label for="estudios">Estudios:</label>
+        <select id="estudios" multiple required>
+          <!-- LISTA COMPLETA (no tocar) -->
+          <option value="Consulta Medicina">Consulta Medicina</option>
+          <option value="eco">eco</option>
+          <option value="Reevaluación">Reevaluación</option>
+          <option value="Eco tv">Eco tv</option>
+          <option value="Eco doppler">Eco doppler</option>
+          <option value="Eco abdomen completo">Eco abdomen completo</option>
+          <option value="Eco renal">Eco renal</option>
+          <option value="Eco mamaria">Eco mamaria</option>
+          <option value="Eco obstetrica">Eco obstetrica</option>
+          <option value="Eco pelvica">Eco pelvica</option>
+          <option value="Eco abdomen sup">Eco abdomen sup</option>
+          <option value="Eco abdomen inf">Eco abdomen inf</option>
+          <option value="Eco pb">Eco pb</option>
+          <option value="TEM">Tomografía</option>
+          <option value="RM">Resonancia Magnética</option>
+          <option value="RX">Rayos X</option>
+          <option value="Mamografia">Mamografía</option>
+          <option value="Eco prostata">Eco prostata</option>
+          <option value="Eco genética">Eco genética</option>
+          <option value="Eco morfo">Eco morfo</option>
+          <option value="Eco 4d">Eco 4d</option>
+          <option value="Eco 5d">Eco 5d</option>
+          <option value="Eco vias urinarias">Eco vias urinarias</option>
+        </select>
 
-    <label for="pf">PF (ticket de pago):</label>
-    <input type="text" id="pf" required>
+        <div id="cantidad-eco-pb" style="display:none;">
+          <label for="ecoPbCantidad">Cantidad Eco pb:</label>
+          <select id="ecoPbCantidad">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+        </div>
 
-    <button type="submit">Registrar</button>
-  </form>
+        <label for="precio">Precio:</label>
+        <input type="number" id="precio" required>
 
-  <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
+        <label for="pf">PF (ticket de pago):</label>
+        <input type="text" id="pf" required>
 
-  <div id="filtros" style="margin-top: 20px;">
-    <label for="filtroSede">Filtrar por sede:</label>
-    <input type="text" id="filtroSede" placeholder="Sede...">
+        <button type="submit">Registrar</button>
+      </form>
 
-    <label for="filtroNombre">Filtrar por nombre/apellido:</label>
-    <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
+      <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
 
-    <label for="filtroEstudio">Filtrar por estudio:</label>
-    <input type="text" id="filtroEstudio" placeholder="Estudio...">
+      <div id="filtros" style="margin-top: 20px;">
+        <label for="filtroSede">Filtrar por sede:</label>
+        <input type="text" id="filtroSede" placeholder="Sede...">
 
-    <label for="filtroFecha">Filtrar por fecha:</label>
-    <input type="date" id="filtroFecha">
+        <label for="filtroNombre">Filtrar por nombre/apellido:</label>
+        <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
 
-    <button onclick="exportarExcel()">Exportar a Excel</button>
-  </div>
+        <label for="filtroEstudio">Filtrar por estudio:</label>
+        <input type="text" id="filtroEstudio" placeholder="Estudio...">
 
-  <table>
-    <thead>
-      <tr>
-        <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
-        <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
-        <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
-        <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-pacientes"></tbody>
-  </table>
+        <label for="filtroFecha">Filtrar por fecha:</label>
+        <input type="date" id="filtroFecha">
 
-  <!-- SECCIÓN RESUMEN -->
-  <section id="resumen" class="seccion" style="max-width:1100px; margin-top: 30px;">
-    <h2>Resumen de Pacientes</h2>
+        <button onclick="exportarExcel()">Exportar a Excel</button>
+      </div>
 
-    <!-- Contador de Pacientes en Espera -->
-    <div style="margin-bottom: 15px; font-weight: bold; font-size: 15px; color: #3d0a11; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e0e0e0; display: inline-block;">
-      Pacientes en espera: 
-      <span id="contadorResumenEnEspera" style="background: #ffe5e5; color: #d32f2f; padding: 3px 10px; border-radius: 4px; border: 1px solid #ffb3b3; font-size: 17px; margin-left: 5px;">
-        0
-      </span>
-    </div>
-
-    <!-- Filtros del Resumen -->
-    <div style="display: flex; gap: 15px; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #ddd; flex-wrap: wrap;">
-      <label><strong>Filtrar por sede:</strong><br> 
-        <input type="text" id="filtroSedeResumen" placeholder="Escribe la sede..." style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
-      </label>
-      <label><strong>Filtrar por fecha:</strong><br> 
-        <input type="date" id="filtroFechaResumen" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-top: 4px;">
-      </label>
-    </div>
-
-    <!-- Tabla Resumen -->
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; background: white;">
+      <table>
         <thead>
-          <tr style="background-color: #f2f2f2;">
-            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Sede</th>
-            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Apellidos</th>
-            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Nombres</th>
-            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estudios</th>
-            <th style="padding:8px; border:1px solid #ddd; text-align:center;">Cant</th>
-            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Estado</th>
-            <th style="padding:8px; border:1px solid #ddd; text-align:left;">Fecha Modificación</th>
+          <tr>
+            <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
+            <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
+            <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
+            <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acción</th>
           </tr>
         </thead>
-        <tbody id="tabla-resumen">
-          <!-- Se llena dinámicamente -->
-        </tbody>
+        <tbody id="tabla-pacientes"></tbody>
       </table>
-    </div>
+      <div id="paginacion-tabla"></div>
+    </section>
 
-    <!-- Paginación Resumen -->
-    <div id="paginacionResumen" style="margin-top: 15px; display: flex; justify-content: center; gap: 6px;"></div>
-  </section>
+    <!-- VISTA SECUNDARIA DENTRO DEL MISMO INDEX (SPA) -->
+    <section id="vista-reportes" class="seccion-modulo" style="display: none;">
+      <h2>Reportes y Estadísticas Generales</h2>
+      <p>Módulo de reportes cargado internamente sin necesidad de refrescar la página ni cambiar de archivo.</p>
+    </section>
+
+  </main>
 
   <!-- MODAL: entrega (placas/cd/informe + firma) -->
   <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
