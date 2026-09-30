@@ -17,6 +17,10 @@ const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
+// Instancias de Gráficos Chart.js
+let chartSedesInstance = null;
+let chartEstadosInstance = null;
+
 // ---------- Función Helper: Fecha/Hora Perú (UTC-5) ----------
 function getFechaHoraPeru() {
   const ahora = new Date();
@@ -75,9 +79,106 @@ function mostrarSeccion(idSeccion) {
   if (activa) activa.style.display = 'block';
 
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add('active');
+  if (window.event && window.event.currentTarget) {
+    window.event.currentTarget.classList.add('active');
   }
+}
+
+// ---------- Control Sub-Pestañas en Reportes ----------
+function mostrarSubPestana(idSubSeccion) {
+  document.querySelectorAll('.sub-seccion').forEach(sub => {
+    sub.style.display = 'none';
+  });
+
+  const subActiva = document.getElementById(idSubSeccion);
+  if (subActiva) subActiva.style.display = 'block';
+
+  document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
+  if (window.event && window.event.currentTarget) {
+    window.event.currentTarget.classList.add('active');
+  }
+
+  // Carga de datos EXCLUSIVA al presionar en "Estadísticas"
+  if (idSubSeccion === 'sub-estadisticas') {
+    cargarEstadisticas();
+  }
+}
+
+// ---------- Carga y Cálculo de Estadísticas ----------
+function cargarEstadisticas() {
+  const totalPacientes = datosPacientes.length;
+  const atendidosEntregados = datosPacientes.filter(p => p.estado === 'Atendido' || p.estado === 'Entregado').length;
+  
+  const recaudacionTotal = datosPacientes.reduce((acc, p) => {
+    const val = parseFloat(p.precio) || 0;
+    return acc + val;
+  }, 0);
+
+  // Renderizar Tarjetas de Métricas
+  const elTotal = document.getElementById('stat-total-pacientes');
+  const elAtendidos = document.getElementById('stat-atendidos');
+  const elRecaudacion = document.getElementById('stat-recaudacion');
+
+  if (elTotal) elTotal.textContent = totalPacientes;
+  if (elAtendidos) elAtendidos.textContent = atendidosEntregados;
+  if (elRecaudacion) elRecaudacion.textContent = `S/ ${recaudacionTotal.toFixed(2)}`;
+
+  // Agrupamiento por Sedes
+  const conteoSedes = {};
+  datosPacientes.forEach(p => {
+    const s = p.sede || 'Sin Sede';
+    conteoSedes[s] = (conteoSedes[s] || 0) + 1;
+  });
+
+  // Agrupamiento por Estado
+  const conteoEstados = {};
+  datosPacientes.forEach(p => {
+    const est = p.estado || 'Desconocido';
+    conteoEstados[est] = (conteoEstados[est] || 0) + 1;
+  });
+
+  // Renderizar Gráficos con Chart.js
+  renderizarGraficoSedes(conteoSedes);
+  renderizarGraficoEstados(conteoEstados);
+}
+
+function renderizarGraficoSedes(conteoSedes) {
+  const canvas = document.getElementById('chartSedes');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  if (chartSedesInstance) chartSedesInstance.destroy();
+
+  chartSedesInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(conteoSedes),
+      datasets: [{
+        label: 'Cantidad de Pacientes',
+        data: Object.values(conteoSedes),
+        backgroundColor: '#3d0a11'
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderizarGraficoEstados(conteoEstados) {
+  const canvas = document.getElementById('chartEstados');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  if (chartEstadosInstance) chartEstadosInstance.destroy();
+
+  chartEstadosInstance = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(conteoEstados),
+      datasets: [{
+        data: Object.values(conteoEstados),
+        backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#6c757d', '#20c997']
+      }]
+    },
+    options: { responsive: true }
+  });
 }
 
 // ---------- Escáner QR ----------
@@ -123,7 +224,7 @@ if (btnEscaneoQR) {
           alert("El código QR escaneado no tiene un formato válido (JSON).");
         }
       }, (error) => {
-        // Ignorar errores de escaneo en bucle
+        // Ignorar errores de escaneo
       });
     } else {
       alert('La librería de escaneo QR no está cargada.');
@@ -185,7 +286,7 @@ if (formulario) {
     const precio = document.getElementById('precio').value.trim();
     const pf = document.getElementById('pf').value.trim();
     const estado = 'En espera';
-    const fechaModificacion = getFechaHoraPeru(); // Hora Perú
+    const fechaModificacion = getFechaHoraPeru();
 
     if (estudios.includes('Eco pb')) {
       const ecoCantidad = parseInt(ecoPbCantidad.value) || 1;
@@ -394,7 +495,7 @@ function editarConClave(evt, key, campo, inputEl) {
     inputEl.focus();
     const blurHandler = () => {
       const nuevoValor = inputEl.value;
-      const fechaModificacion = getFechaHoraPeru(); // Hora Perú
+      const fechaModificacion = getFechaHoraPeru();
       update(ref(db, 'pacientes/' + key), { [campo]: nuevoValor, fechaModificacion });
       inputEl.setAttribute('readonly', 'true');
       inputEl.removeEventListener('blur', blurHandler);
@@ -413,7 +514,7 @@ function editarConClaveCheckbox(evt, key, campo, checkboxEl) {
   if (pass === ADMIN_PASS) {
     const nuevoVal = (!checkboxEl.checked) ? 'SI' : 'NO';
     checkboxEl.checked = (nuevoVal === 'SI');
-    const fechaModificacion = getFechaHoraPeru(); // Hora Perú
+    const fechaModificacion = getFechaHoraPeru();
     update(ref(db, 'pacientes/' + key), { [campo]: nuevoVal, fechaModificacion });
   } else {
     alert('Contraseña incorrecta. No se permite modificar.');
@@ -437,7 +538,7 @@ function cambiarEstado(key, nuevoEstado) {
     return;
   }
 
-  const fechaModificacion = getFechaHoraPeru(); // Hora Perú
+  const fechaModificacion = getFechaHoraPeru();
 
   if (nuevoEstado === 'En atención') {
     const turno = {
@@ -509,7 +610,7 @@ function abrirModalParaEntrega(key) {
   const informeSelect = document.getElementById('modal_informe');
 
   if (!placasInput || !cdSelect || !informeSelect || !modalFirma || !canvas) {
-    alert('Faltan elementos del modal en index.html. Revisa modal_placas/modal_cd/modal_informe/canvasFirma.');
+    alert('Faltan elementos del modal en index.html.');
     if (pendingSelectForEntrega) {
       update(ref(db, 'pacientes/' + key), { estado: paciente.estado || 'En espera' });
       pendingSelectForEntrega = null;
@@ -615,7 +716,7 @@ function guardarEntregaDesdeModal() {
   }
 
   const dataURL = canvas.toDataURL('image/png');
-  const fechaModificacion = getFechaHoraPeru(); // Hora Perú
+  const fechaModificacion = getFechaHoraPeru();
 
   update(ref(db, 'pacientes/' + firmaActualPaciente), {
     estado: 'Entregado',
@@ -663,7 +764,7 @@ function guardarFirma() {
   if (!firmaActualPaciente) return;
   if (!ctx || isCanvasBlank(canvas)) { alert('Firma vacía.'); return; }
   const dataURL = canvas.toDataURL('image/png');
-  const fechaModificacion = getFechaHoraPeru(); // Hora Perú
+  const fechaModificacion = getFechaHoraPeru();
   update(ref(db, 'pacientes/' + firmaActualPaciente), { firma: dataURL, fechaModificacion });
   cerrarModal();
 }
@@ -719,6 +820,7 @@ window.limpiarFirma = limpiarFirma;
 window.guardarEntregaDesdeModal = guardarEntregaDesdeModal;
 window.exportarExcel = exportarExcel;
 window.mostrarSeccion = mostrarSeccion;
+window.mostrarSubPestana = mostrarSubPestana;
 
 // ---------- Iniciar ----------
 loadSedesToSelect();
