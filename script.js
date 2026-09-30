@@ -17,6 +17,9 @@ const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
+// Filtro Rápido por Estado
+let estadoFiltroRapido = '';
+
 // Buscador PLN para Estadísticas
 const inputBuscarEstadisticaNL = document.getElementById('nl-query-input');
 const btnBuscarEstadisticaNL = document.getElementById('btn-nl-search');
@@ -234,7 +237,7 @@ function mostrarResultadosNL(query, lista, filtros) {
 
   const totalRecaudado = lista.reduce((acc, curr) => acc + (parseFloat(curr.precio) || 0), 0);
 
-  textResp.innerHTML = `Se encontraron <span style="color: #3d0a11; font-size: 22px;">${lista.length}</span> paciente(s) en la búsqueda.`;
+  textResp.innerHTML = `Se encontraron <span style="color: var(--accent); font-size: 22px;">${lista.length}</span> paciente(s) en la búsqueda.`;
   if (statTotal) statTotal.textContent = lista.length;
   if (statRecaudacion) statRecaudacion.textContent = `S/ ${totalRecaudado.toFixed(2)}`;
   
@@ -247,11 +250,10 @@ function mostrarResultadosNL(query, lista, filtros) {
   // Renderizar Tabla
   tableBody.innerHTML = '';
   if (lista.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:#777;">No hay registros que coincidan con la búsqueda.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--muted);">No hay registros que coincidan con la búsqueda.</td></tr>`;
   } else {
     lista.forEach(p => {
       const row = document.createElement('tr');
-      row.style.borderBottom = '1px solid #ddd';
       row.innerHTML = `
         <td style="padding: 6px 8px;"><strong>${p.apellidos || ''} ${p.nombres || ''}</strong></td>
         <td style="padding: 6px 8px;">${p.sede || '-'}</td>
@@ -304,13 +306,13 @@ function renderizarGraficoNL(labels, data, type = 'bar', labelLegend = 'Paciente
   }
 
   const backgroundColors = [
-    '#3d0a11',
-    '#28a745',
-    '#ffc107',
-    '#17a2b8',
-    '#6c757d',
-    '#20c997',
-    '#fd7e14'
+    '#0284c7',
+    '#22c55e',
+    '#f59e0b',
+    '#3b82f6',
+    '#64748b',
+    '#a855f7',
+    '#ef4444'
   ];
 
   nlDynamicChartInstance = new Chart(ctx, {
@@ -492,8 +494,38 @@ function cargarPacientes() {
       }
     });
     datosPacientes = pacientes;
+    actualizarKPIsProcesamiento();
     aplicarFiltros();
   });
+}
+
+// ---------- Métricas KPIs de Recepción en Tiempo Real ----------
+function actualizarKPIsProcesamiento() {
+  const hoyStr = getFechaHoraPeru().split('T')[0];
+  
+  const pacientesHoy = datosPacientes.filter(p => (p.fechaModificacion || p.fecha || '').startsWith(hoyStr));
+  
+  const enEspera = pacientesHoy.filter(p => p.estado === 'En espera').length;
+  const enAtencion = pacientesHoy.filter(p => p.estado === 'En atención').length;
+  const entregados = pacientesHoy.filter(p => p.estado === 'Entregado').length;
+  
+  const recaudacionTotal = pacientesHoy.reduce((acc, p) => acc + (parseFloat(p.precio) || 0), 0);
+
+  const kpiEspera = document.getElementById('kpi-espera');
+  const kpiAtencion = document.getElementById('kpi-atencion');
+  const kpiEntregados = document.getElementById('kpi-entregados');
+  const kpiRecaudacion = document.getElementById('kpi-recaudacion');
+
+  if (kpiEspera) kpiEspera.textContent = enEspera;
+  if (kpiAtencion) kpiAtencion.textContent = enAtencion;
+  if (kpiEntregados) kpiEntregados.textContent = entregados;
+  if (kpiRecaudacion) kpiRecaudacion.textContent = `S/ ${recaudacionTotal.toFixed(2)}`;
+}
+
+// ---------- Filtro Rápido de Estado ----------
+function filtrarPorEstadoRapido(estado) {
+  estadoFiltroRapido = estado;
+  aplicarFiltros();
 }
 
 // ---------- Filtros Tabla Pacientes ----------
@@ -509,6 +541,10 @@ function aplicarFiltros() {
   if (nombreFiltro) pacientes = pacientes.filter(p => (p.nombres || '').toLowerCase().includes(nombreFiltro) || (p.apellidos || '').toLowerCase().includes(nombreFiltro));
   if (estudioFiltro) pacientes = pacientes.filter(p => (p.estudios || '').toLowerCase().includes(estudioFiltro));
   if (fechaFiltro) pacientes = pacientes.filter(p => (p.fechaModificacion || '').startsWith(fechaFiltro));
+
+  if (estadoFiltroRapido) {
+    pacientes = pacientes.filter(p => p.estado === estadoFiltroRapido);
+  }
 
   paginaActual = 1;
   mostrarPacientes(pacientes);
@@ -554,9 +590,9 @@ function mostrarPacientes(pacientes) {
 
     let firmaHTML = '';
     if (p.firma) {
-      firmaHTML = `<img src="${p.firma}" alt="Firma" class="firma-img" style="max-height: 40px;">`;
+      firmaHTML = `<img src="${p.firma}" alt="Firma" class="firma-img">`;
     } else if (p.estado === 'Entregado') {
-      firmaHTML = `<button onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
+      firmaHTML = `<button class="btn small" onclick="abrirModal('${p.key}')" title="Firmar">✍️</button>`;
     }
 
     const placasHTML = (requierePlacas && p.estado === 'Entregado')
@@ -580,16 +616,19 @@ function mostrarPacientes(pacientes) {
         <option ${p.estado === 'Atendido' ? 'selected' : ''}>Atendido</option>
         <option ${p.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
       </select>
-      <div style="font-size:10px;">${p.fechaModificacion || ''}</div>
+      <div style="font-size:10px; margin-top:2px; color:var(--muted);">${p.fechaModificacion || ''}</div>
     `;
 
-    const accionEliminar = `<button onclick="confirmarEliminar('${p.key}')">🗑️</button>`;
+    const accionEliminar = `<button class="btn small danger" onclick="confirmarEliminar('${p.key}')" title="Eliminar">🗑️</button>`;
     const llamarOtraVez = (p.estado === 'En atención')
-      ? `<button onclick="llamarOtraVez('${p.key}')">🔔 Llamar otra vez</button>` : '';
+      ? `<button class="btn small primary" onclick="llamarOtraVez('${p.key}')" title="Llamar">🔔</button>` : '';
+    
+    // Botón para Ficha Histórica del Paciente
+    const verFicha = `<button class="btn small" onclick="verFichaPaciente('${p.key}')" title="Ver Historial Clínico">🔍 Ficha</button>`;
 
     tr.innerHTML = `
       <td>${p.sede || ''}</td>
-      <td>${p.apellidos || ''}</td>
+      <td><strong>${p.apellidos || ''}</strong></td>
       <td>${p.nombres || ''}</td>
       <td>${p.estudios || ''}</td>
       <td style="text-align:center; width:60px;">${p.cant || ''}</td>
@@ -601,13 +640,64 @@ function mostrarPacientes(pacientes) {
       <td style="text-align:center; width:70px;">${informeHTML}</td>
       <td style="text-align:center; width:90px;">${p.estado === 'Entregado' ? 'Sí' : ''}</td>
       <td style="text-align:center; width:110px;">${firmaHTML}</td>
-      <td style="text-align:center;">${accionEliminar} ${llamarOtraVez}</td>
+      <td style="text-align:center; display:flex; gap:4px; justify-content:center;">${verFicha} ${llamarOtraVez} ${accionEliminar}</td>
     `;
 
     if (tablaPacientes) tablaPacientes.appendChild(tr);
   });
 
   renderizarPaginacion(pacientes.length, totalPaginas, pacientes);
+}
+
+// ---------- Ficha e Historial del Paciente ----------
+function verFichaPaciente(key) {
+  const pActual = datosPacientes.find(x => x.key === key);
+  if (!pActual) return;
+
+  const nomComp = `${pActual.nombres || ''} ${pActual.apellidos || ''}`.trim().toLowerCase();
+
+  // Buscar todas las atenciones históricas del paciente en la BD
+  const historial = datosPacientes.filter(p => {
+    const nom = `${p.nombres || ''} ${p.apellidos || ''}`.trim().toLowerCase();
+    return nom === nomComp && nomComp !== '';
+  });
+
+  const datosPersonalesDiv = document.getElementById('ficha-datos-personales');
+  const tablaHistorial = document.getElementById('ficha-tabla-historial');
+
+  if (datosPersonalesDiv) {
+    datosPersonalesDiv.innerHTML = `
+      <p style="margin: 4px 0;"><strong>Paciente:</strong> ${pActual.apellidos || ''}, ${pActual.nombres || ''}</p>
+      <p style="margin: 4px 0;"><strong>Sede de Registro:</strong> ${pActual.sede || 'N/A'}</p>
+      <p style="margin: 4px 0;"><strong>Total Atenciones Registradas:</strong> <span style="color: var(--accent); font-weight: bold;">${historial.length}</span></p>
+    `;
+  }
+
+  if (tablaHistorial) {
+    tablaHistorial.innerHTML = '';
+    historial.forEach(h => {
+      const tr = document.createElement('tr');
+      
+      let imgFirma = h.firma ? `<img src="${h.firma}" style="max-height: 25px;">` : 'Sin firma';
+
+      tr.innerHTML = `
+        <td style="padding: 6px;"><small>${h.fechaModificacion || h.fecha || '-'}</small></td>
+        <td style="padding: 6px;">${h.sede || '-'}</td>
+        <td style="padding: 6px;">${h.estudios || '-'}</td>
+        <td style="padding: 6px;"><strong>${h.estado || '-'}</strong></td>
+        <td style="padding: 6px; text-align: center;">${imgFirma}</td>
+      `;
+      tablaHistorial.appendChild(tr);
+    });
+  }
+
+  const modalFicha = document.getElementById('modalFichaPaciente');
+  if (modalFicha) modalFicha.style.display = 'flex';
+}
+
+function cerrarModalFicha() {
+  const modalFicha = document.getElementById('modalFichaPaciente');
+  if (modalFicha) modalFicha.style.display = 'none';
 }
 
 // ---------- Renderizar Paginación ----------
@@ -630,15 +720,7 @@ function renderizarPaginacion(totalRegistros, totalPaginas, pacientes) {
   for (let i = 1; i <= totalPaginas; i++) {
     const btn = document.createElement('button');
     btn.textContent = i;
-    btn.style.cssText = `
-      padding: 6px 12px;
-      border: 1px solid #ccc;
-      background: ${i === paginaActual ? '#3d0a11' : '#fff'};
-      color: ${i === paginaActual ? '#fff' : '#333'};
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: ${i === paginaActual ? 'bold' : 'normal'};
-    `;
+    btn.className = `btn small ${i === paginaActual ? 'primary' : ''}`;
     btn.onclick = () => {
       paginaActual = i;
       mostrarPacientes(pacientes);
@@ -982,6 +1064,9 @@ window.guardarEntregaDesdeModal = guardarEntregaDesdeModal;
 window.exportarExcel = exportarExcel;
 window.mostrarSeccion = mostrarSeccion;
 window.mostrarSubPestana = mostrarSubPestana;
+window.verFichaPaciente = verFichaPaciente;
+window.cerrarModalFicha = cerrarModalFicha;
+window.filtrarPorEstadoRapido = filtrarPorEstadoRapido;
 
 // ---------- Iniciar ----------
 loadSedesToSelect();
