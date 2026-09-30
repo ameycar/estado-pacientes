@@ -23,118 +23,170 @@
   </script>
 
   <!-- Navegación Superior (SPA) -->
-  <header>
-    <nav class="navbar" style="display: flex; gap: 10px; padding: 10px; background-color: #3d0a11; color: white; justify-content: space-between; align-items: center;">
+  <header style="margin-bottom: 15px;">
+    <nav class="panel" style="display: flex; gap: 10px; padding: 12px; background-color: #3d0a11; color: white; justify-content: space-between; align-items: center; border: none;">
       <div style="display: flex; gap: 10px;">
-        <button class="nav-btn active" onclick="mostrarSeccion('vista-pacientes')" style="padding: 8px 16px; cursor: pointer;">📋 Gestión de Pacientes</button>
-        <button class="nav-btn" onclick="mostrarSeccion('vista-reportes')" style="padding: 8px 16px; cursor: pointer;">📊 Reportes Integrados</button>
+        <button class="btn nav-btn active" onclick="mostrarSeccion('vista-pacientes')">📋 Gestión de Pacientes</button>
+        <button class="btn nav-btn" onclick="mostrarSeccion('vista-reportes')">📊 Reportes Integrados</button>
       </div>
       <div>
-        <button onclick="cerrarSesion()" style="padding: 6px 12px; cursor: pointer;">Cerrar sesión</button>
+        <button class="btn danger small" onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
     </nav>
   </header>
 
-  <main style="padding: 20px;">
+  <main>
 
     <!-- SECCIÓN PRINCIPAL: GESTIÓN DE PACIENTES -->
     <section id="vista-pacientes" class="seccion-modulo">
       <h1>Estado de Pacientes</h1>
 
+      <!-- TARJETAS DE MÉTRICAS / KPIS EN VIVO DE RECEPCIÓN -->
+      <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div class="panel" style="border-left: 5px solid var(--espera-border); flex: 1; min-width: 160px; margin-bottom: 0;">
+          <small style="color: var(--muted); font-weight: bold; display: block;">⏳ Pacientes en Espera</small>
+          <span id="kpi-espera" style="font-size: 22px; font-weight: bold; color: var(--espera-text);">0</span>
+        </div>
+        <div class="panel" style="border-left: 5px solid var(--atencion-border); flex: 1; min-width: 160px; margin-bottom: 0;">
+          <small style="color: var(--muted); font-weight: bold; display: block;">🩺 En Atención Ahora</small>
+          <span id="kpi-atencion" style="font-size: 22px; font-weight: bold; color: var(--atencion-text);">0</span>
+        </div>
+        <div class="panel" style="border-left: 5px solid var(--atendido-border); flex: 1; min-width: 160px; margin-bottom: 0;">
+          <small style="color: var(--muted); font-weight: bold; display: block;">✅ Entregados Hoy</small>
+          <span id="kpi-entregados" style="font-size: 22px; font-weight: bold; color: var(--atendido-text);">0</span>
+        </div>
+        <div class="panel" style="border-left: 5px solid var(--accent); flex: 1; min-width: 160px; margin-bottom: 0;">
+          <small style="color: var(--muted); font-weight: bold; display: block;">💰 Recaudación S/</small>
+          <span id="kpi-recaudacion" style="font-size: 22px; font-weight: bold; color: var(--accent);">S/ 0.00</span>
+        </div>
+      </div>
+
       <!-- Lector de Código QR -->
-      <div id="seccion-qr" style="margin-bottom: 15px; background: #f4f4f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
-        <button type="button" id="btn-escaneo-qr" style="padding: 10px 15px; font-weight: bold; cursor: pointer;">📷 Escanear QR de Boleta</button>
-        <div id="reader" style="width: 320px; display: none; margin-top: 10px; border: 1px solid #ccc;"></div>
+      <div id="seccion-qr" class="panel">
+        <button type="button" id="btn-escaneo-qr" class="btn primary">📷 Escanear QR de Boleta</button>
+        <div id="reader" style="width: 320px; display: none; margin-top: 10px; border: 1px solid var(--border); border-radius: 8px;"></div>
       </div>
 
       <!-- Formulario de Registro -->
-      <form id="formulario">
-        <label for="sede">Sede:</label>
-        <select id="sede" required>
-          <!-- las sedes se cargarán desde Firebase -->
-        </select>
+      <form id="formulario" class="panel">
+        <div class="form-grid">
+          <div>
+            <label for="sede" style="font-weight: 600; font-size: 13px;">Sede:</label>
+            <select id="sede" required></select>
+          </div>
 
-        <label for="apellidos">Apellidos:</label>
-        <input type="text" id="apellidos" required>
+          <div>
+            <label for="apellidos" style="font-weight: 600; font-size: 13px;">Apellidos:</label>
+            <input type="text" id="apellidos" required>
+          </div>
 
-        <label for="nombres">Nombres:</label>
-        <input type="text" id="nombres" required>
+          <div>
+            <label for="nombres" style="font-weight: 600; font-size: 13px;">Nombres:</label>
+            <input type="text" id="nombres" required>
+          </div>
 
-        <label for="estudios">Estudios:</label>
-        <select id="estudios" multiple required>
-          <option value="Consulta Medicina">Consulta Medicina</option>
-          <option value="eco">eco</option>
-          <option value="Reevaluación">Reevaluación</option>
-          <option value="Eco tv">Eco tv</option>
-          <option value="Eco doppler">Eco doppler</option>
-          <option value="Eco abdomen completo">Eco abdomen completo</option>
-          <option value="Eco renal">Eco renal</option>
-          <option value="Eco mamaria">Eco mamaria</option>
-          <option value="Eco obstetrica">Eco obstetrica</option>
-          <option value="Eco pelvica">Eco pelvica</option>
-          <option value="Eco abdomen sup">Eco abdomen sup</option>
-          <option value="Eco abdomen inf">Eco abdomen inf</option>
-          <option value="Eco pb">Eco pb</option>
-          <option value="TEM">Tomografía</option>
-          <option value="RM">Resonancia Magnética</option>
-          <option value="RX">Rayos X</option>
-          <option value="Mamografia">Mamografía</option>
-          <option value="Eco prostata">Eco prostata</option>
-          <option value="Eco genética">Eco genética</option>
-          <option value="Eco morfo">Eco morfo</option>
-          <option value="Eco 4d">Eco 4d</option>
-          <option value="Eco 5d">Eco 5d</option>
-          <option value="Eco vias urinarias">Eco vias urinarias</option>
-        </select>
+          <div>
+            <label for="estudios" style="font-weight: 600; font-size: 13px;">Estudios:</label>
+            <select id="estudios" multiple required style="height: 110px;">
+              <option value="Consulta Medicina">Consulta Medicina</option>
+              <option value="eco">eco</option>
+              <option value="Reevaluación">Reevaluación</option>
+              <option value="Eco tv">Eco tv</option>
+              <option value="Eco doppler">Eco doppler</option>
+              <option value="Eco abdomen completo">Eco abdomen completo</option>
+              <option value="Eco renal">Eco renal</option>
+              <option value="Eco mamaria">Eco mamaria</option>
+              <option value="Eco obstetrica">Eco obstetrica</option>
+              <option value="Eco pelvica">Eco pelvica</option>
+              <option value="Eco abdomen sup">Eco abdomen sup</option>
+              <option value="Eco abdomen inf">Eco abdomen inf</option>
+              <option value="Eco pb">Eco pb</option>
+              <option value="TEM">Tomografía</option>
+              <option value="RM">Resonancia Magnética</option>
+              <option value="RX">Rayos X</option>
+              <option value="Mamografia">Mamografía</option>
+              <option value="Eco prostata">Eco prostata</option>
+              <option value="Eco genética">Eco genética</option>
+              <option value="Eco morfo">Eco morfo</option>
+              <option value="Eco 4d">Eco 4d</option>
+              <option value="Eco 5d">Eco 5d</option>
+              <option value="Eco vias urinarias">Eco vias urinarias</option>
+            </select>
+          </div>
 
-        <div id="cantidad-eco-pb" style="display:none;">
-          <label for="ecoPbCantidad">Cantidad Eco pb:</label>
-          <select id="ecoPbCantidad">
-            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-            <option value="10">10</option>
-          </select>
+          <div id="cantidad-eco-pb" style="display:none;">
+            <label for="ecoPbCantidad" style="font-weight: 600; font-size: 13px;">Cantidad Eco pb:</label>
+            <select id="ecoPbCantidad">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="precio" style="font-weight: 600; font-size: 13px;">Precio:</label>
+            <input type="number" id="precio" required>
+          </div>
+
+          <div>
+            <label for="pf" style="font-weight: 600; font-size: 13px;">PF (ticket de pago):</label>
+            <input type="text" id="pf" required>
+          </div>
         </div>
 
-        <label for="precio">Precio:</label>
-        <input type="number" id="precio" required>
-
-        <label for="pf">PF (ticket de pago):</label>
-        <input type="text" id="pf" required>
-
-        <button type="submit">Registrar</button>
+        <div style="margin-top: 15px; text-align: right;">
+          <button type="submit" class="btn primary">Registrar Paciente</button>
+        </div>
       </form>
 
-      <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
+      <div id="contador" style="margin: 15px 0; font-weight: bold; color: var(--text);">Pacientes en espera: 0</div>
 
-      <div id="filtros" style="margin-top: 20px;">
-        <label for="filtroSede">Filtrar por sede:</label>
-        <input type="text" id="filtroSede" placeholder="Sede...">
+      <div id="filtros" class="panel">
+        <div class="form-grid">
+          <div>
+            <label for="filtroSede" style="font-weight: 600; font-size: 12px;">Sede:</label>
+            <input type="text" id="filtroSede" placeholder="Buscar Sede...">
+          </div>
+          <div>
+            <label for="filtroNombre" style="font-weight: 600; font-size: 12px;">Paciente:</label>
+            <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
+          </div>
+          <div>
+            <label for="filtroEstudio" style="font-weight: 600; font-size: 12px;">Estudio:</label>
+            <input type="text" id="filtroEstudio" placeholder="Estudio...">
+          </div>
+          <div>
+            <label for="filtroFecha" style="font-weight: 600; font-size: 12px;">Fecha:</label>
+            <input type="date" id="filtroFecha">
+          </div>
+        </div>
 
-        <label for="filtroNombre">Filtrar por nombre/apellido:</label>
-        <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
-
-        <label for="filtroEstudio">Filtrar por estudio:</label>
-        <input type="text" id="filtroEstudio" placeholder="Estudio...">
-
-        <label for="filtroFecha">Filtrar por fecha:</label>
-        <input type="date" id="filtroFecha">
-
-        <button onclick="exportarExcel()">Exportar a Excel</button>
+        <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn small" onclick="filtrarPorEstadoRapido('')">Todos</button>
+            <button type="button" class="btn small" onclick="filtrarPorEstadoRapido('En espera')" style="background: var(--espera-bg); color: var(--espera-text);">En espera</button>
+            <button type="button" class="btn small" onclick="filtrarPorEstadoRapido('En atención')" style="background: var(--atencion-bg); color: var(--atencion-text);">En atención</button>
+            <button type="button" class="btn small" onclick="filtrarPorEstadoRapido('Atendido')" style="background: var(--atendido-bg); color: var(--atendido-text);">Atendidos</button>
+            <button type="button" class="btn small" onclick="filtrarPorEstadoRapido('Entregado')" style="background: var(--entregado-bg); color: var(--entregado-text);">Entregados</button>
+          </div>
+          <button class="btn primary small" onclick="exportarExcel()">📥 Exportar a Excel</button>
+        </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
-            <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
-            <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
-            <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acción</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-pacientes"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
+              <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
+              <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
+              <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-pacientes"></tbody>
+        </table>
+      </div>
       <div id="paginacion-tabla"></div>
     </section>
 
@@ -143,87 +195,79 @@
       <h2>Reportes y Estadísticas Generales</h2>
       
       <!-- Sub-Navegación Interna de Reportes -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #3d0a11; padding-bottom: 10px;">
-        <button class="sub-tab-btn active" onclick="mostrarSubPestana('sub-resumen')" style="padding: 8px 16px; cursor: pointer;">📋 Resumen de Pacientes</button>
-        <button class="sub-tab-btn" onclick="mostrarSubPestana('sub-estadisticas')" style="padding: 8px 16px; cursor: pointer;">📊 Estadísticas</button>
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">
+        <button class="btn sub-tab-btn active" onclick="mostrarSubPestana('sub-resumen')">📋 Resumen de Pacientes</button>
+        <button class="btn sub-tab-btn" onclick="mostrarSubPestana('sub-estadisticas')">📊 Estadísticas</button>
       </div>
 
       <!-- Sub-Pestaña 1: Resumen -->
-      <div id="sub-resumen" class="sub-seccion">
+      <div id="sub-resumen" class="sub-seccion panel">
         <h3>Resumen Operativo</h3>
-        <p>Módulo de información general y métricas operativas de pacientes en tiempo real.</p>
+        <p style="color: var(--muted);">Módulo de información general y métricas operativas de pacientes en tiempo real.</p>
       </div>
 
       <!-- Sub-Pestaña 2: Asistente Inteligente y Estadísticas -->
       <div id="sub-estadisticas" class="sub-seccion" style="display: none;">
-        <h3>🤖 Asistente de Consultas y Estadísticas</h3>
-
-        <!-- Buscador de Lenguaje Natural -->
-        <div style="background: #fdfdfd; padding: 15px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 15px;">
+        <div class="panel">
+          <h3>🤖 Asistente de Consultas y Estadísticas</h3>
           <label for="nl-query-input" style="font-weight: bold; display: block; margin-bottom: 8px;">Escribe tu pregunta sobre los registros de la base de datos:</label>
           <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="nl-query-input" placeholder="Ej: ¿Cuántos pacientes se atendieron hoy por ecografía en Grau Central?" style="flex: 1; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px;" />
-            <button type="button" id="btn-nl-search" style="padding: 10px 20px; background-color: #3d0a11; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Consultar</button>
+            <input type="text" id="nl-query-input" placeholder="Ej: ¿Cuántos pacientes se atendieron hoy por ecografía en Grau Central?" />
+            <button type="button" id="btn-nl-search" class="btn primary">Consultar</button>
           </div>
           
-          <div style="font-size: 13px; color: #555;">
+          <div style="font-size: 13px; color: var(--muted);">
             <strong>Consultas rápidas de ejemplo:</strong><br>
-            <button type="button" class="quick-query-btn" style="margin-top: 5px; margin-right: 5px; padding: 4px 8px; font-size: 12px; cursor: pointer;">¿Cuántos pacientes se atendieron hoy por ecografía en Grau Central?</button>
-            <button type="button" class="quick-query-btn" style="margin-top: 5px; margin-right: 5px; padding: 4px 8px; font-size: 12px; cursor: pointer;">Muestra los pacientes entregados este mes por sede</button>
-            <button type="button" class="quick-query-btn" style="margin-top: 5px; margin-right: 5px; padding: 4px 8px; font-size: 12px; cursor: pointer;">Recaudación de hoy por servicio</button>
-            <button type="button" class="quick-query-btn" style="margin-top: 5px; margin-right: 5px; padding: 4px 8px; font-size: 12px; cursor: pointer;">Pacientes en espera hoy</button>
+            <button type="button" class="btn small quick-query-btn" style="margin-top: 5px; margin-right: 4px;">¿Cuántos pacientes se atendieron hoy por ecografía en Grau Central?</button>
+            <button type="button" class="btn small quick-query-btn" style="margin-top: 5px; margin-right: 4px;">Muestra los pacientes entregados este mes por sede</button>
+            <button type="button" class="btn small quick-query-btn" style="margin-top: 5px; margin-right: 4px;">Recaudación de hoy por servicio</button>
+            <button type="button" class="btn small quick-query-btn" style="margin-top: 5px; margin-right: 4px;">Pacientes en espera hoy</button>
           </div>
         </div>
 
         <!-- Contenedor Dinámico de Resultados -->
         <div id="nl-results-container" style="display: none;">
-          <!-- Tarjeta de Resumen -->
-          <div style="background: #eef2f5; padding: 15px; border-left: 5px solid #3d0a11; border-radius: 4px; margin-bottom: 20px;">
-            <h4 style="margin: 0 0 10px 0; color: #3d0a11;">Respuesta de la Consulta</h4>
+          <div class="panel" style="border-left: 5px solid var(--accent);">
+            <h4 style="margin: 0 0 10px 0; color: var(--accent);">Respuesta de la Consulta</h4>
             <div id="nl-response-text" style="font-size: 16px; font-weight: bold; margin-bottom: 10px;"></div>
             
             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-              <div style="background: #fff; padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
-                <small style="color: #666; display: block;">Total Encontrados</small>
-                <span id="stat-nl-total" style="font-size: 20px; font-weight: bold; color: #333;">0</span>
+              <div class="panel" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+                <small style="color: var(--muted); display: block;">Total Encontrados</small>
+                <span id="stat-nl-total" style="font-size: 20px; font-weight: bold;">0</span>
               </div>
-              <div style="background: #fff; padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
-                <small style="color: #666; display: block;">Recaudación Estimada</small>
-                <span id="stat-nl-recaudacion" style="font-size: 20px; font-weight: bold; color: green;">S/ 0.00</span>
+              <div class="panel" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+                <small style="color: var(--muted); display: block;">Recaudación Estimada</small>
+                <span id="stat-nl-recaudacion" style="font-size: 20px; font-weight: bold; color: var(--atendido-text);">S/ 0.00</span>
               </div>
-              <div style="background: #fff; padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; flex: 1; min-width: 180px;">
-                <small style="color: #666; display: block;">Filtros Aplicados</small>
+              <div class="panel" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                <small style="color: var(--muted); display: block;">Filtros Aplicados</small>
                 <div id="stat-nl-filtros" style="font-size: 12px; margin-top: 4px;">-</div>
               </div>
             </div>
           </div>
 
-          <!-- Panel de Gráfico y Tabla -->
-          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <!-- Gráfico Dinámico -->
-            <div style="flex: 1.2; min-width: 320px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div class="panel" style="flex: 1.2; min-width: 320px; margin-bottom: 0;">
               <h4 id="nl-chart-title" style="margin-top:0;">Visualización Gráfica</h4>
               <div style="position: relative; height: 320px;">
                 <canvas id="nlDynamicChart"></canvas>
               </div>
             </div>
 
-            <!-- Tabla de Detalles -->
-            <div style="flex: 1; min-width: 300px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <div class="panel" style="flex: 1; min-width: 300px; margin-bottom: 0;">
               <h4 style="margin-top:0;">Detalle de Registros</h4>
-              <div style="max-height: 320px; overflow-y: auto; border: 1px solid #eee;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;" id="nl-result-table">
+              <div class="table-wrap" style="max-height: 320px; overflow-y: auto;">
+                <table class="tabla" id="nl-result-table">
                   <thead>
-                    <tr style="background-color: #3d0a11; color: white; text-align: left;">
-                      <th style="padding: 8px;">Paciente</th>
-                      <th style="padding: 8px;">Sede</th>
-                      <th style="padding: 8px;">Estudio</th>
-                      <th style="padding: 8px;">Estado</th>
+                    <tr>
+                      <th>Paciente</th>
+                      <th>Sede</th>
+                      <th>Estudio</th>
+                      <th>Estado</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <!-- Filas dinámicas -->
-                  </tbody>
+                  <tbody></tbody>
                 </table>
               </div>
             </div>
@@ -234,42 +278,75 @@
 
   </main>
 
+  <!-- MODAL: Historial / Ficha Unificada del Paciente -->
+  <div id="modalFichaPaciente" class="modal">
+    <div class="modal-content" style="width: 650px; max-width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">
+        <h3 style="margin:0; color: var(--accent);"><i class="fas fa-id-card"></i> Ficha e Historial del Paciente</h3>
+        <button class="btn small danger" onclick="cerrarModalFicha()">✕</button>
+      </div>
+
+      <div id="ficha-datos-personales" class="panel" style="background: var(--bg); margin-bottom: 15px;"></div>
+
+      <h4 style="margin-bottom: 10px;">📜 Historial de Atenciones Registradas</h4>
+      <div class="table-wrap" style="max-height: 250px; overflow-y: auto;">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Sede</th>
+              <th>Estudios</th>
+              <th>Estado</th>
+              <th>Firma</th>
+            </tr>
+          </thead>
+          <tbody id="ficha-tabla-historial"></tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions" style="justify-content: flex-end;">
+        <button class="btn" onclick="cerrarModalFicha()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Entrega (placas/cd/informe + firma) -->
-  <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
-    <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
-      <h3 style="margin-top:0;">Finalizar Entrega</h3>
+  <div id="modalFirma" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <h3 style="margin-top:0; color: var(--text);">Finalizar Entrega</h3>
 
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">Placas:</label>
-        <input id="modal_placas" type="number" min="0" placeholder="nro" style="width:80px;">
+      <div class="modal-row">
+        <label for="modal_placas">Placas:</label>
+        <input id="modal_placas" type="number" min="0" placeholder="nro" style="width:100px;">
       </div>
 
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">CD:</label>
-        <select id="modal_cd" style="width:120px;">
+      <div class="modal-row">
+        <label for="modal_cd">CD:</label>
+        <select id="modal_cd">
           <option value="">Seleccione</option>
           <option value="SI">SI</option>
           <option value="NO">NO</option>
         </select>
       </div>
 
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">Informe:</label>
-        <select id="modal_informe" style="width:120px;">
+      <div class="modal-row">
+        <label for="modal_informe">Informe:</label>
+        <select id="modal_informe">
           <option value="">Seleccione</option>
           <option value="SI">SI</option>
           <option value="NO">NO</option>
         </select>
       </div>
 
-      <div style="margin:8px 0;">
-        <label>Firma:</label>
-        <canvas id="canvasFirma" width="360" height="200" style="border:1px solid #000; touch-action: none; display:block; margin:6px 0; width:100%;"></canvas>
-        <div style="display:flex; gap:8px; justify-content:center;">
-          <button id="modal_limpiar_firma" type="button">Limpiar</button>
-          <button id="modal_save_entrega" type="button">Guardar Entrega</button>
-          <button id="modal_cancel_entrega" type="button">Cancelar</button>
-        </div>
+      <div style="margin: 12px 0;">
+        <label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px;">Firma del Paciente:</label>
+        <canvas id="canvasFirma" class="canvas-firma" width="360" height="180"></canvas>
+      </div>
+
+      <div class="modal-actions">
+        <button id="modal_limpiar_firma" type="button" class="btn small">Limpiar</button>
+        <button id="modal_save_entrega" type="button" class="btn primary small">Guardar Entrega</button>
+        <button id="modal_cancel_entrega" type="button" class="btn danger small">Cancelar</button>
       </div>
     </div>
   </div>
