@@ -10,15 +10,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Librería para Escáner QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- Librería Chart.js para Estadísticas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <script>
-    // (Opcional) control simple de sesión — si quieres forzar login activa la redirección
-    const usuario = localStorage.getItem("user"); // ahora guardamos objeto JSON en 'user'
+    // Control simple de sesión
+    const usuario = localStorage.getItem("user");
     // if (!usuario) { window.location.href = 'login.html'; }
   </script>
 
-  <!-- Navegación Superior para evitar redirecciones de páginas (SPA) -->
+  <!-- Navegación Superior (SPA) -->
   <header>
     <nav class="navbar" style="display: flex; gap: 10px; padding: 10px; background-color: #3d0a11; color: white; justify-content: space-between; align-items: center;">
       <div style="display: flex; gap: 10px;">
@@ -47,7 +49,7 @@
       <form id="formulario">
         <label for="sede">Sede:</label>
         <select id="sede" required>
-          <!-- las sedes se cargarán desde Firebase (sede activas) -->
+          <!-- las sedes se cargarán desde Firebase -->
         </select>
 
         <label for="apellidos">Apellidos:</label>
@@ -58,7 +60,6 @@
 
         <label for="estudios">Estudios:</label>
         <select id="estudios" multiple required>
-          <!-- LISTA COMPLETA (no tocar) -->
           <option value="Consulta Medicina">Consulta Medicina</option>
           <option value="eco">eco</option>
           <option value="Reevaluación">Reevaluación</option>
@@ -135,15 +136,60 @@
       <div id="paginacion-tabla"></div>
     </section>
 
-    <!-- VISTA SECUNDARIA DENTRO DEL MISMO INDEX (SPA) -->
+    <!-- SECCIÓN DE REPORTES Y ESTADÍSTICAS (SPA) -->
     <section id="vista-reportes" class="seccion-modulo" style="display: none;">
       <h2>Reportes y Estadísticas Generales</h2>
-      <p>Módulo de reportes cargado internamente sin necesidad de refrescar la página ni cambiar de archivo.</p>
+      
+      <!-- Sub-Navegación Interna de Reportes -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #3d0a11; padding-bottom: 10px;">
+        <button class="sub-tab-btn active" onclick="mostrarSubPestana('sub-resumen')" style="padding: 8px 16px; cursor: pointer;">📋 Resumen de Pacientes</button>
+        <button class="sub-tab-btn" onclick="mostrarSubPestana('sub-estadisticas')" style="padding: 8px 16px; cursor: pointer;">📊 Estadísticas</button>
+      </div>
+
+      <!-- Sub-Pestaña 1: Resumen -->
+      <div id="sub-resumen" class="sub-seccion">
+        <h3>Resumen Operativo</h3>
+        <p>Módulo de información general y métricas operativas de pacientes en tiempo real.</p>
+      </div>
+
+      <!-- Sub-Pestaña 2: Estadísticas -->
+      <div id="sub-estadisticas" class="sub-seccion" style="display: none;">
+        <h3>Análisis Estadístico</h3>
+        <p>Carga de datos al activar la pestaña de estadísticas:</p>
+
+        <!-- Métricas Rápidas -->
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+          <div style="background: #f4f4f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
+            <h4 style="margin:0;">Total Registrados</h4>
+            <span id="stat-total-pacientes" style="font-size: 24px; font-weight: bold; color: #3d0a11;">0</span>
+          </div>
+          <div style="background: #f4f4f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
+            <h4 style="margin:0;">Total Atendidos / Entregados</h4>
+            <span id="stat-atendidos" style="font-size: 24px; font-weight: bold; color: green;">0</span>
+          </div>
+          <div style="background: #f4f4f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
+            <h4 style="margin:0;">Recaudación Total S/</h4>
+            <span id="stat-recaudacion" style="font-size: 24px; font-weight: bold; color: #0056b3;">S/ 0.00</span>
+          </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 300px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <h4>Pacientes por Sede</h4>
+            <canvas id="chartSedes"></canvas>
+          </div>
+          <div style="flex: 1; min-width: 300px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <h4>Estados de Atención</h4>
+            <canvas id="chartEstados"></canvas>
+          </div>
+        </div>
+      </div>
     </section>
 
   </main>
 
-  <!-- MODAL: entrega (placas/cd/informe + firma) -->
+  <!-- MODAL: Entrega (placas/cd/informe + firma) -->
   <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
     <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
       <h3 style="margin-top:0;">Finalizar Entrega</h3>
