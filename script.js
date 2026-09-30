@@ -1,4 +1,4 @@
-// script.js  (module - Firebase v9)
+// script.js (module - Firebase v9)
 import { db } from "./firebase-config.js";
 import {
   ref, onValue, push, update, remove, set
@@ -17,9 +17,12 @@ const filtroNombre = document.getElementById('filtroNombre');
 const filtroEstudio = document.getElementById('filtroEstudio');
 const filtroFecha = document.getElementById('filtroFecha');
 
-// Instancias de Gráficos Chart.js
-let chartSedesInstance = null;
-let chartEstadosInstance = null;
+// Buscador PLN para Estadísticas
+const inputBuscarEstadisticaNL = document.getElementById('nl-query-input');
+const btnBuscarEstadisticaNL = document.getElementById('btn-nl-search');
+
+// Instancia de Gráfico Dinámico Chart.js
+let nlDynamicChartInstance = null;
 
 // ---------- Función Helper: Fecha/Hora Perú (UTC-5) ----------
 function getFechaHoraPeru() {
@@ -98,86 +101,244 @@ function mostrarSubPestana(idSubSeccion) {
     window.event.currentTarget.classList.add('active');
   }
 
-  // Carga de datos EXCLUSIVA al presionar en "Estadísticas"
+  // Carga inicial o actualización del Asistente en "Estadísticas"
   if (idSubSeccion === 'sub-estadisticas') {
-    cargarEstadisticas();
+    if (inputBuscarEstadisticaNL && inputBuscarEstadisticaNL.value.trim() !== '') {
+      ejecutarConsultaNL(inputBuscarEstadisticaNL.value);
+    } else {
+      ejecutarConsultaNL('Resumen general');
+    }
   }
 }
 
-// ---------- Carga y Cálculo de Estadísticas ----------
-function cargarEstadisticas() {
-  const totalPacientes = datosPacientes.length;
-  const atendidosEntregados = datosPacientes.filter(p => p.estado === 'Atendido' || p.estado === 'Entregado').length;
+// ---------- Escuchadores del Asistente Inteligente (PLN) ----------
+if (btnBuscarEstadisticaNL && inputBuscarEstadisticaNL) {
+  btnBuscarEstadisticaNL.addEventListener('click', () => {
+    ejecutarConsultaNL(inputBuscarEstadisticaNL.value);
+  });
+
+  inputBuscarEstadisticaNL.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      ejecutarConsultaNL(inputBuscarEstadisticaNL.value);
+    }
+  });
+}
+
+document.querySelectorAll('.quick-query-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const text = e.target.innerText.replace(/^¿|^\?/g, '');
+    if (inputBuscarEstadisticaNL) inputBuscarEstadisticaNL.value = text;
+    ejecutarConsultaNL(text);
+  });
+});
+
+// ---------- Motor de Procesamiento de Lenguaje Natural (PLN) ----------
+function ejecutarConsultaNL(queryText) {
+  if (!queryText || queryText.trim() === '') {
+    queryText = 'Resumen general';
+  }
+
+  const q = queryText.toLowerCase().trim();
+  const hoyStr = getFechaHoraPeru().split('T')[0];
+
+  // 1. Extracción de Filtros mediante análisis léxico
+  let filtroFecha = null;
+  if (q.includes('hoy')) {
+    filtroFecha = 'hoy';
+  } else if (q.includes('ayer')) {
+    filtroFecha = 'ayer';
+  } else if (q.includes('este mes') || q.includes('del mes') || q.includes('mes')) {
+    filtroFecha = 'mes';
+  }
+
+  let filtroEstado = null;
+  if (q.includes('atendieron') || q.includes('atendido') || q.includes('atendidos')) {
+    filtroEstado = ['Atendido', 'Entregado'];
+  } else if (q.includes('entregado') || q.includes('entregados') || q.includes('entrega')) {
+    filtroEstado = ['Entregado'];
+  } else if (q.includes('espera') || q.includes('esperando')) {
+    filtroEstado = ['En espera'];
+  } else if (q.includes('programado') || q.includes('programados')) {
+    filtroEstado = ['Programado'];
+  }
+
+  let filtroSede = null;
+  if (q.includes('grau')) filtroSede = 'grau';
+  else if (q.includes('san isidro')) filtroSede = 'san isidro';
+  else if (q.includes('miraflores')) filtroSede = 'miraflores';
+  else if (q.includes('central')) filtroSede = 'central';
+
+  let filtroServicio = null;
+  if (q.includes('ecografia') || q.includes('ecografía') || q.includes('eco')) filtroServicio = 'eco';
+  else if (q.includes('tomografia') || q.includes('tomografía') || q.includes('tem')) filtroServicio = 'tem';
+  else if (q.includes('resonancia') || q.includes('rm')) filtroServicio = 'rm';
+  else if (q.includes('rayos x') || q.includes('rx') || q.includes('radiografia')) filtroServicio = 'rx';
+  else if (q.includes('mamografia') || q.includes('mamografía')) filtroServicio = 'mamografia';
+  else if (q.includes('consulta')) filtroServicio = 'consulta';
+
+  // 2. Filtrado de registros desde datosPacientes
+  let resultados = datosPacientes.filter(p => {
+    let cumple = true;
+
+    // Filtro por Fecha
+    if (p.fechaModificacion || p.fecha) {
+      const pFecha = (p.fechaModificacion || p.fecha).split('T')[0];
+      if (filtroFecha === 'hoy' && pFecha !== hoyStr) cumple = false;
+      if (filtroFecha === 'ayer') {
+        const ayer = new Date();
+        ayer.setDate(ayer.getDate() - 1);
+        const ayerStr = ayer.toISOString().split('T')[0];
+        if (pFecha !== ayerStr) cumple = false;
+      }
+      if (filtroFecha === 'mes') {
+        const mesActual = hoyStr.substring(0, 7);
+        if (!pFecha.startsWith(mesActual)) cumple = false;
+      }
+    }
+
+    // Filtro por Estado
+    if (cumple && filtroEstado) {
+      cumple = filtroEstado.includes(p.estado);
+    }
+
+    // Filtro por Sede
+    if (cumple && filtroSede) {
+      const sedeNorm = (p.sede || '').toLowerCase();
+      cumple = sedeNorm.includes(filtroSede);
+    }
+
+    // Filtro por Estudio/Servicio
+    if (cumple && filtroServicio) {
+      const estNorm = (p.estudios || '').toLowerCase();
+      cumple = estNorm.includes(filtroServicio);
+    }
+
+    return cumple;
+  });
+
+  // 3. Renderizar vista de resultados
+  mostrarResultadosNL(q, resultados, { filtroSede, filtroServicio, filtroFecha, filtroEstado });
+}
+
+function mostrarResultadosNL(query, lista, filtros) {
+  const container = document.getElementById('nl-results-container');
+  const textResp = document.getElementById('nl-response-text');
+  const statTotal = document.getElementById('stat-nl-total');
+  const statRecaudacion = document.getElementById('stat-nl-recaudacion');
+  const statFiltros = document.getElementById('stat-nl-filtros');
+  const tableBody = document.querySelector('#nl-result-table tbody');
+  const chartTitle = document.getElementById('nl-chart-title');
+
+  if (!container) return;
+  container.style.display = 'block';
+
+  const totalRecaudado = lista.reduce((acc, curr) => acc + (parseFloat(curr.precio) || 0), 0);
+
+  textResp.innerHTML = `Se encontraron <span style="color: #3d0a11; font-size: 22px;">${lista.length}</span> paciente(s) en la búsqueda.`;
+  if (statTotal) statTotal.textContent = lista.length;
+  if (statRecaudacion) statRecaudacion.textContent = `S/ ${totalRecaudado.toFixed(2)}`;
   
-  const recaudacionTotal = datosPacientes.reduce((acc, p) => {
-    const val = parseFloat(p.precio) || 0;
-    return acc + val;
-  }, 0);
+  if (statFiltros) {
+    const fFecha = filtros.filtroFecha ? `Fecha: ${filtros.filtroFecha}` : 'Cualquier fecha';
+    const fSede = filtros.filtroSede ? `Sede: ${filtros.filtroSede}` : 'Todas las sedes';
+    statFiltros.innerHTML = `<strong>${fFecha}</strong> | <strong>${fSede}</strong>`;
+  }
 
-  // Renderizar Tarjetas de Métricas
-  const elTotal = document.getElementById('stat-total-pacientes');
-  const elAtendidos = document.getElementById('stat-atendidos');
-  const elRecaudacion = document.getElementById('stat-recaudacion');
+  // Renderizar Tabla
+  tableBody.innerHTML = '';
+  if (lista.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:#777;">No hay registros que coincidan con la búsqueda.</td></tr>`;
+  } else {
+    lista.forEach(p => {
+      const row = document.createElement('tr');
+      row.style.borderBottom = '1px solid #ddd';
+      row.innerHTML = `
+        <td style="padding: 6px 8px;"><strong>${p.apellidos || ''} ${p.nombres || ''}</strong></td>
+        <td style="padding: 6px 8px;">${p.sede || '-'}</td>
+        <td style="padding: 6px 8px;">${p.estudios || '-'}</td>
+        <td style="padding: 6px 8px;">${p.estado || '-'}</td>
+      `;
+      tableBody.appendChild(row);
+    });
+  }
 
-  if (elTotal) elTotal.textContent = totalPacientes;
-  if (elAtendidos) elAtendidos.textContent = atendidosEntregados;
-  if (elRecaudacion) elRecaudacion.textContent = `S/ ${recaudacionTotal.toFixed(2)}`;
+  // Determinar Agrupación para el Gráfico
+  let agrupacion = {};
+  let tipoGrafico = 'bar';
+  let tituloGrafico = 'Distribución de Pacientes';
 
-  // Agrupamiento por Sedes
-  const conteoSedes = {};
-  datosPacientes.forEach(p => {
-    const s = p.sede || 'Sin Sede';
-    conteoSedes[s] = (conteoSedes[s] || 0) + 1;
-  });
+  if (!filtros.filtroSede && query.includes('sede')) {
+    tituloGrafico = 'Pacientes agrupados por Sede';
+    lista.forEach(p => {
+      const key = p.sede || 'Sin Sede';
+      agrupacion[key] = (agrupacion[key] || 0) + 1;
+    });
+  } else if (!filtros.filtroServicio && (query.includes('servicio') || query.includes('estudio') || query.includes('eco') || query.includes('tem'))) {
+    tituloGrafico = 'Pacientes agrupados por Estudio/Servicio';
+    lista.forEach(p => {
+      const key = p.estudios || 'Sin Especificar';
+      agrupacion[key] = (agrupacion[key] || 0) + 1;
+    });
+  } else {
+    tituloGrafico = 'Pacientes agrupados por Estado';
+    tipoGrafico = 'doughnut';
+    lista.forEach(p => {
+      const key = p.estado || 'Desconocido';
+      agrupacion[key] = (agrupacion[key] || 0) + 1;
+    });
+  }
 
-  // Agrupamiento por Estado
-  const conteoEstados = {};
-  datosPacientes.forEach(p => {
-    const est = p.estado || 'Desconocido';
-    conteoEstados[est] = (conteoEstados[est] || 0) + 1;
-  });
+  if (chartTitle) chartTitle.innerText = tituloGrafico;
 
-  // Renderizar Gráficos con Chart.js
-  renderizarGraficoSedes(conteoSedes);
-  renderizarGraficoEstados(conteoEstados);
+  renderizarGraficoNL(Object.keys(agrupacion), Object.values(agrupacion), tipoGrafico, tituloGrafico);
 }
 
-function renderizarGraficoSedes(conteoSedes) {
-  const canvas = document.getElementById('chartSedes');
+function renderizarGraficoNL(labels, data, type = 'bar', labelLegend = 'Pacientes') {
+  const canvas = document.getElementById('nlDynamicChart');
   if (!canvas || typeof Chart === 'undefined') return;
 
-  if (chartSedesInstance) chartSedesInstance.destroy();
+  const ctx = canvas.getContext('2d');
 
-  chartSedesInstance = new Chart(canvas, {
-    type: 'bar',
+  if (nlDynamicChartInstance) {
+    nlDynamicChartInstance.destroy();
+  }
+
+  const backgroundColors = [
+    '#3d0a11',
+    '#28a745',
+    '#ffc107',
+    '#17a2b8',
+    '#6c757d',
+    '#20c997',
+    '#fd7e14'
+  ];
+
+  nlDynamicChartInstance = new Chart(ctx, {
+    type: type,
     data: {
-      labels: Object.keys(conteoSedes),
+      labels: labels.length > 0 ? labels : ['Sin Datos'],
       datasets: [{
-        label: 'Cantidad de Pacientes',
-        data: Object.values(conteoSedes),
-        backgroundColor: '#3d0a11'
+        label: labelLegend,
+        data: data.length > 0 ? data : [0],
+        backgroundColor: backgroundColors.slice(0, labels.length || 1),
+        borderWidth: 1
       }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-}
-
-function renderizarGraficoEstados(conteoEstados) {
-  const canvas = document.getElementById('chartEstados');
-  if (!canvas || typeof Chart === 'undefined') return;
-
-  if (chartEstadosInstance) chartEstadosInstance.destroy();
-
-  chartEstadosInstance = new Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(conteoEstados),
-      datasets: [{
-        data: Object.values(conteoEstados),
-        backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#6c757d', '#20c997']
-      }]
-    },
-    options: { responsive: true }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: type === 'doughnut' || type === 'pie'
+        }
+      },
+      scales: type === 'bar' ? {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      } : {}
+    }
   });
 }
 
@@ -335,7 +496,7 @@ function cargarPacientes() {
   });
 }
 
-// ---------- Filtros ----------
+// ---------- Filtros Tabla Pacientes ----------
 function aplicarFiltros() {
   let pacientes = (datosPacientes || []).slice();
 
