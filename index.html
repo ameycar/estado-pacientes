@@ -1,242 +1,321 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Estado de Pacientes</title>
-  <link rel="stylesheet" href="style.css" />
-  
-  <!-- Librería XLSX para Exportación -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- Librería para Escáner QR -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <!-- Librería Chart.js para Estadísticas -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Pacientes y Entregables</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Estilos Personalizados -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Librerías Externas -->
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- HTML5 QR Code -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Chart.js para Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-  <script>
-    // Control simple de sesión
-    const usuario = localStorage.getItem("user");
-    // if (!usuario) { window.location.href = 'login.html'; }
-  </script>
+<body class="bg-light">
 
-  <!-- Navegación Superior (SPA) -->
-  <header>
-    <nav class="navbar" style="display: flex; gap: 10px; padding: 10px; background-color: #3d0a11; color: white; justify-content: space-between; align-items: center;">
-      <div style="display: flex; gap: 10px;">
-        <button class="nav-btn active" onclick="mostrarSeccion('vista-pacientes')" style="padding: 8px 16px; cursor: pointer;">📋 Gestión de Pacientes</button>
-        <button class="nav-btn" onclick="mostrarSeccion('vista-reportes')" style="padding: 8px 16px; cursor: pointer;">📊 Reportes Integrados</button>
-      </div>
-      <div>
-        <button onclick="cerrarSesion()" style="padding: 6px 12px; cursor: pointer;">Cerrar sesión</button>
-      </div>
+    <!-- Barra de Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-hospital-user me-2"></i>Gestión de Pacientes
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="tab-registro" href="#" onclick="cambiarPestana('registro')">
+                            <i class="fas fa-user-plus me-1"></i>Registro & Atención
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tab-estadisticas" href="#" onclick="cambiarPestana('estadisticas')">
+                            <i class="fas fa-robot me-1"></i>Asistente & Estadísticas
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex text-white align-items-center">
+                    <span id="usuario-info" class="me-3"><i class="fas fa-user-circle me-1"></i>Sede: <strong id="lbl-sede-actual">Todas</strong></span>
+                    <button class="btn btn-outline-light btn-sm" id="btn-cambiar-sede" onclick="seleccionarSede()">
+                        <i class="fas fa-map-marker-alt me-1"></i>Cambiar Sede
+                    </button>
+                </div>
+            </div>
+        </div>
     </nav>
-  </header>
 
-  <main style="padding: 20px;">
+    <!-- Contenido Principal -->
+    <div class="container-fluid px-4">
 
-    <!-- SECCIÓN PRINCIPAL: GESTIÓN DE PACIENTES -->
-    <section id="vista-pacientes" class="seccion-modulo">
-      <h1>Estado de Pacientes</h1>
+        <!-- SECCIÓN 1: REGISTRO Y ATENCIÓN -->
+        <div id="sec-registro" class="seccion">
+            <div class="row">
+                <!-- Formulario de Registro -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-primary text-white font-weight-bold">
+                            <i class="fas fa-address-card me-2"></i>Registrar Paciente
+                        </div>
+                        <div class="card-body">
+                            <form id="form-paciente">
+                                <div class="mb-3">
+                                    <label for="reg-dni" class="form-label">DNI / Documento</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="reg-dni" placeholder="Número de Documento" required>
+                                        <button class="btn btn-outline-secondary" type="button" id="btn-qr-scan" title="Escanear QR">
+                                            <i class="fas fa-qrcode"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reg-nombre" class="form-label">Nombres y Apellidos</label>
+                                    <input type="text" class="form-control" id="reg-nombre" placeholder="Nombre Completo" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reg-sede" class="form-label">Sede</label>
+                                    <select class="form-select" id="reg-sede" required>
+                                        <option value="">Seleccione Sede...</option>
+                                        <option value="Grau Central">Grau Central</option>
+                                        <option value="San Isidro">San Isidro</option>
+                                        <option value="Miraflores">Miraflores</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reg-servicio" class="form-label">Servicio / Estudio</label>
+                                    <select class="form-select" id="reg-servicio" required>
+                                        <option value="">Seleccione Servicio...</option>
+                                        <option value="Ecografía">Ecografía</option>
+                                        <option value="Tomografía">Tomografía</option>
+                                        <option value="Rayos X">Rayos X</option>
+                                        <option value="Resonancia">Resonancia</option>
+                                        <option value="Laboratorio">Laboratorio</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reg-monto" class="form-label">Monto (S/)</label>
+                                    <input type="number" step="0.10" class="form-control" id="reg-monto" placeholder="0.00" value="0.00">
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 fw-bold">
+                                    <i class="fas fa-save me-1"></i> Guardar Paciente
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
-      <!-- Lector de Código QR -->
-      <div id="seccion-qr" style="margin-bottom: 15px; background: #f4f4f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
-        <button type="button" id="btn-escaneo-qr" style="padding: 10px 15px; font-weight: bold; cursor: pointer;">📷 Escanear QR de Boleta</button>
-        <div id="reader" style="width: 320px; display: none; margin-top: 10px; border: 1px solid #ccc;"></div>
-      </div>
+                <!-- Tabla Principal de Pacientes -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                            <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-list me-2"></i>Pacientes Registrados</h5>
+                            <div>
+                                <button class="btn btn-outline-success btn-sm me-2" id="btn-export-excel">
+                                    <i class="fas fa-file-excel me-1"></i>Exportar Excel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filtros Rápido de Tabla -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-5">
+                                    <input type="text" id="filtro-tabla-buscar" class="form-control form-control-sm" placeholder="Buscar por Nombre o DNI...">
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="filtro-tabla-estado" class="form-select form-select-sm">
+                                        <option value="">Todos los Estados</option>
+                                        <option value="En espera">En espera</option>
+                                        <option value="En atención">En atención</option>
+                                        <option value="Programado">Programado</option>
+                                        <option value="Atendido">Atendido</option>
+                                        <option value="Entregado">Entregado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-primary btn-sm w-100" id="btn-filtrar-tabla">
+                                        <i class="fas fa-filter me-1"></i>Filtrar
+                                    </button>
+                                </div>
+                            </div>
 
-      <!-- Formulario de Registro -->
-      <form id="formulario">
-        <label for="sede">Sede:</label>
-        <select id="sede" required>
-          <!-- las sedes se cargarán desde Firebase -->
-        </select>
-
-        <label for="apellidos">Apellidos:</label>
-        <input type="text" id="apellidos" required>
-
-        <label for="nombres">Nombres:</label>
-        <input type="text" id="nombres" required>
-
-        <label for="estudios">Estudios:</label>
-        <select id="estudios" multiple required>
-          <option value="Consulta Medicina">Consulta Medicina</option>
-          <option value="eco">eco</option>
-          <option value="Reevaluación">Reevaluación</option>
-          <option value="Eco tv">Eco tv</option>
-          <option value="Eco doppler">Eco doppler</option>
-          <option value="Eco abdomen completo">Eco abdomen completo</option>
-          <option value="Eco renal">Eco renal</option>
-          <option value="Eco mamaria">Eco mamaria</option>
-          <option value="Eco obstetrica">Eco obstetrica</option>
-          <option value="Eco pelvica">Eco pelvica</option>
-          <option value="Eco abdomen sup">Eco abdomen sup</option>
-          <option value="Eco abdomen inf">Eco abdomen inf</option>
-          <option value="Eco pb">Eco pb</option>
-          <option value="TEM">Tomografía</option>
-          <option value="RM">Resonancia Magnética</option>
-          <option value="RX">Rayos X</option>
-          <option value="Mamografia">Mamografía</option>
-          <option value="Eco prostata">Eco prostata</option>
-          <option value="Eco genética">Eco genética</option>
-          <option value="Eco morfo">Eco morfo</option>
-          <option value="Eco 4d">Eco 4d</option>
-          <option value="Eco 5d">Eco 5d</option>
-          <option value="Eco vias urinarias">Eco vias urinarias</option>
-        </select>
-
-        <div id="cantidad-eco-pb" style="display:none;">
-          <label for="ecoPbCantidad">Cantidad Eco pb:</label>
-          <select id="ecoPbCantidad">
-            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-            <option value="10">10</option>
-          </select>
+                            <!-- Tabla de Registros -->
+                            <div class="table-responsive style-scrollbar" style="max-height: 500px;">
+                                <table class="table table-hover align-middle" id="tabla-pacientes">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Fecha/Hora</th>
+                                            <th>DNI</th>
+                                            <th>Paciente</th>
+                                            <th>Sede</th>
+                                            <th>Servicio</th>
+                                            <th>Estado</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-pacientes">
+                                        <!-- Filas cargadas dinámicamente desde Firebase -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <label for="precio">Precio:</label>
-        <input type="number" id="precio" required>
+        <!-- SECCIÓN 2: ESTADÍSTICAS & ASISTENTE INTELIGENTE -->
+        <div id="sec-estadisticas" class="seccion" style="display: none;">
+            <div class="card shadow-sm p-4 mb-4 bg-white rounded border-0">
+                <h4 class="text-primary mb-2"><i class="fas fa-robot me-2"></i>Asistente de Consultas y Estadísticas</h4>
+                <p class="text-muted">Escribe tu consulta en lenguaje natural sobre los datos almacenados en tiempo real.</p>
+                
+                <!-- Barra de Búsqueda de Preguntas -->
+                <div class="input-group input-group-lg mb-3">
+                    <input type="text" id="nl-query-input" class="form-control" placeholder="Ej: Arrojame un gráfico donde me salga cuantos pacientes se atendieron hoy por ecografia en la sede grau central">
+                    <button class="btn btn-primary px-4" id="btn-nl-search" type="button">
+                        <i class="fas fa-search me-1"></i> Consultar
+                    </button>
+                </div>
 
-        <label for="pf">PF (ticket de pago):</label>
-        <input type="text" id="pf" required>
+                <!-- Ejemplos rápidos de preguntas -->
+                <div class="mb-2">
+                    <small class="text-muted fw-bold">Consultas rápidas sugeridas:</small><br>
+                    <button class="btn btn-sm btn-outline-secondary me-1 mt-1 quick-query-btn">¿Cuántos pacientes se atendieron hoy por ecografía en Grau Central?</button>
+                    <button class="btn btn-sm btn-outline-secondary me-1 mt-1 quick-query-btn">Muestra los pacientes entregados este mes por sede</button>
+                    <button class="btn btn-sm btn-outline-secondary me-1 mt-1 quick-query-btn">Recaudación de hoy por servicio</button>
+                    <button class="btn btn-sm btn-outline-secondary me-1 mt-1 quick-query-btn">Pacientes en espera hoy</button>
+                </div>
+            </div>
 
-        <button type="submit">Registrar</button>
-      </form>
+            <!-- Panel de Resultados de la Consulta -->
+            <div id="nl-results-container" style="display: none;">
+                <!-- Tarjeta de Resumen en Texto -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary fw-bold"><i class="fas fa-info-circle me-2"></i>Resultado de la Consulta</h5>
+                        <div id="nl-response-text" class="fs-5 text-dark fw-bold mb-2"></div>
+                        <div id="nl-response-metrics" class="row mt-3"></div>
+                    </div>
+                </div>
 
-      <div id="contador" style="margin-top: 20px;">Pacientes en espera: 0</div>
+                <div class="row">
+                    <!-- Gráfico Dinámico -->
+                    <div class="col-md-7 mb-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-light fw-bold" id="nl-chart-title">Visualización Gráfica</div>
+                            <div class="card-body" style="position: relative; height:360px;">
+                                <canvas id="nlDynamicChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
 
-      <div id="filtros" style="margin-top: 20px;">
-        <label for="filtroSede">Filtrar por sede:</label>
-        <input type="text" id="filtroSede" placeholder="Sede...">
-
-        <label for="filtroNombre">Filtrar por nombre/apellido:</label>
-        <input type="text" id="filtroNombre" placeholder="Nombre o apellido...">
-
-        <label for="filtroEstudio">Filtrar por estudio:</label>
-        <input type="text" id="filtroEstudio" placeholder="Estudio...">
-
-        <label for="filtroFecha">Filtrar por fecha:</label>
-        <input type="date" id="filtroFecha">
-
-        <button onclick="exportarExcel()">Exportar a Excel</button>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Sede</th><th>Apellidos</th><th>Nombres</th><th>Estudios</th>
-            <th style="width:60px">Cant</th><th>Precio</th><th>PF</th><th>Estado</th>
-            <th style="width:70px">Placas</th><th style="width:70px">CD</th><th style="width:70px">Informe</th>
-            <th style="width:90px">Entregado</th><th style="width:110px">Firma</th><th>Acción</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-pacientes"></tbody>
-      </table>
-      <div id="paginacion-tabla"></div>
-    </section>
-
-    <!-- SECCIÓN DE REPORTES Y ESTADÍSTICAS (SPA) -->
-    <section id="vista-reportes" class="seccion-modulo" style="display: none;">
-      <h2>Reportes y Estadísticas Generales</h2>
-      
-      <!-- Sub-Navegación Interna de Reportes -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #3d0a11; padding-bottom: 10px;">
-        <button class="sub-tab-btn active" onclick="mostrarSubPestana('sub-resumen')" style="padding: 8px 16px; cursor: pointer;">📋 Resumen de Pacientes</button>
-        <button class="sub-tab-btn" onclick="mostrarSubPestana('sub-estadisticas')" style="padding: 8px 16px; cursor: pointer;">📊 Estadísticas</button>
-      </div>
-
-      <!-- Sub-Pestaña 1: Resumen -->
-      <div id="sub-resumen" class="sub-seccion">
-        <h3>Resumen Operativo</h3>
-        <p>Módulo de información general y métricas operativas de pacientes en tiempo real.</p>
-      </div>
-
-      <!-- Sub-Pestaña 2: Estadísticas -->
-      <div id="sub-estadisticas" class="sub-seccion" style="display: none;">
-        <h3>Análisis Estadístico</h3>
-        <p>Carga de datos al activar la pestaña de estadísticas:</p>
-
-        <!-- Métricas Rápidas -->
-        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-          <div style="background: #f4f4f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
-            <h4 style="margin:0;">Total Registrados</h4>
-            <span id="stat-total-pacientes" style="font-size: 24px; font-weight: bold; color: #3d0a11;">0</span>
-          </div>
-          <div style="background: #f4f4f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
-            <h4 style="margin:0;">Total Atendidos / Entregados</h4>
-            <span id="stat-atendidos" style="font-size: 24px; font-weight: bold; color: green;">0</span>
-          </div>
-          <div style="background: #f4f4f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
-            <h4 style="margin:0;">Recaudación Total S/</h4>
-            <span id="stat-recaudacion" style="font-size: 24px; font-weight: bold; color: #0056b3;">S/ 0.00</span>
-          </div>
+                    <!-- Tabla Detallada -->
+                    <div class="col-md-5 mb-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-light fw-bold">Detalle de Registros Encontrados</div>
+                            <div class="card-body p-0 style-scrollbar" style="max-height: 380px; overflow-y: auto;">
+                                <table class="table table-hover table-striped mb-0 text-sm" id="nl-result-table">
+                                    <thead class="table-dark sticky-top">
+                                        <tr>
+                                            <th>Paciente</th>
+                                            <th>Sede</th>
+                                            <th>Servicio</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Filas dinámicas -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Gráficos -->
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 300px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
-            <h4>Pacientes por Sede</h4>
-            <canvas id="chartSedes"></canvas>
-          </div>
-          <div style="flex: 1; min-width: 300px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
-            <h4>Estados de Atención</h4>
-            <canvas id="chartEstados"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- MODAL: Entrega (placas/cd/informe + firma) -->
-  <div id="modalFirma" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999;">
-    <div style="background:white; padding:18px; border-radius:8px; max-width:420px; width:95%; box-sizing:border-box;">
-      <h3 style="margin-top:0;">Finalizar Entrega</h3>
-
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">Placas:</label>
-        <input id="modal_placas" type="number" min="0" placeholder="nro" style="width:80px;">
-      </div>
-
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">CD:</label>
-        <select id="modal_cd" style="width:120px;">
-          <option value="">Seleccione</option>
-          <option value="SI">SI</option>
-          <option value="NO">NO</option>
-        </select>
-      </div>
-
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-        <label style="min-width:60px;">Informe:</label>
-        <select id="modal_informe" style="width:120px;">
-          <option value="">Seleccione</option>
-          <option value="SI">SI</option>
-          <option value="NO">NO</option>
-        </select>
-      </div>
-
-      <div style="margin:8px 0;">
-        <label>Firma:</label>
-        <canvas id="canvasFirma" width="360" height="200" style="border:1px solid #000; touch-action: none; display:block; margin:6px 0; width:100%;"></canvas>
-        <div style="display:flex; gap:8px; justify-content:center;">
-          <button id="modal_limpiar_firma" type="button">Limpiar</button>
-          <button id="modal_save_entrega" type="button">Guardar Entrega</button>
-          <button id="modal_cancel_entrega" type="button">Cancelar</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- script principal (modular) -->
-  <script type="module" src="./script.js"></script>
+    <!-- MODAL: Entrega y Firma Digital -->
+    <div class="modal fade" id="modalEntrega" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-file-signature me-2"></i>Confirmación de Entrega y Firma</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modal-entrega-id">
+                    <p class="fw-bold mb-1" id="modal-entrega-paciente">Paciente: -</p>
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Entregables del Estudio:</label>
+                        <div class="d-flex justify-content-between">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chk-informe" checked>
+                                <label class="form-check-label" for="chk-informe">Informe Digital/Impreso</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chk-cd">
+                                <label class="form-check-label" for="chk-cd">Disco / CD</label>
+                            </div>
+                        </div>
+                    </div>
 
-  <script>
-    function cerrarSesion() {
-      localStorage.removeItem('user');
-      window.location.href = 'login.html';
-    }
-  </script>
+                    <div class="mb-3">
+                        <label for="num-placas" class="form-label fw-bold">Número de Placas Entregadas:</label>
+                        <input type="number" id="num-placas" class="form-control" value="0" min="0">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Firma Digital del Paciente:</label>
+                        <div class="border rounded bg-light text-center p-1">
+                            <canvas id="canvas-firma" width="400" height="160" style="border: 1px dashed #ccc; background: #fff; cursor: crosshair;"></canvas>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger mt-2" type="button" id="btn-limpiar-firma">
+                            <i class="fas fa-eraser me-1"></i>Limpiar Firma
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success fw-bold" id="btn-confirmar-entrega">
+                        <i class="fas fa-check-circle me-1"></i> Guardar Entrega
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Escáner QR -->
+    <div class="modal fade" id="modalQR" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-qrcode me-2"></i>Escanear DNI / QR</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="reader" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Módulo Script JS Principal -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
