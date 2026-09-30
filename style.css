@@ -1,14 +1,14 @@
 :root {
   /* Paleta Médica Prémium y Elegante */
-  --bg: #f8fafc;                          /* Fondo gris clínico suave */
+  --bg: #f8fafc;                           /* Fondo gris clínico suave */
   --panel-bg: #ffffff;                    /* Paneles blancos puros */
   --card: #ffffff;
-  --accent: #0284c7;                     /* Azul médico profesional */
+  --accent: #0284c7;                      /* Azul médico profesional */
   --accent-hover: #0369a1;               /* Azul oscuro */
-  --text: #0f172a;                       /* Texto principal (azul muy oscuro) */
-  --muted: #64748b;                      /* Texto secundario neutro */
-  --border: #e2e8f0;                     /* Bordes limpios */
-  --danger: #ef4444;                     /* Rojo de alerta */
+  --text: #0f172a;                        /* Texto principal (azul muy oscuro) */
+  --muted: #64748b;                       /* Texto secundario neutro */
+  --border: #e2e8f0;                      /* Bordes limpios */
+  --danger: #ef4444;                      /* Rojo de alerta */
 
   /* Estados Visuales Claros con Resaltado */
   --espera-bg: #fef3c7;     --espera-border: #f59e0b;     --espera-text: #b45309;
