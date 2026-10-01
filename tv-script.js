@@ -2,9 +2,67 @@
 import { db } from "./firebase-config.js";
 import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
+// =========================================================================
+// 🏢 MATRIZ CONFIGURACIÓN DE SEDES / RAZÓN SOCIAL Y RUTAS DE USB (D:\publicidad_tv\)
+// =========================================================================
+const MAPA_MARCAS_SEDES = {
+  // MARCA: CDI
+  "CDI": {
+    razonSocial: "Centro de Diagnóstico e Imágenes (CDI)",
+    colorPrincipal: "#0284c7",    // Azul Clínico
+    colorAcento: "#38bdf8",       // Cían
+    colorBanner: "linear-gradient(135deg, #0284c7, #0369a1)",
+    carpetaUSB: "file:///D:/publicidad_tv/CDI/",
+    videos: ["video1.mp4", "video2.mp4", "promo_cdi.mp4"]
+  },
+  
+  // MARCA: GRUPO QUITO
+  "GRUPO_QUITO": {
+    razonSocial: "Grupo Quito - Servicios Médicos Integrales",
+    colorPrincipal: "#3d0a11",    // Borgoña / Vino
+    colorAcento: "#f59e0b",       // Ámbar
+    colorBanner: "linear-gradient(135deg, #3d0a11, #7f1d1d)",
+    carpetaUSB: "file:///D:/publicidad_tv/GRUPO_QUITO/",
+    videos: ["video1.mp4", "publicidad_quito.mp4"]
+  },
+
+  // MARCA: RESOTEM
+  "RESOTEM": {
+    razonSocial: "Resotem - Resonancia y Tomografía Especializada",
+    colorPrincipal: "#0f766e",    // Verde Teal / Esmeralda
+    colorAcento: "#2dd4bf",       // Turquesa Brilante
+    colorBanner: "linear-gradient(135deg, #0f766e, #115e59)",
+    carpetaUSB: "file:///D:/publicidad_tv/RESOTEM/",
+    videos: ["video1.mp4", "resotem_promo.mp4"]
+  }
+};
+
+// Asignación de Sedes a su Marca/Razón Social correspondiente
+const SEDE_A_MARCA = {
+  // Asigna aquí el nombre de tus sedes en Firebase a la Marca de la USB
+  "Grau Central": "GRUPO_QUITO",
+  "San Isidro": "CDI",
+  "Miraflores": "RESOTEM",
+  "Surco": "CDI"
+};
+
+// Configuración por defecto si la sede no tiene asignación explícita
+const MARCA_DEFECTO = {
+  razonSocial: "Centro de Atención Médica",
+  colorPrincipal: "#1e293b",
+  colorAcento: "#38bdf8",
+  colorBanner: "linear-gradient(135deg, #0284c7, #0369a1)",
+  carpetaUSB: "file:///D:/publicidad_tv/CDI/",
+  videos: ["video1.mp4"]
+};
+
+// Variables Globales
 let sedeSeleccionada = '';
+let marcaActual = {};
 let ultimoTurnoId = null;
 let historialLlamados = [];
+let listaRutasVideos = [];
+let indiceVideoActual = 0;
 
 // Elementos DOM
 const modalInicial = document.getElementById('selector-sede-modal');
@@ -19,16 +77,13 @@ const listaUltimos = document.getElementById('lista-ultimos-llamados');
 const listaEspera = document.getElementById('lista-en-espera');
 const audioTimbre = document.getElementById('audio-timbre');
 const reproductorVideo = document.getElementById('reproductor-usb');
+const fallbackPublicidad = document.getElementById('fallback-publicidad');
+const fallbackRazonSocial = document.getElementById('fallback-razon-social');
 
-// Lista de reproducción de videos locales/USB
-const listaVideosUSB = [
-  './videos/publicidad1.mp4',
-  './videos/publicidad2.mp4',
-  './videos/publicidad3.mp4'
-];
-let indiceVideoActual = 0;
+const bannerLlamado = document.querySelector('.llamado-actual-banner');
+const tvHeader = document.querySelector('.tv-header');
 
-// ---------- Cargar Sedes al Iniciar ----------
+// ---------- Cargar Sedes desde Firebase ----------
 function cargarSedesModal() {
   onValue(ref(db, 'sedes'), snapshot => {
     selectSede.innerHTML = '';
@@ -50,18 +105,45 @@ function actualizarReloj() {
 }
 setInterval(actualizarReloj, 1000);
 
+// ---------- Aplicar Personalización de Marca según Sede ----------
+function aplicarMarcaSede(nombreSede) {
+  // 1. Identificar la marca asignada
+  const claveMarca = SEDE_A_MARCA[nombreSede] || "CDI";
+  marcaActual = MAPA_MARCAS_SEDES[claveMarca] || MARCA_DEFECTO;
+
+  // 2. Personalizar Título y Razón Social
+  if (tvTituloSede) {
+    tvTituloSede.innerHTML = `<i class="fas fa-hospital-user"></i> ${marcaActual.razonSocial} - Sede: ${nombreSede}`;
+  }
+  if (fallbackRazonSocial) {
+    fallbackRazonSocial.textContent = marcaActual.razonSocial;
+  }
+
+  // 3. Personalizar Colores Visuales
+  if (tvHeader) tvHeader.style.backgroundColor = marcaActual.colorPrincipal;
+  if (bannerLlamado) {
+    bannerLlamado.style.background = marcaActual.colorBanner;
+    bannerLlamado.style.borderColor = marcaActual.colorAcento;
+  }
+  if (tvReloj) tvReloj.style.color = marcaActual.colorAcento;
+
+  // 4. Construir rutas completas a la USB (Unidad D:)
+  listaRutasVideos = (marcaActual.videos || []).map(v => `${marcaActual.carpetaUSB}${v}`);
+  indiceVideoActual = 0;
+}
+
 // ---------- Inicio de Pantalla TV ----------
 btnIniciar.addEventListener('click', () => {
   sedeSeleccionada = selectSede.value;
   if (!sedeSeleccionada) return alert('Por favor seleccione una sede.');
 
-  // Habilitar audio desbloqueando la política del navegador
+  // Desbloqueo de audio para alertas de voz
   audioTimbre.play().then(() => {
     audioTimbre.pause();
     audioTimbre.currentTime = 0;
-  }).catch(e => console.log("Audio desbloqueado"));
+  }).catch(e => console.log("Audio listo"));
 
-  tvTituloSede.innerHTML = `<i class="fas fa-hospital-user"></i> Sede: ${sedeSeleccionada}`;
+  aplicarMarcaSede(sedeSeleccionada);
   modalInicial.style.display = 'none';
 
   iniciarReproductorVideo();
@@ -69,21 +151,46 @@ btnIniciar.addEventListener('click', () => {
   escucharListaPacientes();
 });
 
-// ---------- Bucle de Video Publicitario USB ----------
+// ---------- Bucle de Video USB (file:///D:/publicidad_tv/...) ----------
 function iniciarReproductorVideo() {
-  if (!reproductorVideo || listaVideosUSB.length === 0) return;
+  if (!reproductorVideo || listaRutasVideos.length === 0) {
+    mostrarFallbackPublicidad();
+    return;
+  }
 
-  reproductorVideo.src = listaVideosUSB[indiceVideoActual];
-  reproductorVideo.play().catch(e => console.log("Error al reproducir video", e));
-
-  reproductorVideo.addEventListener('ended', () => {
-    indiceVideoActual = (indiceVideoActual + 1) % listaVideosUSB.length;
-    reproductorVideo.src = listaVideosUSB[indiceVideoActual];
-    reproductorVideo.play();
+  reproductorVideo.src = listaRutasVideos[indiceVideoActual];
+  reproductorVideo.play().then(() => {
+    reproductorVideo.style.display = 'block';
+    if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
+  }).catch(e => {
+    console.warn("No se pudo reproducir el video USB local:", e);
+    mostrarFallbackPublicidad();
   });
+
+  reproductorVideo.onerror = () => {
+    console.warn(`Archivo de video no encontrado en la USB: ${listaRutasVideos[indiceVideoActual]}`);
+    // Pasar al siguiente video si falla el archivo
+    siguienteVideo();
+  };
+
+  reproductorVideo.onended = () => {
+    siguienteVideo();
+  };
 }
 
-// ---------- Normalizar Claves de Sede ----------
+function siguienteVideo() {
+  if (listaRutasVideos.length === 0) return;
+  indiceVideoActual = (indiceVideoActual + 1) % listaRutasVideos.length;
+  reproductorVideo.src = listaRutasVideos[indiceVideoActual];
+  reproductorVideo.play().catch(() => mostrarFallbackPublicidad());
+}
+
+function mostrarFallbackPublicidad() {
+  if (reproductorVideo) reproductorVideo.style.display = 'none';
+  if (fallbackPublicidad) fallbackPublicidad.style.display = 'block';
+}
+
+// ---------- Normalizar Claves ----------
 function keyify(s) {
   if (!s) return 'sin_sede';
   return String(s).replace(/[^\w]/g, '_').toLowerCase();
@@ -99,24 +206,19 @@ function escucharTurnoActual() {
 
     const turnoId = `${turno.nombre}-${turno.hora}`;
     
-    // Si es un nuevo llamado o repetición
     if (turnoId !== ultimoTurnoId) {
       ultimoTurnoId = turnoId;
 
-      // Actualizar Banner
       tvPacienteNombre.textContent = turno.nombre || 'PACIENTE';
       tvPacienteArea.textContent = `A: ${turno.estudio || 'CONSULTORIO'}`;
 
-      // Agregar al Historial
       agregarAHistorial(turno);
-
-      // Reproducir Sonido Timbre y Voz
       reproducirAnuncio(turno.nombre, turno.estudio);
     }
   });
 }
 
-// ---------- Escuchar Lista Completa para Pacientes en Espera ----------
+// ---------- Escuchar Lista en Espera ----------
 function escucharListaPacientes() {
   onValue(ref(db, 'pacientes'), snapshot => {
     const enEspera = [];
@@ -132,7 +234,6 @@ function escucharListaPacientes() {
   });
 }
 
-// ---------- Renderizar Lista en Espera ----------
 function renderizarEspera(lista) {
   listaEspera.innerHTML = '';
   if (lista.length === 0) {
@@ -147,13 +248,12 @@ function renderizarEspera(lista) {
         <div class="nom">${p.apellidos || ''}, ${p.nombres || ''}</div>
         <div class="est">${p.estudios || '-'}</div>
       </div>
-      <span style="font-size: 12px; color: #f59e0b; font-weight: bold;">En espera</span>
+      <span style="font-size: 12px; color: ${marcaActual.colorAcento || '#f59e0b'}; font-weight: bold;">En espera</span>
     `;
     listaEspera.appendChild(li);
   });
 }
 
-// ---------- Historial de Llamados ----------
 function agregarAHistorial(turno) {
   historialLlamados.unshift(turno);
   if (historialLlamados.length > 5) historialLlamados.pop();
@@ -173,12 +273,11 @@ function agregarAHistorial(turno) {
   });
 }
 
-// ---------- Reproducción de Timbre (Tilín) + Sintetizador de Voz ----------
+// ---------- Timbre + Voz ----------
 function reproducirAnuncio(nombrePaciente, area) {
   if (audioTimbre) {
     audioTimbre.currentTime = 0;
     audioTimbre.play().then(() => {
-      // Una vez terminado el timbre de aviso, hablar el mensaje
       setTimeout(() => {
         hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
       }, 1200);
@@ -190,14 +289,12 @@ function reproducirAnuncio(nombrePaciente, area) {
 
 function hablarMensaje(texto) {
   if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel(); // Cancelar locuciones anteriores
-
+    window.speechSynthesis.cancel();
     const mensaje = new SpeechSynthesisUtterance(texto);
-    mensaje.lang = 'es-PE'; // Español Perú / Latino
-    mensaje.rate = 0.9;     // Velocidad de voz pausada y clara
-    mensaje.pitch = 1.0;    // Tono estándar
+    mensaje.lang = 'es-PE';
+    mensaje.rate = 0.9;
+    mensaje.pitch = 1.0;
 
-    // Buscar una voz en español disponible en el sistema
     const voces = window.speechSynthesis.getVoices();
     const vozEspanol = voces.find(v => v.lang.includes('es'));
     if (vozEspanol) mensaje.voice = vozEspanol;
