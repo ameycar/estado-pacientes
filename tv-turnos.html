@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pantalla de Llamado de Turnos</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* Layout Pantalla Dividida */
+    .tv-container {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+      gap: 15px;
+      padding: 15px;
+    }
+
+    /* Encabezado TV */
+    .tv-header {
+      grid-column: 1 / -1;
+      background: #3d0a11;
+      padding: 10px 20px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .tv-header h2 {
+      margin: 0;
+      font-size: 26px;
+      color: #ffffff;
+    }
+
+    .tv-clock {
+      font-size: 26px;
+      font-weight: bold;
+      color: #f59e0b;
+    }
+
+    /* Zona Izquierda: Publicidad en Video + Banner Llamado Actual */
+    .zona-izquierda {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .video-container {
+      flex: 1;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      border: 2px solid #334155;
+    }
+
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Alerta de Llamado Gigante */
+    .llamado-actual-banner {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      border: 3px solid #38bdf8;
+      box-shadow: 0 0 20px rgba(2, 132, 199, 0.6);
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.99); box-shadow: 0 0 10px rgba(2, 132, 199, 0.4); }
+      100% { transform: scale(1.01); box-shadow: 0 0 25px rgba(56, 189, 248, 0.8); }
+    }
+
+    .llamado-actual-banner small {
+      font-size: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #e0f2fe;
+      display: block;
+    }
+
+    .llamado-paciente {
+      font-size: 42px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 5px 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .llamado-area {
+      font-size: 32px;
+      font-weight: 700;
+      color: #fef08a;
+    }
+
+    /* Zona Derecha: Paneles de Turnos */
+    .zona-derecha {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .panel-tv {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 15px;
+      border: 1px solid #334155;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-tv h3 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 6px;
+      color: #38bdf8;
+    }
+
+    .lista-turnos {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      overflow-y: hidden;
+      flex: 1;
+    }
+
+    .lista-turnos li {
+      background: #334155;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+    }
+
+    .lista-turnos li.llamado-recent {
+      background: #1e3a8a;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .lista-turnos li .nom {
+      font-weight: bold;
+      color: #ffffff;
+    }
+
+    .lista-turnos li .est {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    /* Selector de Sede Inicial */
+    #selector-sede-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .selector-box {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      border: 1px solid #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Modal Inicial de Configuración de TV -->
+  <div id="selector-sede-modal">
+    <div class="selector-box">
+      <h2>📺 Configuración de Pantalla TV</h2>
+      <p style="color: #94a3b8; font-size: 14px;">Seleccione la sede para esta pantalla y habilite el audio del navegador.</p>
+      
+      <label for="select-tv-sede" style="display: block; margin-bottom: 8px; font-weight: bold;">Sede:</label>
+      <select id="select-tv-sede" style="margin-bottom: 20px; padding: 10px;">
+        <!-- Se cargarán las sedes dinámicamente -->
+      </select>
+
+      <button id="btn-iniciar-tv" class="btn primary" style="width: 100%; padding: 12px; font-size: 16px;">▶️ Iniciar Pantalla de Turnos</button>
+    </div>
+  </div>
+
+  <div class="tv-container">
+    <!-- Encabezado superior -->
+    <div class="tv-header">
+      <h2 id="tv-titulo-sede"><i class="fas fa-hospital-user"></i> Centro Médico - Turnos</h2>
+      <div id="tv-reloj" class="tv-clock">00:00:00 PM</div>
+    </div>
+
+    <!-- Zona Izquierda: Video Publicitario + Banner de Llamado -->
+    <div class="zona-izquierda">
+      <!-- Reproductor Video USB -->
+      <div class="video-container">
+        <video id="reproductor-usb" autoplay muted loop playsinline>
+          <!-- Fuentes de video locales/USB agregadas mediante script -->
+          <source src="./videos/publicidad1.mp4" type="video/mp4">
+        </video>
+      </div>
+
+      <!-- Banner del Paciente en Llamado -->
+      <div class="llamado-actual-banner">
+        <small>🔔 Paciente en Atención</small>
+        <div id="tv-paciente-nombre" class="llamado-paciente">ESPERANDO LLAMADO...</div>
+        <div id="tv-paciente-area" class="llamado-area">-</div>
+      </div>
+    </div>
+
+    <!-- Zona Derecha: Listas de Turnos -->
+    <div class="zona-derecha">
+      <!-- Últimos Llamados -->
+      <div class="panel-tv">
+        <h3><i class="fas fa-history"></i> Últimos Llamados</h3>
+        <ul id="lista-ultimos-llamados" class="lista-turnos">
+          <li style="color: #94a3b8; justify-content: center;">Sin llamados recientes</li>
+        </ul>
+      </div>
+
+      <!-- Pacientes en Espera de esta sede -->
+      <div class="panel-tv">
+        <h3><i class="fas fa-user-clock"></i> En Espera (Sede)</h3>
+        <ul id="lista-en-espera" class="lista-turnos">
+          <li style="color: #94a3b8; justify-content: center;">No hay pacientes en espera</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sonido de Timbre (Tilín) -->
+  <audio id="audio-timbre" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Script modular de Firebase y TV -->
+  <script type="module" src="./tv-script.js"></script>
+</body>
+</html>
