@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pantalla de Llamado de Turnos</title>
+  <title>Pantalla de Turnos - TV</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -25,18 +25,20 @@
       height: 100vh;
       gap: 15px;
       padding: 15px;
+      box-sizing: border-box;
     }
 
     /* Encabezado TV */
     .tv-header {
       grid-column: 1 / -1;
       background: #3d0a11;
-      padding: 10px 20px;
+      padding: 12px 24px;
       border-radius: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: background-color 0.3s ease;
     }
 
     .tv-header h2 {
@@ -51,11 +53,12 @@
       color: #f59e0b;
     }
 
-    /* Zona Izquierda: Publicidad en Video + Banner Llamado Actual */
+    /* Zona Izquierda: Publicidad en Video / Banner + Llamado Actual */
     .zona-izquierda {
       display: flex;
       flex-direction: column;
       gap: 15px;
+      height: 100%;
     }
 
     .video-container {
@@ -65,12 +68,34 @@
       overflow: hidden;
       position: relative;
       border: 2px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .video-container video {
       width: 100%;
       height: 100%;
       object-fit: contain;
+    }
+
+    /* Fallback cuando no hay video en la USB */
+    .banner-fallback-publicidad {
+      display: none;
+      text-align: center;
+      padding: 30px;
+      color: #fff;
+    }
+
+    .banner-fallback-publicidad h1 {
+      font-size: 38px;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+
+    .banner-fallback-publicidad p {
+      font-size: 20px;
+      color: #94a3b8;
     }
 
     /* Alerta de Llamado Gigante */
@@ -82,6 +107,7 @@
       border: 3px solid #38bdf8;
       box-shadow: 0 0 20px rgba(2, 132, 199, 0.6);
       animation: pulse 1.5s infinite alternate;
+      transition: all 0.3s ease;
     }
 
     @keyframes pulse {
@@ -186,7 +212,7 @@
       padding: 30px;
       border-radius: 12px;
       text-align: center;
-      max-width: 400px;
+      max-width: 420px;
       width: 90%;
       border: 1px solid #334155;
     }
@@ -198,14 +224,14 @@
   <div id="selector-sede-modal">
     <div class="selector-box">
       <h2>📺 Configuración de Pantalla TV</h2>
-      <p style="color: #94a3b8; font-size: 14px;">Seleccione la sede para esta pantalla y habilite el audio del navegador.</p>
+      <p style="color: #94a3b8; font-size: 14px;">Seleccione la sede para configurar los colores, razón social y carpeta de videos USB automáticamente.</p>
       
-      <label for="select-tv-sede" style="display: block; margin-bottom: 8px; font-weight: bold;">Sede:</label>
-      <select id="select-tv-sede" style="margin-bottom: 20px; padding: 10px;">
+      <label for="select-tv-sede" style="display: block; margin-bottom: 8px; font-weight: bold; text-align: left;">Sede:</label>
+      <select id="select-tv-sede" style="margin-bottom: 20px; padding: 12px; font-size: 15px; width: 100%; border-radius: 6px;">
         <!-- Se cargarán las sedes dinámicamente -->
       </select>
 
-      <button id="btn-iniciar-tv" class="btn primary" style="width: 100%; padding: 12px; font-size: 16px;">▶️ Iniciar Pantalla de Turnos</button>
+      <button id="btn-iniciar-tv" class="btn primary" style="width: 100%; padding: 12px; font-size: 16px; cursor: pointer;">▶️ Iniciar Pantalla de Turnos</button>
     </div>
   </div>
 
@@ -216,14 +242,18 @@
       <div id="tv-reloj" class="tv-clock">00:00:00 PM</div>
     </div>
 
-    <!-- Zona Izquierda: Video Publicitario + Banner de Llamado -->
+    <!-- Zona Izquierda: Video Publicitario USB / Banner + Llamado -->
     <div class="zona-izquierda">
-      <!-- Reproductor Video USB -->
       <div class="video-container">
-        <video id="reproductor-usb" autoplay muted loop playsinline>
-          <!-- Fuentes de video locales/USB agregadas mediante script -->
-          <source src="./videos/publicidad1.mp4" type="video/mp4">
-        </video>
+        <!-- Reproductor de Video -->
+        <video id="reproductor-usb" autoplay muted playsinline></video>
+
+        <!-- Banner de Respaldo por si no hay archivos en la USB -->
+        <div id="fallback-publicidad" class="banner-fallback-publicidad">
+          <i class="fas fa-heartpulse" style="font-size: 60px; color: #38bdf8; margin-bottom: 15px;"></i>
+          <h1 id="fallback-razon-social">Centro de Diagnóstico Médico</h1>
+          <p>Comprometidos con su salud y bienestar</p>
+        </div>
       </div>
 
       <!-- Banner del Paciente en Llamado -->
