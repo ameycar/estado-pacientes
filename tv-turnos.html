@@ -224,11 +224,18 @@
   <div id="selector-sede-modal">
     <div class="selector-box">
       <h2>📺 Configuración de Pantalla TV</h2>
-      <p style="color: #94a3b8; font-size: 14px;">Seleccione la sede para configurar los colores, razón social y carpeta de videos USB automáticamente.</p>
+      <p style="color: #94a3b8; font-size: 14px;">Seleccione la sede de atención y la marca/razón social correspondiente a la carpeta USB.</p>
       
-      <label for="select-tv-sede" style="display: block; margin-bottom: 8px; font-weight: bold; text-align: left;">Sede:</label>
-      <select id="select-tv-sede" style="margin-bottom: 20px; padding: 12px; font-size: 15px; width: 100%; border-radius: 6px;">
-        <!-- Se cargarán las sedes dinámicamente -->
+      <label for="select-tv-sede" style="display: block; margin-bottom: 4px; font-weight: bold; text-align: left;">Sede de Atención:</label>
+      <select id="select-tv-sede" style="margin-bottom: 15px; padding: 10px; font-size: 15px; width: 100%; border-radius: 6px;">
+        <!-- Carga desde Firebase -->
+      </select>
+
+      <label for="select-tv-marca" style="display: block; margin-bottom: 4px; font-weight: bold; text-align: left;">Marca / Razón Social (USB):</label>
+      <select id="select-tv-marca" style="margin-bottom: 20px; padding: 10px; font-size: 15px; width: 100%; border-radius: 6px;">
+        <option value="CDI">CDI (Centro de Diagnóstico e Imágenes)</option>
+        <option value="GRUPO_QUITO">GRUPO QUITO (Servicios Médicos Integrales)</option>
+        <option value="RESOTEM">RESOTEM (Resonancia y Tomografía)</option>
       </select>
 
       <button id="btn-iniciar-tv" class="btn primary" style="width: 100%; padding: 12px; font-size: 16px; cursor: pointer;">▶️ Iniciar Pantalla de Turnos</button>
