@@ -3,10 +3,9 @@ import { db } from "./firebase-config.js";
 import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
 // =========================================================================
-// 🏢 MATRIZ CONFIGURACIÓN DE SEDES / RAZÓN SOCIAL Y RUTAS DE USB (D:\publicidad_tv\)
+// 🏢 CONFIGURACIÓN DE MARCAS Y VIDEOS EN USB (Unidad D:\publicidad_tv\)
 // =========================================================================
-const MAPA_MARCAS_SEDES = {
-  // MARCA: CDI
+const MARCAS_CONFIG = {
   "CDI": {
     razonSocial: "Centro de Diagnóstico e Imágenes (CDI)",
     colorPrincipal: "#0284c7",    // Azul Clínico
@@ -15,8 +14,6 @@ const MAPA_MARCAS_SEDES = {
     carpetaUSB: "file:///D:/publicidad_tv/CDI/",
     videos: ["video1.mp4", "video2.mp4", "promo_cdi.mp4"]
   },
-  
-  // MARCA: GRUPO QUITO
   "GRUPO_QUITO": {
     razonSocial: "Grupo Quito - Servicios Médicos Integrales",
     colorPrincipal: "#3d0a11",    // Borgoña / Vino
@@ -25,8 +22,6 @@ const MAPA_MARCAS_SEDES = {
     carpetaUSB: "file:///D:/publicidad_tv/GRUPO_QUITO/",
     videos: ["video1.mp4", "publicidad_quito.mp4"]
   },
-
-  // MARCA: RESOTEM
   "RESOTEM": {
     razonSocial: "Resotem - Resonancia y Tomografía Especializada",
     colorPrincipal: "#0f766e",    // Verde Teal / Esmeralda
@@ -35,25 +30,6 @@ const MAPA_MARCAS_SEDES = {
     carpetaUSB: "file:///D:/publicidad_tv/RESOTEM/",
     videos: ["video1.mp4", "resotem_promo.mp4"]
   }
-};
-
-// Asignación de Sedes a su Marca/Razón Social correspondiente
-const SEDE_A_MARCA = {
-  // Asigna aquí el nombre de tus sedes en Firebase a la Marca de la USB
-  "Grau Central": "GRUPO_QUITO",
-  "San Isidro": "CDI",
-  "Miraflores": "RESOTEM",
-  "Surco": "CDI"
-};
-
-// Configuración por defecto si la sede no tiene asignación explícita
-const MARCA_DEFECTO = {
-  razonSocial: "Centro de Atención Médica",
-  colorPrincipal: "#1e293b",
-  colorAcento: "#38bdf8",
-  colorBanner: "linear-gradient(135deg, #0284c7, #0369a1)",
-  carpetaUSB: "file:///D:/publicidad_tv/CDI/",
-  videos: ["video1.mp4"]
 };
 
 // Variables Globales
@@ -67,15 +43,17 @@ let indiceVideoActual = 0;
 // Elementos DOM
 const modalInicial = document.getElementById('selector-sede-modal');
 const selectSede = document.getElementById('select-tv-sede');
+const selectMarca = document.getElementById('select-tv-marca');
 const btnIniciar = document.getElementById('btn-iniciar-tv');
+
 const tvTituloSede = document.getElementById('tv-titulo-sede');
 const tvReloj = document.getElementById('tv-reloj');
-
 const tvPacienteNombre = document.getElementById('tv-paciente-nombre');
 const tvPacienteArea = document.getElementById('tv-paciente-area');
 const listaUltimos = document.getElementById('lista-ultimos-llamados');
 const listaEspera = document.getElementById('lista-en-espera');
 const audioTimbre = document.getElementById('audio-timbre');
+
 const reproductorVideo = document.getElementById('reproductor-usb');
 const fallbackPublicidad = document.getElementById('fallback-publicidad');
 const fallbackRazonSocial = document.getElementById('fallback-razon-social');
@@ -105,13 +83,11 @@ function actualizarReloj() {
 }
 setInterval(actualizarReloj, 1000);
 
-// ---------- Aplicar Personalización de Marca según Sede ----------
-function aplicarMarcaSede(nombreSede) {
-  // 1. Identificar la marca asignada
-  const claveMarca = SEDE_A_MARCA[nombreSede] || "CDI";
-  marcaActual = MAPA_MARCAS_SEDES[claveMarca] || MARCA_DEFECTO;
+// ---------- Aplicar Personalización de Marca Seleccionada ----------
+function aplicarMarca(claveMarca, nombreSede) {
+  marcaActual = MARCAS_CONFIG[claveMarca] || MARCAS_CONFIG["CDI"];
 
-  // 2. Personalizar Título y Razón Social
+  // 1. Personalizar Título y Razón Social
   if (tvTituloSede) {
     tvTituloSede.innerHTML = `<i class="fas fa-hospital-user"></i> ${marcaActual.razonSocial} - Sede: ${nombreSede}`;
   }
@@ -119,7 +95,7 @@ function aplicarMarcaSede(nombreSede) {
     fallbackRazonSocial.textContent = marcaActual.razonSocial;
   }
 
-  // 3. Personalizar Colores Visuales
+  // 2. Personalizar Colores Visuales
   if (tvHeader) tvHeader.style.backgroundColor = marcaActual.colorPrincipal;
   if (bannerLlamado) {
     bannerLlamado.style.background = marcaActual.colorBanner;
@@ -127,7 +103,7 @@ function aplicarMarcaSede(nombreSede) {
   }
   if (tvReloj) tvReloj.style.color = marcaActual.colorAcento;
 
-  // 4. Construir rutas completas a la USB (Unidad D:)
+  // 3. Generar Rutas de Videos
   listaRutasVideos = (marcaActual.videos || []).map(v => `${marcaActual.carpetaUSB}${v}`);
   indiceVideoActual = 0;
 }
@@ -135,6 +111,8 @@ function aplicarMarcaSede(nombreSede) {
 // ---------- Inicio de Pantalla TV ----------
 btnIniciar.addEventListener('click', () => {
   sedeSeleccionada = selectSede.value;
+  const marcaSeleccionada = selectMarca.value;
+
   if (!sedeSeleccionada) return alert('Por favor seleccione una sede.');
 
   // Desbloqueo de audio para alertas de voz
@@ -143,7 +121,7 @@ btnIniciar.addEventListener('click', () => {
     audioTimbre.currentTime = 0;
   }).catch(e => console.log("Audio listo"));
 
-  aplicarMarcaSede(sedeSeleccionada);
+  aplicarMarca(marcaSeleccionada, sedeSeleccionada);
   modalInicial.style.display = 'none';
 
   iniciarReproductorVideo();
@@ -159,17 +137,20 @@ function iniciarReproductorVideo() {
   }
 
   reproductorVideo.src = listaRutasVideos[indiceVideoActual];
-  reproductorVideo.play().then(() => {
-    reproductorVideo.style.display = 'block';
-    if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
-  }).catch(e => {
-    console.warn("No se pudo reproducir el video USB local:", e);
-    mostrarFallbackPublicidad();
-  });
+  
+  const promise = reproductorVideo.play();
+  if (promise !== undefined) {
+    promise.then(() => {
+      reproductorVideo.style.display = 'block';
+      if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
+    }).catch(e => {
+      console.warn("No se pudo reproducir el video USB local:", e);
+      mostrarFallbackPublicidad();
+    });
+  }
 
   reproductorVideo.onerror = () => {
-    console.warn(`Archivo de video no encontrado en la USB: ${listaRutasVideos[indiceVideoActual]}`);
-    // Pasar al siguiente video si falla el archivo
+    console.warn(`Archivo no encontrado en USB: ${listaRutasVideos[indiceVideoActual]}`);
     siguienteVideo();
   };
 
