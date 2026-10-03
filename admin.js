@@ -30,14 +30,34 @@ const selectRol = document.getElementById("usuarioRol");
 const selectSedeUsuario = document.getElementById("usuarioSede");
 const listaUsuarios = document.getElementById("listaUsuarios");
 
+/* DOM - PERSONALIZACIÓN REMOTA TV */
+const btnGuardarCfg = document.getElementById("btn-guardar-cfg-tv");
+const selectSedeCfg = document.getElementById("cfg-tv-sede");
+
 /* ==========================================
-   UTILIDADES - ENCRIPTACIÓN DE CONTRASEÑA
+   UTILIDADES
    ========================================== */
+function keyify(s) {
+  if (!s) return 'sin_sede';
+  return String(s).replace(/[^\w]/g, '_').toLowerCase();
+}
+
 async function hashPassword(password) {
   const msgUint8 = new TextEncoder().encode(password);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Función para solicitar contraseña
+function verificarPasswordAdmin() {
+  const pass = prompt("Ingrese la contraseña de Administrador para realizar esta acción:");
+  if (pass === null) return false; // Cancelado
+  if (pass !== ADMIN_PASSWORD) {
+    alert("Contraseña incorrecta. Acción denegada.");
+    return false;
+  }
+  return true;
 }
 
 /* ==========================================
@@ -129,17 +149,6 @@ onValue(ref(db, "sedes"), (snap) => {
   renderSedes(snap);
   actualizarSelectSedesUsuarios(snap);
 });
-
-// Función para solicitar contraseña
-function verificarPasswordAdmin() {
-  const pass = prompt("Ingrese la contraseña de Administrador para realizar esta acción:");
-  if (pass === null) return false; // Cancelado
-  if (pass !== ADMIN_PASSWORD) {
-    alert("Contraseña incorrecta. Acción denegada.");
-    return false;
-  }
-  return true;
-}
 
 async function editarSede(id, currentName) {
   if (!verificarPasswordAdmin()) return;
@@ -413,4 +422,35 @@ async function eliminarUsuario(userKey, username) {
   } catch (err) {
     alert("Error al eliminar usuario: " + err.message);
   }
+}
+
+/* ==========================================
+   3. PERSONALIZACIÓN REMOTA DE PANTALLAS TV
+   ========================================== */
+if (btnGuardarCfg) {
+  btnGuardarCfg.addEventListener('click', () => {
+    const sedeNombre = selectSedeCfg ? selectSedeCfg.value : '';
+    if (!sedeNombre) return alert('Seleccione una sede para personalizar.');
+
+    const sedeKey = keyify(sedeNombre);
+
+    const configuracion = {
+      colorHeader: document.getElementById('cfg-color-header').value,
+      colorAcento: document.getElementById('cfg-color-acento').value,
+      colorBanner: document.getElementById('cfg-color-banner').value,
+      logoUrl: document.getElementById('cfg-logo-url').value,
+      posicionVideo: document.getElementById('cfg-pos-video').value,
+      mostrarUltimos: document.getElementById('cfg-chk-ultimos').checked,
+      mostrarEspera: document.getElementById('cfg-chk-espera').checked,
+      updatedAt: Date.now()
+    };
+
+    set(ref(db, `configuracion_tv/${sedeKey}`), configuracion)
+      .then(() => {
+        alert(`¡Configuración de TV enviada a la sede '${sedeNombre}' exitosamente!`);
+      })
+      .catch((err) => {
+        alert("Error al guardar en Firebase: " + err.message);
+      });
+  });
 }
