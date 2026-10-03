@@ -37,7 +37,20 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
+    }
+
+    .tv-header-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .tv-logo-custom {
+      max-height: 45px;
+      max-width: 180px;
+      object-fit: contain;
+      display: none;
     }
 
     .tv-header h2 { margin: 0; font-size: 26px; color: #ffffff; }
@@ -226,15 +239,18 @@
     </div>
   </div>
 
-  <div class="tv-container">
-    <div class="tv-header">
-      <h2 id="tv-titulo-sede"><i class="fas fa-hospital-user"></i> Centro Médico - Turnos</h2>
+  <div class="tv-container" id="tv-layout-main">
+    <div class="tv-header" id="tv-header-elem">
+      <div class="tv-header-info">
+        <img id="tv-custom-logo" class="tv-logo-custom" alt="Logo" />
+        <h2 id="tv-titulo-sede"><i class="fas fa-hospital-user"></i> Centro Médico - Turnos</h2>
+      </div>
       <div id="tv-reloj" class="tv-clock">00:00:00 PM</div>
     </div>
 
     <!-- Columna Izquierda -->
-    <div class="zona-izquierda">
-      <div class="video-container">
+    <div class="zona-izquierda" id="zona-video">
+      <div class="video-container" id="box-video">
         <video id="reproductor-usb" playsinline></video>
         <div id="fallback-publicidad" class="banner-fallback-publicidad">
           <i class="fas fa-heartpulse" style="font-size: 60px; color: #38bdf8; margin-bottom: 15px;"></i>
@@ -244,7 +260,7 @@
       </div>
 
       <!-- Banner de Paciente Llamado -->
-      <div class="llamado-actual-banner">
+      <div class="llamado-actual-banner" id="banner-llamado-elem">
         <small>🔔 PACIENTE EN ATENCIÓN</small>
         <div id="tv-paciente-nombre" class="llamado-paciente">ESPERANDO LLAMADO...</div>
         <div id="tv-paciente-area" class="llamado-area">-</div>
@@ -252,16 +268,16 @@
     </div>
 
     <!-- Columna Derecha -->
-    <div class="zona-derecha">
-      <div class="panel-tv">
-        <h3><i class="fas fa-history"></i> Últimos Llamados</h3>
+    <div class="zona-derecha" id="zona-listas">
+      <div class="panel-tv" id="panel-ultimos-llamados">
+        <h3 id="hdr-ultimos"><i class="fas fa-history"></i> Últimos Llamados</h3>
         <ul id="lista-ultimos-llamados" class="lista-turnos">
           <li style="color: #94a3b8; justify-content: center;">Sin llamados recientes</li>
         </ul>
       </div>
 
-      <div class="panel-tv">
-        <h3><i class="fas fa-user-clock"></i> En Espera (Sede)</h3>
+      <div class="panel-tv" id="panel-en-espera">
+        <h3 id="hdr-espera"><i class="fas fa-user-clock"></i> En Espera (Sede)</h3>
         <ul id="lista-en-espera" class="lista-turnos">
           <li style="color: #94a3b8; justify-content: center;">No hay pacientes en espera</li>
         </ul>
@@ -336,8 +352,12 @@
     const fallbackPublicidad = document.getElementById('fallback-publicidad');
     const fallbackRazonSocial = document.getElementById('fallback-razon-social');
 
-    const bannerLlamado = document.querySelector('.llamado-actual-banner');
-    const tvHeader = document.querySelector('.tv-header');
+    const bannerLlamado = document.getElementById('banner-llamado-elem');
+    const tvHeader = document.getElementById('tv-header-elem');
+    const tvCustomLogo = document.getElementById('tv-custom-logo');
+    const tvLayoutMain = document.getElementById('tv-layout-main');
+    const panelUltimos = document.getElementById('panel-ultimos-llamados');
+    const panelEspera = document.getElementById('panel-en-espera');
 
     function cargarSedesModal() {
       onValue(ref(db, 'sedes'), snapshot => {
@@ -377,13 +397,50 @@
       indiceVideoActual = 0;
     }
 
+    // LISTENER EN TIEMPO REAL: Escuchar cambios de diseño desde Firebase
+    function escucharConfiguracionRemota(sedeNombre) {
+      const sedeKey = keyify(sedeNombre);
+      onValue(ref(db, `configuracion_tv/${sedeKey}`), snapshot => {
+        const config = snapshot.val();
+        if (!config) return;
+
+        // 1. Colores Personalizados
+        if (config.colorHeader && tvHeader) tvHeader.style.backgroundColor = config.colorHeader;
+        if (config.colorAcento && tvReloj) tvReloj.style.color = config.colorAcento;
+        if (config.colorBanner && bannerLlamado) {
+          bannerLlamado.style.background = config.colorBanner;
+          if (config.colorAcento) bannerLlamado.style.borderColor = config.colorAcento;
+        }
+
+        // 2. Logo Personalizado
+        if (config.logoUrl && tvCustomLogo) {
+          tvCustomLogo.src = config.logoUrl;
+          tvCustomLogo.style.display = 'block';
+        }
+
+        // 3. Posición del Video (Invertir Columnas)
+        if (config.posicionVideo === 'derecha' && tvLayoutMain) {
+          tvLayoutMain.style.gridTemplateColumns = '1fr 2fr';
+          document.getElementById('zona-video').style.order = '2';
+          document.getElementById('zona-listas').style.order = '1';
+        } else if (tvLayoutMain) {
+          tvLayoutMain.style.gridTemplateColumns = '2fr 1fr';
+          document.getElementById('zona-video').style.order = '1';
+          document.getElementById('zona-listas').style.order = '2';
+        }
+
+        // 4. Mostrar/Ocultar Paneles
+        if (panelUltimos) panelUltimos.style.display = config.mostrarUltimos === false ? 'none' : 'flex';
+        if (panelEspera) panelEspera.style.display = config.mostrarEspera === false ? 'none' : 'flex';
+      });
+    }
+
     btnIniciar.addEventListener('click', () => {
       sedeSeleccionada = selectSede.value;
       const marcaSeleccionada = selectMarca.value;
 
       if (!sedeSeleccionada) return alert('Por favor seleccione una sede.');
 
-      // Desbloquear audio general con la interacción del usuario
       if (audioTimbre) {
         audioTimbre.play().then(() => {
           audioTimbre.pause();
@@ -398,6 +455,7 @@
       iniciarReproductorVideo();
       escucharTurnoActual();
       escucharListaPacientes();
+      escucharConfiguracionRemota(sedeSeleccionada);
     });
 
     function configurarEventosReproductor() {
@@ -419,7 +477,6 @@
         return;
       }
 
-      // Activar sonido con volumen normal (100%)
       reproductorVideo.muted = false;
       reproductorVideo.volume = 1.0;
       reproductorVideo.src = listaRutasVideos[indiceVideoActual];
@@ -428,7 +485,7 @@
         reproductorVideo.style.display = 'block';
         if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
       }).catch(e => {
-        console.warn("Autoplay con sonido bloqueado o archivo no encontrado:", e);
+        console.warn("Autoplay bloqueado:", e);
         siguienteVideo();
       });
     }
@@ -527,23 +584,14 @@
       });
     }
 
-    // CONTROL DE AUDIO E INTEGACIÓN DE ATENUACIÓN (AUDIO DUCKING)
     function reproducirAnuncio(nombrePaciente, area) {
-      // 1. Bajar el volumen del video al 10%
-      if (reproductorVideo) {
-        reproductorVideo.volume = 0.1;
-      }
+      if (reproductorVideo) reproductorVideo.volume = 0.1;
 
-      // 2. Reproducir timbre
       if (audioTimbre) {
         audioTimbre.currentTime = 0;
         audioTimbre.play().then(() => {
-          setTimeout(() => {
-            hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
-          }, 1200);
-        }).catch(() => {
-          hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
-        });
+          setTimeout(() => hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`), 1200);
+        }).catch(() => hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`));
       } else {
         hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
       }
@@ -561,26 +609,17 @@
         const vozEspanol = voces.find(v => v.lang.includes('es'));
         if (vozEspanol) mensaje.voice = vozEspanol;
 
-        // 3. Al terminar el llamado por voz, subir el volumen del video nuevamente al 100%
-        mensaje.onend = () => {
-          restaurarVolumenVideo();
-        };
-
-        mensaje.onerror = () => {
-          restaurarVolumenVideo();
-        };
+        mensaje.onend = () => restaurarVolumenVideo();
+        mensaje.onerror = () => restaurarVolumenVideo();
 
         window.speechSynthesis.speak(mensaje);
       } else {
-        // Restauración de seguridad tras 5 segundos si no hay síntesis de voz
         setTimeout(restaurarVolumenVideo, 5000);
       }
     }
 
     function restaurarVolumenVideo() {
-      if (reproductorVideo) {
-        reproductorVideo.volume = 1.0;
-      }
+      if (reproductorVideo) reproductorVideo.volume = 1.0;
     }
 
     cargarSedesModal();
