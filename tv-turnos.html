@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pantalla de Turnos - TV</title>
-  <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
@@ -17,7 +16,6 @@
       height: 100vh;
     }
 
-    /* Layout Pantalla Dividida */
     .tv-container {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -28,7 +26,6 @@
       box-sizing: border-box;
     }
 
-    /* Encabezado TV */
     .tv-header {
       grid-column: 1 / -1;
       background: #3d0a11;
@@ -41,19 +38,9 @@
       transition: background-color 0.3s ease;
     }
 
-    .tv-header h2 {
-      margin: 0;
-      font-size: 26px;
-      color: #ffffff;
-    }
+    .tv-header h2 { margin: 0; font-size: 26px; color: #ffffff; }
+    .tv-clock { font-size: 26px; font-weight: bold; color: #f59e0b; }
 
-    .tv-clock {
-      font-size: 26px;
-      font-weight: bold;
-      color: #f59e0b;
-    }
-
-    /* Zona Izquierda: Publicidad en Video / Banner + Llamado Actual */
     .zona-izquierda {
       display: flex;
       flex-direction: column;
@@ -73,13 +60,8 @@
       justify-content: center;
     }
 
-    .video-container video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
+    .video-container video { width: 100%; height: 100%; object-fit: contain; }
 
-    /* Fallback cuando no hay video en la USB */
     .banner-fallback-publicidad {
       display: none;
       text-align: center;
@@ -87,18 +69,9 @@
       color: #fff;
     }
 
-    .banner-fallback-publicidad h1 {
-      font-size: 38px;
-      margin-bottom: 10px;
-      color: #ffffff;
-    }
+    .banner-fallback-publicidad h1 { font-size: 38px; margin-bottom: 10px; color: #ffffff; }
+    .banner-fallback-publicidad p { font-size: 20px; color: #94a3b8; }
 
-    .banner-fallback-publicidad p {
-      font-size: 20px;
-      color: #94a3b8;
-    }
-
-    /* Alerta de Llamado Gigante */
     .llamado-actual-banner {
       background: linear-gradient(135deg, #0284c7, #0369a1);
       border-radius: 12px;
@@ -123,26 +96,10 @@
       display: block;
     }
 
-    .llamado-paciente {
-      font-size: 42px;
-      font-weight: 800;
-      color: #ffffff;
-      margin: 5px 0;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
+    .llamado-paciente { font-size: 42px; font-weight: 800; color: #ffffff; margin: 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+    .llamado-area { font-size: 32px; font-weight: 700; color: #fef08a; }
 
-    .llamado-area {
-      font-size: 32px;
-      font-weight: 700;
-      color: #fef08a;
-    }
-
-    /* Zona Derecha: Paneles de Turnos */
-    .zona-derecha {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+    .zona-derecha { display: flex; flex-direction: column; gap: 15px; }
 
     .panel-tv {
       background: #1e293b;
@@ -162,13 +119,7 @@
       color: #38bdf8;
     }
 
-    .lista-turnos {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      overflow-y: hidden;
-      flex: 1;
-    }
+    .lista-turnos { list-style: none; padding: 0; margin: 0; overflow-y: hidden; flex: 1; }
 
     .lista-turnos li {
       background: #334155;
@@ -181,22 +132,10 @@
       font-size: 16px;
     }
 
-    .lista-turnos li.llamado-recent {
-      background: #1e3a8a;
-      border-left: 4px solid #3b82f6;
-    }
+    .lista-turnos li.llamado-recent { background: #1e3a8a; border-left: 4px solid #3b82f6; }
+    .lista-turnos li .nom { font-weight: bold; color: #ffffff; }
+    .lista-turnos li .est { font-size: 13px; color: #94a3b8; }
 
-    .lista-turnos li .nom {
-      font-weight: bold;
-      color: #ffffff;
-    }
-
-    .lista-turnos li .est {
-      font-size: 13px;
-      color: #94a3b8;
-    }
-
-    /* Selector de Sede Inicial */
     #selector-sede-modal {
       position: fixed;
       inset: 0;
@@ -216,6 +155,19 @@
       width: 90%;
       border: 1px solid #334155;
     }
+
+    .btn-iniciar {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+    .btn-iniciar:hover { background-color: #0369a1; }
   </style>
 </head>
 <body>
@@ -228,7 +180,10 @@
       
       <label for="select-tv-sede" style="display: block; margin-bottom: 4px; font-weight: bold; text-align: left;">Sede de Atención:</label>
       <select id="select-tv-sede" style="margin-bottom: 15px; padding: 10px; font-size: 15px; width: 100%; border-radius: 6px;">
-        <!-- Carga dinámica desde Firebase -->
+        <option value="GRAU CENTRAL">GRAU CENTRAL</option>
+        <option value="San Isidro">San Isidro</option>
+        <option value="Miraflores">Miraflores</option>
+        <option value="Surco">Surco</option>
       </select>
 
       <label for="select-tv-marca" style="display: block; margin-bottom: 4px; font-weight: bold; text-align: left;">Marca / Razón Social (USB):</label>
@@ -238,24 +193,19 @@
         <option value="RESOTEM">RESOTEM (Resonancia y Tomografía)</option>
       </select>
 
-      <button type="button" id="btn-iniciar-tv" class="btn primary" style="width: 100%; padding: 12px; font-size: 16px; cursor: pointer;">▶️ Iniciar Pantalla de Turnos</button>
+      <button type="button" id="btn-iniciar-tv" class="btn-iniciar">▶️ Iniciar Pantalla de Turnos</button>
     </div>
   </div>
 
   <div class="tv-container">
-    <!-- Encabezado superior -->
     <div class="tv-header">
       <h2 id="tv-titulo-sede"><i class="fas fa-hospital-user"></i> Centro Médico - Turnos</h2>
       <div id="tv-reloj" class="tv-clock">00:00:00 PM</div>
     </div>
 
-    <!-- Zona Izquierda: Video Publicitario USB / Banner + Llamado -->
     <div class="zona-izquierda">
       <div class="video-container">
-        <!-- Reproductor de Video -->
         <video id="reproductor-usb" autoplay muted playsinline></video>
-
-        <!-- Banner de Respaldo por si no hay archivos en la USB -->
         <div id="fallback-publicidad" class="banner-fallback-publicidad">
           <i class="fas fa-heartpulse" style="font-size: 60px; color: #38bdf8; margin-bottom: 15px;"></i>
           <h1 id="fallback-razon-social">Centro de Diagnóstico Médico</h1>
@@ -263,7 +213,6 @@
         </div>
       </div>
 
-      <!-- Banner del Paciente en Llamado -->
       <div class="llamado-actual-banner">
         <small>🔔 Paciente en Atención</small>
         <div id="tv-paciente-nombre" class="llamado-paciente">ESPERANDO LLAMADO...</div>
@@ -271,9 +220,7 @@
       </div>
     </div>
 
-    <!-- Zona Derecha: Listas de Turnos -->
     <div class="zona-derecha">
-      <!-- Últimos Llamados -->
       <div class="panel-tv">
         <h3><i class="fas fa-history"></i> Últimos Llamados</h3>
         <ul id="lista-ultimos-llamados" class="lista-turnos">
@@ -281,7 +228,6 @@
         </ul>
       </div>
 
-      <!-- Pacientes en Espera de esta sede -->
       <div class="panel-tv">
         <h3><i class="fas fa-user-clock"></i> En Espera (Sede)</h3>
         <ul id="lista-en-espera" class="lista-turnos">
@@ -291,12 +237,271 @@
     </div>
   </div>
 
-  <!-- Sonido de Timbre (Tilín) -->
   <audio id="audio-timbre" preload="auto">
     <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
   </audio>
 
-  <!-- Script modular de Firebase y TV -->
-  <script type="module" src="./tv-script.js"></script>
+  <!-- Lógica modular integrada sin archivos externos -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    // Reemplaza con la configuración de tu firebase-config.js si es distinta
+    const firebaseConfig = {
+      databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const MARCAS_CONFIG = {
+      "CDI": {
+        razonSocial: "Centro de Diagnóstico e Imágenes (CDI)",
+        colorPrincipal: "#0284c7",
+        colorAcento: "#38bdf8",
+        colorBanner: "linear-gradient(135deg, #0284c7, #0369a1)",
+        carpetaUSB: "file:///D:/publicidad_tv/CDI/",
+        videos: ["video1.mp4", "video2.mp4", "promo_cdi.mp4"]
+      },
+      "GRUPO_QUITO": {
+        razonSocial: "Grupo Quito - Servicios Médicos Integrales",
+        colorPrincipal: "#3d0a11",
+        colorAcento: "#f59e0b",
+        colorBanner: "linear-gradient(135deg, #3d0a11, #7f1d1d)",
+        carpetaUSB: "file:///D:/publicidad_tv/GRUPO_QUITO/",
+        videos: ["video1.mp4", "publicidad_quito.mp4"]
+      },
+      "RESOTEM": {
+        razonSocial: "Resotem - Resonancia y Tomografía Especializada",
+        colorPrincipal: "#0f766e",
+        colorAcento: "#2dd4bf",
+        colorBanner: "linear-gradient(135deg, #0f766e, #115e59)",
+        carpetaUSB: "file:///D:/publicidad_tv/RESOTEM/",
+        videos: ["video1.mp4", "resotem_promo.mp4"]
+      }
+    };
+
+    let sedeSeleccionada = '';
+    let marcaActual = {};
+    let ultimoTurnoId = null;
+    let historialLlamados = [];
+    let listaRutasVideos = [];
+    let indiceVideoActual = 0;
+
+    const modalInicial = document.getElementById('selector-sede-modal');
+    const selectSede = document.getElementById('select-tv-sede');
+    const selectMarca = document.getElementById('select-tv-marca');
+    const btnIniciar = document.getElementById('btn-iniciar-tv');
+
+    const tvTituloSede = document.getElementById('tv-titulo-sede');
+    const tvReloj = document.getElementById('tv-reloj');
+    const tvPacienteNombre = document.getElementById('tv-paciente-nombre');
+    const tvPacienteArea = document.getElementById('tv-paciente-area');
+    const listaUltimos = document.getElementById('lista-ultimos-llamados');
+    const listaEspera = document.getElementById('lista-en-espera');
+    const audioTimbre = document.getElementById('audio-timbre');
+
+    const reproductorVideo = document.getElementById('reproductor-usb');
+    const fallbackPublicidad = document.getElementById('fallback-publicidad');
+    const fallbackRazonSocial = document.getElementById('fallback-razon-social');
+
+    const bannerLlamado = document.querySelector('.llamado-actual-banner');
+    const tvHeader = document.querySelector('.tv-header');
+
+    // Cargar sedes en vivo desde Firebase agregándolas a la lista estática
+    function cargarSedesModal() {
+      onValue(ref(db, 'sedes'), snapshot => {
+        if (!snapshot.exists()) return;
+        selectSede.innerHTML = '';
+        snapshot.forEach(child => {
+          const s = child.val();
+          const nombre = s.name || s.nombre || child.key;
+          const opt = document.createElement('option');
+          opt.value = nombre;
+          opt.textContent = nombre;
+          selectSede.appendChild(opt);
+        });
+      });
+    }
+
+    function actualizarReloj() {
+      const ahora = new Date();
+      if (tvReloj) tvReloj.textContent = ahora.toLocaleTimeString('es-PE', { hour12: true });
+    }
+    setInterval(actualizarReloj, 1000);
+
+    function aplicarMarca(claveMarca, nombreSede) {
+      marcaActual = MARCAS_CONFIG[claveMarca] || MARCAS_CONFIG["CDI"];
+
+      if (tvTituloSede) tvTituloSede.innerHTML = `<i class="fas fa-hospital-user"></i> ${marcaActual.razonSocial} - Sede: ${nombreSede}`;
+      if (fallbackRazonSocial) fallbackRazonSocial.textContent = marcaActual.razonSocial;
+
+      if (tvHeader) tvHeader.style.backgroundColor = marcaActual.colorPrincipal;
+      if (bannerLlamado) {
+        bannerLlamado.style.background = marcaActual.colorBanner;
+        bannerLlamado.style.borderColor = marcaActual.colorAcento;
+      }
+      if (tvReloj) tvReloj.style.color = marcaActual.colorAcento;
+
+      listaRutasVideos = (marcaActual.videos || []).map(v => `${marcaActual.carpetaUSB}${v}`);
+      indiceVideoActual = 0;
+    }
+
+    btnIniciar.addEventListener('click', () => {
+      sedeSeleccionada = selectSede.value;
+      const marcaSeleccionada = selectMarca.value;
+
+      if (!sedeSeleccionada) return alert('Por favor seleccione una sede.');
+
+      if (audioTimbre) {
+        audioTimbre.play().then(() => {
+          audioTimbre.pause();
+          audioTimbre.currentTime = 0;
+        }).catch(e => console.log("Audio de timbre preparado"));
+      }
+
+      aplicarMarca(marcaSeleccionada, sedeSeleccionada);
+      modalInicial.style.display = 'none';
+
+      iniciarReproductorVideo();
+      escucharTurnoActual();
+      escucharListaPacientes();
+    });
+
+    function iniciarReproductorVideo() {
+      if (!reproductorVideo || listaRutasVideos.length === 0) {
+        mostrarFallbackPublicidad();
+        return;
+      }
+
+      reproductorVideo.src = listaRutasVideos[indiceVideoActual];
+      
+      const promise = reproductorVideo.play();
+      if (promise !== undefined) {
+        promise.then(() => {
+          reproductorVideo.style.display = 'block';
+          if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
+        }).catch(e => mostrarFallbackPublicidad());
+      }
+
+      reproductorVideo.onerror = () => siguienteVideo();
+      reproductorVideo.onended = () => siguienteVideo();
+    }
+
+    function siguienteVideo() {
+      if (listaRutasVideos.length === 0) return;
+      indiceVideoActual = (indiceVideoActual + 1) % listaRutasVideos.length;
+      reproductorVideo.src = listaRutasVideos[indiceVideoActual];
+      reproductorVideo.play().catch(() => mostrarFallbackPublicidad());
+    }
+
+    function mostrarFallbackPublicidad() {
+      if (reproductorVideo) reproductorVideo.style.display = 'none';
+      if (fallbackPublicidad) fallbackPublicidad.style.display = 'block';
+    }
+
+    function keyify(s) {
+      if (!s) return 'sin_sede';
+      return String(s).replace(/[^\w]/g, '_').toLowerCase();
+    }
+
+    function escucharTurnoActual() {
+      const sedeKey = keyify(sedeSeleccionada);
+      onValue(ref(db, `turnoActual/${sedeKey}`), snapshot => {
+        const turno = snapshot.val();
+        if (!turno) return;
+
+        const turnoId = `${turno.nombre}-${turno.hora}`;
+        if (turnoId !== ultimoTurnoId) {
+          ultimoTurnoId = turnoId;
+          if (tvPacienteNombre) tvPacienteNombre.textContent = turno.nombre || 'PACIENTE';
+          if (tvPacienteArea) tvPacienteArea.textContent = `A: ${turno.estudio || 'CONSULTORIO'}`;
+          agregarAHistorial(turno);
+          reproducirAnuncio(turno.nombre, turno.estudio);
+        }
+      });
+    }
+
+    function escucharListaPacientes() {
+      onValue(ref(db, 'pacientes'), snapshot => {
+        const enEspera = [];
+        snapshot.forEach(child => {
+          const p = child.val();
+          if ((p.sede || '').toLowerCase() === sedeSeleccionada.toLowerCase() && p.estado === 'En espera') {
+            enEspera.push(p);
+          }
+        });
+        renderizarEspera(enEspera);
+      });
+    }
+
+    function renderizarEspera(lista) {
+      if (!listaEspera) return;
+      listaEspera.innerHTML = '';
+      if (lista.length === 0) {
+        listaEspera.innerHTML = `<li style="color: #94a3b8; justify-content: center;">No hay pacientes en espera</li>`;
+        return;
+      }
+
+      lista.slice(0, 6).forEach(p => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div>
+            <div class="nom">${p.apellidos || ''}, ${p.nombres || ''}</div>
+            <div class="est">${p.estudios || '-'}</div>
+          </div>
+          <span style="font-size: 12px; color: ${marcaActual.colorAcento || '#f59e0b'}; font-weight: bold;">En espera</span>
+        `;
+        listaEspera.appendChild(li);
+      });
+    }
+
+    function agregarAHistorial(turno) {
+      if (!listaUltimos) return;
+      historialLlamados.unshift(turno);
+      if (historialLlamados.length > 5) historialLlamados.pop();
+
+      listaUltimos.innerHTML = '';
+      historialLlamados.forEach((item, index) => {
+        const li = document.createElement('li');
+        if (index === 0) li.classList.add('llamado-recent');
+        li.innerHTML = `
+          <div>
+            <div class="nom">${item.nombre}</div>
+            <div class="est">${item.estudio}</div>
+          </div>
+          <span style="font-size: 13px; color: #38bdf8; font-weight: bold;">${item.hora || ''}</span>
+        `;
+        listaUltimos.appendChild(li);
+      });
+    }
+
+    function reproducirAnuncio(nombrePaciente, area) {
+      if (audioTimbre) {
+        audioTimbre.currentTime = 0;
+        audioTimbre.play().then(() => {
+          setTimeout(() => hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`), 1200);
+        }).catch(() => hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`));
+      }
+    }
+
+    function hablarMensaje(texto) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const mensaje = new SpeechSynthesisUtterance(texto);
+        mensaje.lang = 'es-PE';
+        mensaje.rate = 0.9;
+        mensaje.pitch = 1.0;
+
+        const voces = window.speechSynthesis.getVoices();
+        const vozEspanol = voces.find(v => v.lang.includes('es'));
+        if (vozEspanol) mensaje.voice = vozEspanol;
+
+        window.speechSynthesis.speak(mensaje);
+      }
+    }
+
+    cargarSedesModal();
+  </script>
 </body>
 </html>
