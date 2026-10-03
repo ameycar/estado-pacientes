@@ -16,16 +16,18 @@
       height: 100vh;
     }
 
+    /* Layout Principal */
     .tv-container {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto 1fr;
       height: 100vh;
       gap: 15px;
       padding: 15px;
       box-sizing: border-box;
     }
 
+    /* Encabezado Superior */
     .tv-header {
       grid-column: 1 / -1;
       background: #3d0a11;
@@ -41,15 +43,18 @@
     .tv-header h2 { margin: 0; font-size: 26px; color: #ffffff; }
     .tv-clock { font-size: 26px; font-weight: bold; color: #f59e0b; }
 
+    /* Columna Izquierda (Video + Banner Animado) */
     .zona-izquierda {
       display: flex;
       flex-direction: column;
       gap: 15px;
       height: 100%;
+      min-height: 0; /* Previene desbordamientos */
     }
 
     .video-container {
       flex: 1;
+      max-height: 62vh; /* Mantiene espacio visible para el banner inferior */
       background: #000;
       border-radius: 12px;
       overflow: hidden;
@@ -60,7 +65,11 @@
       justify-content: center;
     }
 
-    .video-container video { width: 100%; height: 100%; object-fit: contain; }
+    .video-container video { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: contain; 
+    }
 
     .banner-fallback-publicidad {
       display: none;
@@ -69,13 +78,14 @@
       color: #fff;
     }
 
-    .banner-fallback-publicidad h1 { font-size: 38px; margin-bottom: 10px; color: #ffffff; }
-    .banner-fallback-publicidad p { font-size: 20px; color: #94a3b8; }
+    .banner-fallback-publicidad h1 { font-size: 36px; margin-bottom: 10px; color: #ffffff; }
+    .banner-fallback-publicidad p { font-size: 18px; color: #94a3b8; }
 
+    /* Banner Animado del Paciente en Llamado (Siempre Visible) */
     .llamado-actual-banner {
       background: linear-gradient(135deg, #0284c7, #0369a1);
       border-radius: 12px;
-      padding: 20px;
+      padding: 18px;
       text-align: center;
       border: 3px solid #38bdf8;
       box-shadow: 0 0 20px rgba(2, 132, 199, 0.6);
@@ -89,17 +99,35 @@
     }
 
     .llamado-actual-banner small {
-      font-size: 20px;
+      font-size: 18px;
       text-transform: uppercase;
       letter-spacing: 2px;
       color: #e0f2fe;
       display: block;
+      font-weight: bold;
     }
 
-    .llamado-paciente { font-size: 42px; font-weight: 800; color: #ffffff; margin: 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-    .llamado-area { font-size: 32px; font-weight: 700; color: #fef08a; }
+    .llamado-paciente { 
+      font-size: 38px; 
+      font-weight: 800; 
+      color: #ffffff; 
+      margin: 4px 0; 
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
+    }
+    
+    .llamado-area { 
+      font-size: 28px; 
+      font-weight: 700; 
+      color: #fef08a; 
+    }
 
-    .zona-derecha { display: flex; flex-direction: column; gap: 15px; }
+    /* Columna Derecha (Listas de Pacientes) */
+    .zona-derecha { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 15px; 
+      height: 100%;
+    }
 
     .panel-tv {
       background: #1e293b;
@@ -136,6 +164,7 @@
     .lista-turnos li .nom { font-weight: bold; color: #ffffff; }
     .lista-turnos li .est { font-size: 13px; color: #94a3b8; }
 
+    /* Modal Emergente */
     #selector-sede-modal {
       position: fixed;
       inset: 0;
@@ -172,7 +201,7 @@
 </head>
 <body>
 
-  <!-- Modal Inicial de Configuración de TV -->
+  <!-- Modal Inicial -->
   <div id="selector-sede-modal">
     <div class="selector-box">
       <h2>📺 Configuración de Pantalla TV</h2>
@@ -203,9 +232,10 @@
       <div id="tv-reloj" class="tv-clock">00:00:00 PM</div>
     </div>
 
+    <!-- Columna Izquierda -->
     <div class="zona-izquierda">
       <div class="video-container">
-        <video id="reproductor-usb" autoplay muted playsinline></video>
+        <video id="reproductor-usb" muted playsinline></video>
         <div id="fallback-publicidad" class="banner-fallback-publicidad">
           <i class="fas fa-heartpulse" style="font-size: 60px; color: #38bdf8; margin-bottom: 15px;"></i>
           <h1 id="fallback-razon-social">Centro de Diagnóstico Médico</h1>
@@ -213,13 +243,15 @@
         </div>
       </div>
 
+      <!-- Banner de Paciente Llamado (Resaltado) -->
       <div class="llamado-actual-banner">
-        <small>🔔 Paciente en Atención</small>
+        <small>🔔 PACIENTE EN ATENCIÓN</small>
         <div id="tv-paciente-nombre" class="llamado-paciente">ESPERANDO LLAMADO...</div>
         <div id="tv-paciente-area" class="llamado-area">-</div>
       </div>
     </div>
 
+    <!-- Columna Derecha -->
     <div class="zona-derecha">
       <div class="panel-tv">
         <h3><i class="fas fa-history"></i> Últimos Llamados</h3>
@@ -241,12 +273,11 @@
     <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
   </audio>
 
-  <!-- Lógica modular integrada sin archivos externos -->
+  <!-- Lógica Modular Integrada -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-    // Reemplaza con la configuración de tu firebase-config.js si es distinta
     const firebaseConfig = {
       databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com"
     };
@@ -260,7 +291,7 @@
         colorPrincipal: "#0284c7",
         colorAcento: "#38bdf8",
         colorBanner: "linear-gradient(135deg, #0284c7, #0369a1)",
-        carpetaUSB: "file:///D:/publicidad_tv/CDI/",
+        carpetaUSB: "./publicidad_tv/CDI/",
         videos: ["video1.mp4", "video2.mp4", "promo_cdi.mp4"]
       },
       "GRUPO_QUITO": {
@@ -268,16 +299,16 @@
         colorPrincipal: "#3d0a11",
         colorAcento: "#f59e0b",
         colorBanner: "linear-gradient(135deg, #3d0a11, #7f1d1d)",
-        carpetaUSB: "file:///D:/publicidad_tv/GRUPO_QUITO/",
-        videos: ["video1.mp4", "publicidad_quito.mp4"]
+        carpetaUSB: "./publicidad_tv/GRUPO_QUITO/",
+        videos: ["video1.mp4", "video2.mp4", "publicidad_quito.mp4"]
       },
       "RESOTEM": {
         razonSocial: "Resotem - Resonancia y Tomografía Especializada",
         colorPrincipal: "#0f766e",
         colorAcento: "#2dd4bf",
         colorBanner: "linear-gradient(135deg, #0f766e, #115e59)",
-        carpetaUSB: "file:///D:/publicidad_tv/RESOTEM/",
-        videos: ["video1.mp4", "resotem_promo.mp4"]
+        carpetaUSB: "./publicidad_tv/RESOTEM/",
+        videos: ["video1.mp4", "video2.mp4", "resotem_promo.mp4"]
       }
     };
 
@@ -308,7 +339,6 @@
     const bannerLlamado = document.querySelector('.llamado-actual-banner');
     const tvHeader = document.querySelector('.tv-header');
 
-    // Cargar sedes en vivo desde Firebase agregándolas a la lista estática
     function cargarSedesModal() {
       onValue(ref(db, 'sedes'), snapshot => {
         if (!snapshot.exists()) return;
@@ -357,16 +387,33 @@
         audioTimbre.play().then(() => {
           audioTimbre.pause();
           audioTimbre.currentTime = 0;
-        }).catch(e => console.log("Audio de timbre preparado"));
+        }).catch(e => console.log("Audio de timbre listo"));
       }
 
       aplicarMarca(marcaSeleccionada, sedeSeleccionada);
       modalInicial.style.display = 'none';
 
+      configurarEventosReproductor();
       iniciarReproductorVideo();
       escucharTurnoActual();
       escucharListaPacientes();
     });
+
+    // Configuración de Bucle Infinito y Secuencial
+    function configurarEventosReproductor() {
+      if (!reproductorVideo) return;
+
+      // Al finalizar un video, pasa automáticamente al siguiente
+      reproductorVideo.onended = () => {
+        siguienteVideo();
+      };
+
+      // Si falla la carga de un archivo específico, pasa al siguiente
+      reproductorVideo.onerror = () => {
+        console.warn(`No se pudo cargar: ${listaRutasVideos[indiceVideoActual]}`);
+        siguienteVideo();
+      };
+    }
 
     function iniciarReproductorVideo() {
       if (!reproductorVideo || listaRutasVideos.length === 0) {
@@ -375,24 +422,29 @@
       }
 
       reproductorVideo.src = listaRutasVideos[indiceVideoActual];
-      
-      const promise = reproductorVideo.play();
-      if (promise !== undefined) {
-        promise.then(() => {
-          reproductorVideo.style.display = 'block';
-          if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
-        }).catch(e => mostrarFallbackPublicidad());
-      }
-
-      reproductorVideo.onerror = () => siguienteVideo();
-      reproductorVideo.onended = () => siguienteVideo();
+      reproductorVideo.play().then(() => {
+        reproductorVideo.style.display = 'block';
+        if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
+      }).catch(e => {
+        console.warn("Autoplay bloqueado o archivo no disponible:", e);
+        siguienteVideo();
+      });
     }
 
     function siguienteVideo() {
       if (listaRutasVideos.length === 0) return;
+      
+      // Avanza al siguiente índice; si llega al final, vuelve al 0 (bucle continuo)
       indiceVideoActual = (indiceVideoActual + 1) % listaRutasVideos.length;
+      
       reproductorVideo.src = listaRutasVideos[indiceVideoActual];
-      reproductorVideo.play().catch(() => mostrarFallbackPublicidad());
+      reproductorVideo.play().then(() => {
+        reproductorVideo.style.display = 'block';
+        if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
+      }).catch(() => {
+        // Si no se encuentra ningún video en la carpeta USB, muestra el banner
+        mostrarFallbackPublicidad();
+      });
     }
 
     function mostrarFallbackPublicidad() {
