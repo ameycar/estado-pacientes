@@ -49,12 +49,12 @@
       flex-direction: column;
       gap: 15px;
       height: 100%;
-      min-height: 0; /* Previene desbordamientos */
+      min-height: 0;
     }
 
     .video-container {
       flex: 1;
-      max-height: 62vh; /* Mantiene espacio visible para el banner inferior */
+      max-height: 62vh;
       background: #000;
       border-radius: 12px;
       overflow: hidden;
@@ -81,7 +81,7 @@
     .banner-fallback-publicidad h1 { font-size: 36px; margin-bottom: 10px; color: #ffffff; }
     .banner-fallback-publicidad p { font-size: 18px; color: #94a3b8; }
 
-    /* Banner Animado del Paciente en Llamado (Siempre Visible) */
+    /* Banner Animado del Paciente en Llamado */
     .llamado-actual-banner {
       background: linear-gradient(135deg, #0284c7, #0369a1);
       border-radius: 12px;
@@ -209,9 +209,9 @@
       
       <label for="select-tv-sede" style="display: block; margin-bottom: 4px; font-weight: bold; text-align: left;">Sede de Atención:</label>
       <select id="select-tv-sede" style="margin-bottom: 15px; padding: 10px; font-size: 15px; width: 100%; border-radius: 6px;">
+        <option value="EL Agustino">EL Agustino</option>
         <option value="GRAU CENTRAL">GRAU CENTRAL</option>
         <option value="San Isidro">San Isidro</option>
-        <option value="Miraflores">Miraflores</option>
         <option value="Surco">Surco</option>
       </select>
 
@@ -235,7 +235,7 @@
     <!-- Columna Izquierda -->
     <div class="zona-izquierda">
       <div class="video-container">
-        <video id="reproductor-usb" muted playsinline></video>
+        <video id="reproductor-usb" playsinline></video>
         <div id="fallback-publicidad" class="banner-fallback-publicidad">
           <i class="fas fa-heartpulse" style="font-size: 60px; color: #38bdf8; margin-bottom: 15px;"></i>
           <h1 id="fallback-razon-social">Centro de Diagnóstico Médico</h1>
@@ -243,7 +243,7 @@
         </div>
       </div>
 
-      <!-- Banner de Paciente Llamado (Resaltado) -->
+      <!-- Banner de Paciente Llamado -->
       <div class="llamado-actual-banner">
         <small>🔔 PACIENTE EN ATENCIÓN</small>
         <div id="tv-paciente-nombre" class="llamado-paciente">ESPERANDO LLAMADO...</div>
@@ -383,11 +383,12 @@
 
       if (!sedeSeleccionada) return alert('Por favor seleccione una sede.');
 
+      // Desbloquear audio general con la interacción del usuario
       if (audioTimbre) {
         audioTimbre.play().then(() => {
           audioTimbre.pause();
           audioTimbre.currentTime = 0;
-        }).catch(e => console.log("Audio de timbre listo"));
+        }).catch(e => console.log("Timbre listo"));
       }
 
       aplicarMarca(marcaSeleccionada, sedeSeleccionada);
@@ -399,16 +400,13 @@
       escucharListaPacientes();
     });
 
-    // Configuración de Bucle Infinito y Secuencial
     function configurarEventosReproductor() {
       if (!reproductorVideo) return;
 
-      // Al finalizar un video, pasa automáticamente al siguiente
       reproductorVideo.onended = () => {
         siguienteVideo();
       };
 
-      // Si falla la carga de un archivo específico, pasa al siguiente
       reproductorVideo.onerror = () => {
         console.warn(`No se pudo cargar: ${listaRutasVideos[indiceVideoActual]}`);
         siguienteVideo();
@@ -421,12 +419,16 @@
         return;
       }
 
+      // Activar sonido con volumen normal (100%)
+      reproductorVideo.muted = false;
+      reproductorVideo.volume = 1.0;
       reproductorVideo.src = listaRutasVideos[indiceVideoActual];
+
       reproductorVideo.play().then(() => {
         reproductorVideo.style.display = 'block';
         if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
       }).catch(e => {
-        console.warn("Autoplay bloqueado o archivo no disponible:", e);
+        console.warn("Autoplay con sonido bloqueado o archivo no encontrado:", e);
         siguienteVideo();
       });
     }
@@ -434,17 +436,14 @@
     function siguienteVideo() {
       if (listaRutasVideos.length === 0) return;
       
-      // Avanza al siguiente índice; si llega al final, vuelve al 0 (bucle continuo)
       indiceVideoActual = (indiceVideoActual + 1) % listaRutasVideos.length;
-      
       reproductorVideo.src = listaRutasVideos[indiceVideoActual];
+      reproductorVideo.muted = false;
+      
       reproductorVideo.play().then(() => {
         reproductorVideo.style.display = 'block';
         if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
-      }).catch(() => {
-        // Si no se encuentra ningún video en la carpeta USB, muestra el banner
-        mostrarFallbackPublicidad();
-      });
+      }).catch(() => mostrarFallbackPublicidad());
     }
 
     function mostrarFallbackPublicidad() {
@@ -528,12 +527,25 @@
       });
     }
 
+    // CONTROL DE AUDIO E INTEGACIÓN DE ATENUACIÓN (AUDIO DUCKING)
     function reproducirAnuncio(nombrePaciente, area) {
+      // 1. Bajar el volumen del video al 10%
+      if (reproductorVideo) {
+        reproductorVideo.volume = 0.1;
+      }
+
+      // 2. Reproducir timbre
       if (audioTimbre) {
         audioTimbre.currentTime = 0;
         audioTimbre.play().then(() => {
-          setTimeout(() => hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`), 1200);
-        }).catch(() => hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`));
+          setTimeout(() => {
+            hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
+          }, 1200);
+        }).catch(() => {
+          hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
+        });
+      } else {
+        hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
       }
     }
 
@@ -549,7 +561,25 @@
         const vozEspanol = voces.find(v => v.lang.includes('es'));
         if (vozEspanol) mensaje.voice = vozEspanol;
 
+        // 3. Al terminar el llamado por voz, subir el volumen del video nuevamente al 100%
+        mensaje.onend = () => {
+          restaurarVolumenVideo();
+        };
+
+        mensaje.onerror = () => {
+          restaurarVolumenVideo();
+        };
+
         window.speechSynthesis.speak(mensaje);
+      } else {
+        // Restauración de seguridad tras 5 segundos si no hay síntesis de voz
+        setTimeout(restaurarVolumenVideo, 5000);
+      }
+    }
+
+    function restaurarVolumenVideo() {
+      if (reproductorVideo) {
+        reproductorVideo.volume = 1.0;
       }
     }
 
