@@ -3,7 +3,7 @@ import { db } from "./firebase-config.js";
 import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
 // =========================================================================
-// 🏢 CONFIGURACIÓN DE MARCAS Y VIDEOS EN USB (Unidad D:\publicidad_tv\)
+// 🏢 MARCAS, RAZONES SOCIALES Y RUTA EN DISCO/USB (Unidad D:\publicidad_tv\)
 // =========================================================================
 const MARCAS_CONFIG = {
   "CDI": {
@@ -61,10 +61,18 @@ const fallbackRazonSocial = document.getElementById('fallback-razon-social');
 const bannerLlamado = document.querySelector('.llamado-actual-banner');
 const tvHeader = document.querySelector('.tv-header');
 
-// ---------- Cargar Sedes desde Firebase ----------
+// ---------- Cargar Sedes desde Firebase Realtime Database ----------
 function cargarSedesModal() {
+  if (!selectSede) return;
   onValue(ref(db, 'sedes'), snapshot => {
     selectSede.innerHTML = '';
+    if (!snapshot.exists()) {
+      const opt = document.createElement('option');
+      opt.value = "General";
+      opt.textContent = "Sede Principal";
+      selectSede.appendChild(opt);
+      return;
+    }
     snapshot.forEach(child => {
       const s = child.val();
       const nombre = s.name || s.nombre || child.key;
@@ -78,16 +86,17 @@ function cargarSedesModal() {
 
 // ---------- Reloj Digital ----------
 function actualizarReloj() {
-  const ahora = new Date();
-  tvReloj.textContent = ahora.toLocaleTimeString('es-PE', { hour12: true });
+  if (tvReloj) {
+    const ahora = new Date();
+    tvReloj.textContent = ahora.toLocaleTimeString('es-PE', { hour12: true });
+  }
 }
 setInterval(actualizarReloj, 1000);
 
-// ---------- Aplicar Personalización de Marca Seleccionada ----------
+// ---------- Aplicar Personalización de Marca y Tema ----------
 function aplicarMarca(claveMarca, nombreSede) {
   marcaActual = MARCAS_CONFIG[claveMarca] || MARCAS_CONFIG["CDI"];
 
-  // 1. Personalizar Título y Razón Social
   if (tvTituloSede) {
     tvTituloSede.innerHTML = `<i class="fas fa-hospital-user"></i> ${marcaActual.razonSocial} - Sede: ${nombreSede}`;
   }
@@ -95,7 +104,6 @@ function aplicarMarca(claveMarca, nombreSede) {
     fallbackRazonSocial.textContent = marcaActual.razonSocial;
   }
 
-  // 2. Personalizar Colores Visuales
   if (tvHeader) tvHeader.style.backgroundColor = marcaActual.colorPrincipal;
   if (bannerLlamado) {
     bannerLlamado.style.background = marcaActual.colorBanner;
@@ -103,31 +111,39 @@ function aplicarMarca(claveMarca, nombreSede) {
   }
   if (tvReloj) tvReloj.style.color = marcaActual.colorAcento;
 
-  // 3. Generar Rutas de Videos
   listaRutasVideos = (marcaActual.videos || []).map(v => `${marcaActual.carpetaUSB}${v}`);
   indiceVideoActual = 0;
 }
 
 // ---------- Inicio de Pantalla TV ----------
-btnIniciar.addEventListener('click', () => {
-  sedeSeleccionada = selectSede.value;
-  const marcaSeleccionada = selectMarca.value;
+if (btnIniciar) {
+  btnIniciar.addEventListener('click', (e) => {
+    e.preventDefault();
+    sedeSeleccionada = selectSede ? selectSede.value : '';
+    const marcaSeleccionada = selectMarca ? selectMarca.value : 'CDI';
 
-  if (!sedeSeleccionada) return alert('Por favor seleccione una sede.');
+    if (!sedeSeleccionada) {
+      alert('Por favor seleccione una sede de atención.');
+      return;
+    }
 
-  // Desbloqueo de audio para alertas de voz
-  audioTimbre.play().then(() => {
-    audioTimbre.pause();
-    audioTimbre.currentTime = 0;
-  }).catch(e => console.log("Audio listo"));
+    // Activar audio
+    if (audioTimbre) {
+      audioTimbre.play().then(() => {
+        audioTimbre.pause();
+        audioTimbre.currentTime = 0;
+      }).catch(err => console.log("Audio de timbre preparado:", err));
+    }
 
-  aplicarMarca(marcaSeleccionada, sedeSeleccionada);
-  modalInicial.style.display = 'none';
+    aplicarMarca(marcaSeleccionada, sedeSeleccionada);
+    
+    if (modalInicial) modalInicial.style.display = 'none';
 
-  iniciarReproductorVideo();
-  escucharTurnoActual();
-  escucharListaPacientes();
-});
+    iniciarReproductorVideo();
+    escucharTurnoActual();
+    escucharListaPacientes();
+  });
+}
 
 // ---------- Bucle de Video USB (file:///D:/publicidad_tv/...) ----------
 function iniciarReproductorVideo() {
@@ -144,13 +160,13 @@ function iniciarReproductorVideo() {
       reproductorVideo.style.display = 'block';
       if (fallbackPublicidad) fallbackPublicidad.style.display = 'none';
     }).catch(e => {
-      console.warn("No se pudo reproducir el video USB local:", e);
+      console.warn("Aviso de reproducción de video:", e);
       mostrarFallbackPublicidad();
     });
   }
 
   reproductorVideo.onerror = () => {
-    console.warn(`Archivo no encontrado en USB: ${listaRutasVideos[indiceVideoActual]}`);
+    console.warn(`Archivo no encontrado en USB local: ${listaRutasVideos[indiceVideoActual]}`);
     siguienteVideo();
   };
 
@@ -190,8 +206,8 @@ function escucharTurnoActual() {
     if (turnoId !== ultimoTurnoId) {
       ultimoTurnoId = turnoId;
 
-      tvPacienteNombre.textContent = turno.nombre || 'PACIENTE';
-      tvPacienteArea.textContent = `A: ${turno.estudio || 'CONSULTORIO'}`;
+      if (tvPacienteNombre) tvPacienteNombre.textContent = turno.nombre || 'PACIENTE';
+      if (tvPacienteArea) tvPacienteArea.textContent = `A: ${turno.estudio || 'CONSULTORIO'}`;
 
       agregarAHistorial(turno);
       reproducirAnuncio(turno.nombre, turno.estudio);
@@ -216,6 +232,7 @@ function escucharListaPacientes() {
 }
 
 function renderizarEspera(lista) {
+  if (!listaEspera) return;
   listaEspera.innerHTML = '';
   if (lista.length === 0) {
     listaEspera.innerHTML = `<li style="color: #94a3b8; justify-content: center;">No hay pacientes en espera</li>`;
@@ -236,6 +253,7 @@ function renderizarEspera(lista) {
 }
 
 function agregarAHistorial(turno) {
+  if (!listaUltimos) return;
   historialLlamados.unshift(turno);
   if (historialLlamados.length > 5) historialLlamados.pop();
 
@@ -262,7 +280,7 @@ function reproducirAnuncio(nombrePaciente, area) {
       setTimeout(() => {
         hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
       }, 1200);
-    }).catch(e => {
+    }).catch(() => {
       hablarMensaje(`Paciente ${nombrePaciente}, dirigirse a ${area}`);
     });
   }
@@ -284,5 +302,5 @@ function hablarMensaje(texto) {
   }
 }
 
-// Iniciar Carga de Sedes
+// Cargar sedes al iniciar
 cargarSedesModal();
