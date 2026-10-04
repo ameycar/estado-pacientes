@@ -397,10 +397,9 @@
       indiceVideoActual = 0;
     }
 
-    // LISTENER EN TIEMPO REAL: Escuchar cambios de diseño desde Firebase
-    function escucharConfiguracionRemota(sedeNombre) {
-      const sedeKey = keyify(sedeNombre);
-      onValue(ref(db, `configuracion_tv/${sedeKey}`), snapshot => {
+    // LISTENER EN TIEMPO REAL: Escuchar cambios de diseño desde Firebase por Marca Comercial
+    function escucharConfiguracionRemota(claveMarca) {
+      onValue(ref(db, `configuracion_tv/${claveMarca}`), snapshot => {
         const config = snapshot.val();
         if (!config) return;
 
@@ -412,7 +411,7 @@
           if (config.colorAcento) bannerLlamado.style.borderColor = config.colorAcento;
         }
 
-        // 2. Logo Personalizado
+        // 2. Logo Personalizado (Soporta Base64)
         if (config.logoUrl && tvCustomLogo) {
           tvCustomLogo.src = config.logoUrl;
           tvCustomLogo.style.display = 'block';
@@ -455,7 +454,7 @@
       iniciarReproductorVideo();
       escucharTurnoActual();
       escucharListaPacientes();
-      escucharConfiguracionRemota(sedeSeleccionada);
+      escucharConfiguracionRemota(marcaSeleccionada);
     });
 
     function configurarEventosReproductor() {
