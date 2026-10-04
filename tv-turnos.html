@@ -6,14 +6,29 @@
   <title>Pantalla de Turnos - TV</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    :root {
+      --font-family-tv: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-scale-tv: 100%;
+      --color-header: #3d0a11;
+      --color-acento: #f59e0b;
+      --color-banner: linear-gradient(135deg, #0284c7, #0369a1);
+      --color-footer-bg: #0f172a;
+      --color-footer-text: #ffffff;
+      --color-card-bg: #334155;
+      --color-card-text: #ffffff;
+    }
+
     body {
       margin: 0;
       padding: 0;
       background-color: #0f172a;
       color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: var(--font-family-tv);
+      font-size: var(--font-scale-tv);
       overflow: hidden;
       height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     /* Layout Principal */
@@ -21,16 +36,17 @@
       display: grid;
       grid-template-columns: 2fr 1fr;
       grid-template-rows: auto 1fr;
-      height: 100vh;
+      flex: 1;
       gap: 15px;
       padding: 15px;
       box-sizing: border-box;
+      min-height: 0;
     }
 
     /* Encabezado Superior */
     .tv-header {
       grid-column: 1 / -1;
-      background: #3d0a11;
+      background: var(--color-header);
       padding: 10px 24px;
       border-radius: 10px;
       display: flex;
@@ -56,8 +72,8 @@
       border-radius: 6px;
     }
 
-    .tv-header h2 { margin: 0; font-size: 24px; color: #ffffff; }
-    .tv-clock { font-size: 26px; font-weight: bold; color: #f59e0b; }
+    .tv-header h2 { margin: 0; font-size: 1.5em; color: #ffffff; }
+    .tv-clock { font-size: 1.6em; font-weight: bold; color: var(--color-acento); }
 
     /* Columna Izquierda (Video + Banner Animado) */
     .zona-izquierda {
@@ -70,7 +86,7 @@
 
     .video-container {
       flex: 1;
-      max-height: 62vh;
+      max-height: 60vh;
       background: #000;
       border-radius: 12px;
       overflow: hidden;
@@ -94,16 +110,16 @@
       color: #fff;
     }
 
-    .banner-fallback-publicidad h1 { font-size: 36px; margin-bottom: 10px; color: #ffffff; }
-    .banner-fallback-publicidad p { font-size: 18px; color: #94a3b8; }
+    .banner-fallback-publicidad h1 { font-size: 2.2em; margin-bottom: 10px; color: #ffffff; }
+    .banner-fallback-publicidad p { font-size: 1.1em; color: #94a3b8; }
 
     /* Banner Animado del Paciente en Llamado */
     .llamado-actual-banner {
-      background: linear-gradient(135deg, #0284c7, #0369a1);
+      background: var(--color-banner);
       border-radius: 12px;
       padding: 18px;
       text-align: center;
-      border: 3px solid #38bdf8;
+      border: 3px solid var(--color-acento);
       box-shadow: 0 0 20px rgba(2, 132, 199, 0.6);
       animation: pulse 1.5s infinite alternate;
       transition: all 0.3s ease;
@@ -115,7 +131,7 @@
     }
 
     .llamado-actual-banner small {
-      font-size: 18px;
+      font-size: 1.1em;
       text-transform: uppercase;
       letter-spacing: 2px;
       color: #e0f2fe;
@@ -124,7 +140,7 @@
     }
 
     .llamado-paciente { 
-      font-size: 38px; 
+      font-size: 2.4em; 
       font-weight: 800; 
       color: #ffffff; 
       margin: 4px 0; 
@@ -132,7 +148,7 @@
     }
     
     .llamado-area { 
-      font-size: 28px; 
+      font-size: 1.7em; 
       font-weight: 700; 
       color: #fef08a; 
     }
@@ -157,7 +173,7 @@
 
     .panel-tv h3 {
       margin: 0 0 10px 0;
-      font-size: 18px;
+      font-size: 1.1em;
       border-bottom: 2px solid #0284c7;
       padding-bottom: 6px;
       color: #38bdf8;
@@ -166,19 +182,39 @@
     .lista-turnos { list-style: none; padding: 0; margin: 0; overflow-y: hidden; flex: 1; }
 
     .lista-turnos li {
-      background: #334155;
+      background: var(--color-card-bg);
+      color: var(--color-card-text);
       padding: 10px 12px;
       border-radius: 8px;
       margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 16px;
+      font-size: 1em;
+      transition: all 0.3s ease;
     }
 
     .lista-turnos li.llamado-recent { background: #1e3a8a; border-left: 4px solid #3b82f6; }
-    .lista-turnos li .nom { font-weight: bold; color: #ffffff; }
-    .lista-turnos li .est { font-size: 13px; color: #94a3b8; }
+    .lista-turnos li .nom { font-weight: bold; color: inherit; }
+    .lista-turnos li .est { font-size: 0.85em; opacity: 0.85; }
+
+    /* Footer / Ticker de noticias */
+    .tv-footer-ticker {
+      background: var(--color-footer-bg);
+      color: var(--color-footer-text);
+      padding: 8px 15px;
+      font-size: 0.95em;
+      white-space: nowrap;
+      overflow: hidden;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+    }
+
+    .tv-footer-ticker marquee {
+      width: 100%;
+      font-weight: 500;
+    }
 
     /* Modal Emergente */
     #selector-sede-modal {
@@ -204,7 +240,7 @@
     .btn-iniciar {
       width: 100%;
       padding: 12px;
-      font-size: 16px;
+      font-size: 1em;
       cursor: pointer;
       background-color: #0284c7;
       color: white;
@@ -221,7 +257,7 @@
   <div id="selector-sede-modal">
     <div class="selector-box">
       <h2>📺 Configuración de Pantalla TV</h2>
-      <p style="color: #94a3b8; font-size: 14px;">Seleccione la sede de atención y la marca/razón social correspondiente a la carpeta USB.</p>
+      <p style="color: #94a3b8; font-size: 14px;">Seleccione la sede de atención y la marca/razón social correspondiente.</p>
       
       <label for="select-tv-sede" style="display: block; margin-bottom: 4px; font-weight: bold; text-align: left;">Sede de Atención:</label>
       <select id="select-tv-sede" style="margin-bottom: 15px; padding: 10px; font-size: 15px; width: 100%; border-radius: 6px;">
@@ -286,6 +322,11 @@
         </ul>
       </div>
     </div>
+  </div>
+
+  <!-- Pie de Página / Ticker -->
+  <div class="tv-footer-ticker" id="tv-footer-elem">
+    <marquee id="tv-footer-text">Por favor permanezca atento a la pantalla para el llamado de su turno. | Mantenga el distanciamiento y recuerde portar su documento de identidad.</marquee>
   </div>
 
   <audio id="audio-timbre" preload="auto">
@@ -357,6 +398,7 @@
 
     const bannerLlamado = document.getElementById('banner-llamado-elem');
     const tvHeader = document.getElementById('tv-header-elem');
+    const tvFooter = document.getElementById('tv-footer-elem');
     const tvCustomLogo = document.getElementById('tv-custom-logo');
     const tvLayoutMain = document.getElementById('tv-layout-main');
     const panelUltimos = document.getElementById('panel-ultimos-llamados');
@@ -389,12 +431,9 @@
       if (tvTituloSede) tvTituloSede.innerHTML = `${marcaActual.razonSocial} - Sede: ${nombreSede}`;
       if (fallbackRazonSocial) fallbackRazonSocial.textContent = marcaActual.razonSocial;
 
-      if (tvHeader) tvHeader.style.backgroundColor = marcaActual.colorPrincipal;
-      if (bannerLlamado) {
-        bannerLlamado.style.background = marcaActual.colorBanner;
-        bannerLlamado.style.borderColor = marcaActual.colorAcento;
-      }
-      if (tvReloj) tvReloj.style.color = marcaActual.colorAcento;
+      document.documentElement.style.setProperty('--color-header', marcaActual.colorPrincipal);
+      document.documentElement.style.setProperty('--color-acento', marcaActual.colorAcento);
+      document.documentElement.style.setProperty('--color-banner', marcaActual.colorBanner);
 
       listaRutasVideos = (marcaActual.videos || []).map(v => `${marcaActual.carpetaUSB}${v}`);
       indiceVideoActual = 0;
@@ -413,21 +452,30 @@
         const config = snapshot.val();
         if (!config) return;
 
-        // 1. Colores Personalizados
-        if (config.colorHeader && tvHeader) tvHeader.style.backgroundColor = config.colorHeader;
-        if (config.colorAcento && tvReloj) tvReloj.style.color = config.colorAcento;
-        if (config.colorBanner && bannerLlamado) {
-          bannerLlamado.style.background = config.colorBanner;
-          if (config.colorAcento) bannerLlamado.style.borderColor = config.colorAcento;
-        }
+        // 1. Colores Principales y Banners
+        if (config.colorHeader) document.documentElement.style.setProperty('--color-header', config.colorHeader);
+        if (config.colorAcento) document.documentElement.style.setProperty('--color-acento', config.colorAcento);
+        if (config.colorBanner) document.documentElement.style.setProperty('--color-banner', config.colorBanner);
+        if (config.colorFooterBg) document.documentElement.style.setProperty('--color-footer-bg', config.colorFooterBg);
+        if (config.colorFooterText) document.documentElement.style.setProperty('--color-footer-text', config.colorFooterText);
 
-        // 2. Logo Personalizado (Base64 / URL)
+        // 2. Tipografía y Tamaño
+        if (config.fontFamily) document.documentElement.style.setProperty('--font-family-tv', config.fontFamily);
+        if (config.fontSizeScale) document.documentElement.style.setProperty('--font-scale-tv', config.fontSizeScale);
+
+        // 3. Tarjetas
+        if (config.colorCardBg) document.documentElement.style.setProperty('--color-card-bg', config.colorCardBg);
+        if (config.colorCardText) document.documentElement.style.setProperty('--color-card-text', config.colorCardText);
+
+        // 4. Logo Personalizado (Base64 / URL)
         if (config.logoUrl && tvCustomLogo) {
           tvCustomLogo.src = config.logoUrl;
           tvCustomLogo.style.display = 'inline-block';
+        } else if (tvCustomLogo) {
+          tvCustomLogo.style.display = 'none';
         }
 
-        // 3. Posición del Video (Invertir Columnas)
+        // 5. Posición del Video (Invertir Columnas)
         if (config.posicionVideo === 'derecha' && tvLayoutMain) {
           tvLayoutMain.style.gridTemplateColumns = '1fr 2fr';
           document.getElementById('zona-video').style.order = '2';
@@ -438,7 +486,7 @@
           document.getElementById('zona-listas').style.order = '2';
         }
 
-        // 4. Mostrar/Ocultar Paneles
+        // 6. Mostrar/Ocultar Paneles
         if (panelUltimos) panelUltimos.style.display = config.mostrarUltimos === false ? 'none' : 'flex';
         if (panelEspera) panelEspera.style.display = config.mostrarEspera === false ? 'none' : 'flex';
       });
@@ -556,7 +604,7 @@
       if (!listaEspera) return;
       listaEspera.innerHTML = '';
       if (lista.length === 0) {
-        listaEspera.innerHTML = `<li style="color: #94a3b8; justify-content: center;">No hay pacientes en espera</li>`;
+        listaEspera.innerHTML = `<li style="opacity: 0.7; justify-content: center;">No hay pacientes en espera</li>`;
         return;
       }
 
@@ -567,7 +615,7 @@
             <div class="nom">${p.apellidos || ''}, ${p.nombres || ''}</div>
             <div class="est">${p.estudios || '-'}</div>
           </div>
-          <span style="font-size: 12px; color: ${marcaActual.colorAcento || '#f59e0b'}; font-weight: bold;">En espera</span>
+          <span style="font-size: 0.8em; color: var(--color-acento); font-weight: bold;">En espera</span>
         `;
         listaEspera.appendChild(li);
       });
@@ -587,7 +635,7 @@
             <div class="nom">${item.nombre}</div>
             <div class="est">${item.estudio}</div>
           </div>
-          <span style="font-size: 13px; color: #38bdf8; font-weight: bold;">${item.hora || ''}</span>
+          <span style="font-size: 0.85em; color: #38bdf8; font-weight: bold;">${item.hora || ''}</span>
         `;
         listaUltimos.appendChild(li);
       });
