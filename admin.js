@@ -32,7 +32,11 @@ const listaUsuarios = document.getElementById("listaUsuarios");
 
 /* DOM - PERSONALIZACIÓN REMOTA TV */
 const btnGuardarCfg = document.getElementById("btn-guardar-cfg-tv");
-const selectSedeCfg = document.getElementById("cfg-tv-sede");
+const selectMarcaCfg = document.getElementById("cfg-tv-marca");
+const inputLogoFile = document.getElementById("cfg-logo-file");
+const previewLogoImg = document.getElementById("preview-logo-img");
+
+let logoBase64Actual = "";
 
 /* ==========================================
    UTILIDADES
@@ -425,29 +429,90 @@ async function eliminarUsuario(userKey, username) {
 }
 
 /* ==========================================
-   3. PERSONALIZACIÓN REMOTA DE PANTALLAS TV
+   3. PERSONALIZACIÓN REMOTA DE PANTALLAS TV POR MARCA Y LECTOR DE ARCHIVOS LOGO
    ========================================== */
+
+// Lector de archivo de imagen (Convierte PNG/JPG a Base64)
+if (inputLogoFile) {
+  inputLogoFile.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // Límite recomendado 1MB
+        alert("La imagen es muy grande. Por favor selecciona un logo de menos de 1MB.");
+        inputLogoFile.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        logoBase64Actual = event.target.result;
+        if (previewLogoImg) {
+          previewLogoImg.src = logoBase64Actual;
+          previewLogoImg.style.display = "block";
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+// Cargar configuración guardada al cambiar la Marca seleccionada
+function cargarConfiguracionMarca(marcaClave) {
+  onValue(ref(db, `configuracion_tv/${marcaClave}`), (snapshot) => {
+    const config = snapshot.val();
+    if (!config) {
+      logoBase64Actual = "";
+      if (previewLogoImg) previewLogoImg.style.display = "none";
+      return;
+    }
+
+    if (config.colorHeader) document.getElementById('cfg-color-header').value = config.colorHeader;
+    if (config.colorAcento) document.getElementById('cfg-color-acento').value = config.colorAcento;
+    if (config.colorBanner) document.getElementById('cfg-color-banner').value = config.colorBanner;
+    if (config.posicionVideo) document.getElementById('cfg-pos-video').value = config.posicionVideo;
+    
+    if (document.getElementById('cfg-chk-ultimos')) document.getElementById('cfg-chk-ultimos').checked = config.mostrarUltimos !== false;
+    if (document.getElementById('cfg-chk-espera')) document.getElementById('cfg-chk-espera').checked = config.mostrarEspera !== false;
+
+    if (config.logoUrl) {
+      logoBase64Actual = config.logoUrl;
+      if (previewLogoImg) {
+        previewLogoImg.src = config.logoUrl;
+        previewLogoImg.style.display = "block";
+      }
+    } else {
+      logoBase64Actual = "";
+      if (previewLogoImg) previewLogoImg.style.display = "none";
+    }
+  }, { onlyOnce: true });
+}
+
+if (selectMarcaCfg) {
+  selectMarcaCfg.addEventListener("change", () => {
+    cargarConfiguracionMarca(selectMarcaCfg.value);
+  });
+  // Carga inicial
+  cargarConfiguracionMarca(selectMarcaCfg.value);
+}
+
 if (btnGuardarCfg) {
   btnGuardarCfg.addEventListener('click', () => {
-    const sedeNombre = selectSedeCfg ? selectSedeCfg.value : '';
-    if (!sedeNombre) return alert('Seleccione una sede para personalizar.');
-
-    const sedeKey = keyify(sedeNombre);
+    const marcaClave = selectMarcaCfg ? selectMarcaCfg.value : '';
+    if (!marcaClave) return alert('Seleccione una marca comercial para personalizar.');
 
     const configuracion = {
       colorHeader: document.getElementById('cfg-color-header').value,
       colorAcento: document.getElementById('cfg-color-acento').value,
       colorBanner: document.getElementById('cfg-color-banner').value,
-      logoUrl: document.getElementById('cfg-logo-url').value,
+      logoUrl: logoBase64Actual, // Se guarda la imagen Base64 para cargarse al instante en la TV
       posicionVideo: document.getElementById('cfg-pos-video').value,
       mostrarUltimos: document.getElementById('cfg-chk-ultimos').checked,
       mostrarEspera: document.getElementById('cfg-chk-espera').checked,
       updatedAt: Date.now()
     };
 
-    set(ref(db, `configuracion_tv/${sedeKey}`), configuracion)
+    set(ref(db, `configuracion_tv/${marcaClave}`), configuracion)
       .then(() => {
-        alert(`¡Configuración de TV enviada a la sede '${sedeNombre}' exitosamente!`);
+        alert(`¡Configuración de diseño enviada para la marca '${marcaClave}' exitosamente!`);
       })
       .catch((err) => {
         alert("Error al guardar en Firebase: " + err.message);
