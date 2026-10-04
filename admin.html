@@ -224,43 +224,95 @@
     <!-- SECCIÓN PERSONALIZACIÓN REMOTA PANTALLAS TV -->
     <section id="personalizar-tv" class="seccion" style="display:none;">
       <h2>🎨 Control Visual Remoto para Pantallas TV</h2>
-      <p style="color: #64748b; margin-bottom: 20px;">Selecciona una marca comercial y modifica sus colores, logo o posición en tiempo real sin ir al local.</p>
+      <p style="color: #64748b; margin-bottom: 20px;">Selecciona una marca comercial y modifica sus colores, tipografía, banners, tarjetas y logo en tiempo real.</p>
 
-      <div style="background: #1e293b; padding: 20px; border-radius: 10px; max-width: 600px; color: white;">
-        <label style="display:block; margin-bottom: 8px; font-weight: bold;">Seleccionar Marca / Razón Social a Personalizar:</label>
+      <div style="background: #1e293b; padding: 20px; border-radius: 10px; max-width: 700px; color: white;">
+        
+        <label style="display:block; margin-bottom: 8px; font-weight: bold; color: #38bdf8;">Seleccionar Marca / Razón Social a Personalizar:</label>
         <select id="cfg-tv-marca" style="width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 15px;">
           <option value="CDI">CDI (Centro de Diagnóstico e Imágenes)</option>
           <option value="GRUPO_QUITO">GRUPO QUITO (Servicios Médicos Integrales)</option>
           <option value="RESOTEM">RESOTEM (Resonancia y Tomografía)</option>
         </select>
 
+        <!-- SECCIÓN 1: COLORES PRINCIPALES Y BANNERS -->
+        <h4 style="color: #38bdf8; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 6px;">1. Banners y Colores Institucionales</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div>
-            <label style="display:block; margin-bottom: 4px;">Color Encabezado:</label>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Color Header/Encabezado:</label>
             <input type="color" id="cfg-color-header" value="#3d0a11" style="width: 100%; height: 40px; cursor: pointer;">
           </div>
           <div>
-            <label style="display:block; margin-bottom: 4px;">Color Reloj/Acento:</label>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Color Reloj / Acento:</label>
             <input type="color" id="cfg-color-acento" value="#f59e0b" style="width: 100%; height: 40px; cursor: pointer;">
           </div>
         </div>
 
         <div style="margin-bottom: 15px;">
-          <label style="display:block; margin-bottom: 4px;">Gradiente Banner Llamado (CSS):</label>
-          <input type="text" id="cfg-color-banner" value="linear-gradient(135deg, #0284c7, #0369a1)" style="width: 100%; padding: 8px; border-radius: 6px;">
+          <label style="display:block; margin-bottom: 4px; font-size: 13px;">Gradiente Banner Llamado (CSS):</label>
+          <input type="text" id="cfg-color-banner" value="linear-gradient(135deg, #0284c7, #0369a1)" style="width: 100%; padding: 8px; border-radius: 6px; box-sizing: border-box;">
         </div>
 
-        <!-- CARGADOR / BUSCADOR DE IMAGEN PARA LOGO INSTITUCIONAL -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Fondo Banner Pie (Ticker):</label>
+            <input type="color" id="cfg-color-footer-bg" value="#0f172a" style="width: 100%; height: 40px; cursor: pointer;">
+          </div>
+          <div>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Texto Banner Pie (Ticker):</label>
+            <input type="color" id="cfg-color-footer-text" value="#ffffff" style="width: 100%; height: 40px; cursor: pointer;">
+          </div>
+        </div>
+
+        <!-- SECCIÓN 2: TIPOGRAFÍA Y ESCALADO DE TEXTO -->
+        <h4 style="color: #38bdf8; margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 6px;">2. Tipografía y Tamaño de Fuentes</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Fuente / Tipografía:</label>
+            <select id="cfg-font-family" style="width: 100%; padding: 8px; border-radius: 6px;">
+              <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Segoe UI (Estándar)</option>
+              <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="'Montserrat', sans-serif">Montserrat (Moderna)</option>
+              <option value="'Poppins', sans-serif">Poppins</option>
+              <option value="Arial, Helvetica, sans-serif">Arial</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Escala de Texto TV:</label>
+            <select id="cfg-font-size-scale" style="width: 100%; padding: 8px; border-radius: 6px;">
+              <option value="90%">Pequeño (90%)</option>
+              <option value="100%" selected>Normal (100%)</option>
+              <option value="110%">Grande (110%)</option>
+              <option value="120%">Muy Grande (120%)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 3: ESTILOS DE TARJETAS Y PANELES -->
+        <h4 style="color: #38bdf8; margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 6px;">3. Tarjetas de Pacientes y Listas</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Fondo Tarjetas Pacientes:</label>
+            <input type="color" id="cfg-color-card-bg" value="#ffffff" style="width: 100%; height: 40px; cursor: pointer;">
+          </div>
+          <div>
+            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Texto Tarjetas Pacientes:</label>
+            <input type="color" id="cfg-color-card-text" value="#1e293b" style="width: 100%; height: 40px; cursor: pointer;">
+          </div>
+        </div>
+
+        <!-- SECCIÓN 4: LOGO Y DISPOSICIÓN -->
+        <h4 style="color: #38bdf8; margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 6px;">4. Logo y Disposición General</h4>
         <div style="margin-bottom: 15px;">
-          <label style="display:block; margin-bottom: 6px; font-weight: bold;">Cargar Logo Institucional (Imagen PNG/JPG):</label>
-          <input type="file" id="cfg-logo-file" accept="image/*" style="width: 100%; padding: 8px; background: #334155; border-radius: 6px; color: white; cursor: pointer;">
+          <label style="display:block; margin-bottom: 6px; font-weight: bold; font-size: 13px;">Cargar Logo Institucional (Imagen PNG/JPG):</label>
+          <input type="file" id="cfg-logo-file" accept="image/*" style="width: 100%; padding: 8px; background: #334155; border-radius: 6px; color: white; cursor: pointer; box-sizing: border-box;">
           <div style="margin-top: 10px; text-align: center;">
             <img id="preview-logo-img" src="" alt="Vista previa de logo" style="max-height: 60px; max-width: 100%; display: none; margin: 0 auto; border: 1px dashed #38bdf8; padding: 4px; border-radius: 6px;">
           </div>
         </div>
 
         <div style="margin-bottom: 15px;">
-          <label style="display:block; margin-bottom: 4px;">Posición del Video:</label>
+          <label style="display:block; margin-bottom: 4px; font-size: 13px;">Posición del Video:</label>
           <select id="cfg-pos-video" style="width: 100%; padding: 8px; border-radius: 6px;">
             <option value="izquierda">Video a la Izquierda (Predeterminado)</option>
             <option value="derecha">Video a la Derecha</option>
@@ -268,8 +320,8 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 6px;"><input type="checkbox" id="cfg-chk-ultimos" checked> Mostrar "Últimos Llamados"</label>
-          <label style="display: block;"><input type="checkbox" id="cfg-chk-espera" checked> Mostrar "En Espera"</label>
+          <label style="display: block; margin-bottom: 6px; font-size: 14px;"><input type="checkbox" id="cfg-chk-ultimos" checked> Mostrar "Últimos Llamados"</label>
+          <label style="display: block; font-size: 14px;"><input type="checkbox" id="cfg-chk-espera" checked> Mostrar "En Espera"</label>
         </div>
 
         <button type="button" id="btn-guardar-cfg-tv" style="width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px;">
