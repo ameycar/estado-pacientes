@@ -429,7 +429,7 @@ async function eliminarUsuario(userKey, username) {
 }
 
 /* ==========================================
-   3. PERSONALIZACIÓN REMOTA DE PANTALLAS TV POR MARCA Y LECTOR DE ARCHIVOS LOGO
+   3. PERSONALIZACIÓN REMOTA COMPLETA DE PANTALLAS TV POR MARCA
    ========================================== */
 
 // Lector de archivo de imagen (Convierte PNG/JPG a Base64)
@@ -465,11 +465,23 @@ function cargarConfiguracionMarca(marcaClave) {
       return;
     }
 
-    if (config.colorHeader) document.getElementById('cfg-color-header').value = config.colorHeader;
-    if (config.colorAcento) document.getElementById('cfg-color-acento').value = config.colorAcento;
-    if (config.colorBanner) document.getElementById('cfg-color-banner').value = config.colorBanner;
-    if (config.posicionVideo) document.getElementById('cfg-pos-video').value = config.posicionVideo;
-    
+    // 1. Colores Principales y Banners
+    if (config.colorHeader && document.getElementById('cfg-color-header')) document.getElementById('cfg-color-header').value = config.colorHeader;
+    if (config.colorAcento && document.getElementById('cfg-color-acento')) document.getElementById('cfg-color-acento').value = config.colorAcento;
+    if (config.colorBanner && document.getElementById('cfg-color-banner')) document.getElementById('cfg-color-banner').value = config.colorBanner;
+    if (config.colorFooterBg && document.getElementById('cfg-color-footer-bg')) document.getElementById('cfg-color-footer-bg').value = config.colorFooterBg;
+    if (config.colorFooterText && document.getElementById('cfg-color-footer-text')) document.getElementById('cfg-color-footer-text').value = config.colorFooterText;
+
+    // 2. Tipografía y Fuentes
+    if (config.fontFamily && document.getElementById('cfg-font-family')) document.getElementById('cfg-font-family').value = config.fontFamily;
+    if (config.fontSizeScale && document.getElementById('cfg-font-size-scale')) document.getElementById('cfg-font-size-scale').value = config.fontSizeScale;
+
+    // 3. Tarjetas de Pacientes
+    if (config.colorCardBg && document.getElementById('cfg-color-card-bg')) document.getElementById('cfg-color-card-bg').value = config.colorCardBg;
+    if (config.colorCardText && document.getElementById('cfg-color-card-text')) document.getElementById('cfg-color-card-text').value = config.colorCardText;
+
+    // 4. Logo y Disposición
+    if (config.posicionVideo && document.getElementById('cfg-pos-video')) document.getElementById('cfg-pos-video').value = config.posicionVideo;
     if (document.getElementById('cfg-chk-ultimos')) document.getElementById('cfg-chk-ultimos').checked = config.mostrarUltimos !== false;
     if (document.getElementById('cfg-chk-espera')) document.getElementById('cfg-chk-espera').checked = config.mostrarEspera !== false;
 
@@ -490,7 +502,7 @@ if (selectMarcaCfg) {
   selectMarcaCfg.addEventListener("change", () => {
     cargarConfiguracionMarca(selectMarcaCfg.value);
   });
-  // Carga inicial
+  // Carga inicial al cargar el módulo admin
   cargarConfiguracionMarca(selectMarcaCfg.value);
 }
 
@@ -500,13 +512,26 @@ if (btnGuardarCfg) {
     if (!marcaClave) return alert('Seleccione una marca comercial para personalizar.');
 
     const configuracion = {
-      colorHeader: document.getElementById('cfg-color-header').value,
-      colorAcento: document.getElementById('cfg-color-acento').value,
-      colorBanner: document.getElementById('cfg-color-banner').value,
-      logoUrl: logoBase64Actual, // Se guarda la imagen Base64 para cargarse al instante en la TV
-      posicionVideo: document.getElementById('cfg-pos-video').value,
-      mostrarUltimos: document.getElementById('cfg-chk-ultimos').checked,
-      mostrarEspera: document.getElementById('cfg-chk-espera').checked,
+      // 1. Colores y Banners
+      colorHeader: document.getElementById('cfg-color-header') ? document.getElementById('cfg-color-header').value : '#3d0a11',
+      colorAcento: document.getElementById('cfg-color-acento') ? document.getElementById('cfg-color-acento').value : '#f59e0b',
+      colorBanner: document.getElementById('cfg-color-banner') ? document.getElementById('cfg-color-banner').value : 'linear-gradient(135deg, #0284c7, #0369a1)',
+      colorFooterBg: document.getElementById('cfg-color-footer-bg') ? document.getElementById('cfg-color-footer-bg').value : '#0f172a',
+      colorFooterText: document.getElementById('cfg-color-footer-text') ? document.getElementById('cfg-color-footer-text').value : '#ffffff',
+
+      // 2. Tipografía y Tamaño
+      fontFamily: document.getElementById('cfg-font-family') ? document.getElementById('cfg-font-family').value : "'Segoe UI', sans-serif",
+      fontSizeScale: document.getElementById('cfg-font-size-scale') ? document.getElementById('cfg-font-size-scale').value : "100%",
+
+      // 3. Tarjetas
+      colorCardBg: document.getElementById('cfg-color-card-bg') ? document.getElementById('cfg-color-card-bg').value : '#ffffff',
+      colorCardText: document.getElementById('cfg-color-card-text') ? document.getElementById('cfg-color-card-text').value : '#1e293b',
+
+      // 4. Logo y Posición
+      logoUrl: logoBase64Actual,
+      posicionVideo: document.getElementById('cfg-pos-video') ? document.getElementById('cfg-pos-video').value : 'izquierda',
+      mostrarUltimos: document.getElementById('cfg-chk-ultimos') ? document.getElementById('cfg-chk-ultimos').checked : true,
+      mostrarEspera: document.getElementById('cfg-chk-espera') ? document.getElementById('cfg-chk-espera').checked : true,
       updatedAt: Date.now()
     };
 
