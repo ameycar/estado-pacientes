@@ -31,6 +31,7 @@
       flex-direction: column;
     }
 
+    /* Layout Principal */
     .tv-container {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -42,6 +43,7 @@
       min-height: 0;
     }
 
+    /* Encabezado Superior */
     .tv-header {
       grid-column: 1 / -1;
       background: var(--color-header);
@@ -73,6 +75,7 @@
     .tv-header h2 { margin: 0; font-size: 1.5em; color: #ffffff; }
     .tv-clock { font-size: 1.6em; font-weight: bold; color: var(--color-acento); }
 
+    /* Columna Izquierda (Video + Banner Animado) */
     .zona-izquierda {
       display: flex;
       flex-direction: column;
@@ -110,6 +113,7 @@
     .banner-fallback-publicidad h1 { font-size: 2.2em; margin-bottom: 10px; color: #ffffff; }
     .banner-fallback-publicidad p { font-size: 1.1em; color: #94a3b8; }
 
+    /* Banner Animado del Paciente en Llamado */
     .llamado-actual-banner {
       background: var(--color-banner);
       border-radius: 12px;
@@ -149,6 +153,7 @@
       color: #fef08a; 
     }
 
+    /* Columna Derecha (Listas de Pacientes) */
     .zona-derecha { 
       display: flex; 
       flex-direction: column; 
@@ -193,6 +198,7 @@
     .lista-turnos li .nom { font-weight: bold; color: inherit; }
     .lista-turnos li .est { font-size: 0.85em; opacity: 0.85; }
 
+    /* Footer / Ticker de noticias */
     .tv-footer-ticker {
       background: var(--color-footer-bg);
       color: var(--color-footer-text);
@@ -210,6 +216,7 @@
       font-weight: 500;
     }
 
+    /* Modal Emergente */
     #selector-sede-modal {
       position: fixed;
       inset: 0;
@@ -317,6 +324,7 @@
     </div>
   </div>
 
+  <!-- Pie de Página / Ticker -->
   <div class="tv-footer-ticker" id="tv-footer-elem">
     <marquee id="tv-footer-text">Por favor permanezca atento a la pantalla para el llamado de su turno. | Mantenga el distanciamiento y recuerde portar su documento de identidad.</marquee>
   </div>
@@ -325,6 +333,7 @@
     <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
   </audio>
 
+  <!-- Lógica Modular Integrada -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
@@ -435,6 +444,7 @@
       return String(clave).replace(/\s+/g, '_').toUpperCase();
     }
 
+    // LISTENER EN TIEMPO REAL: Escuchar cambios de diseño desde Firebase por Marca Comercial
     function escucharConfiguracionRemota(claveMarca) {
       const marcaKey = normalizarClaveMarca(claveMarca);
       
@@ -442,15 +452,22 @@
         const config = snapshot.val();
         if (!config) return;
 
+        // 1. Colores Principales y Banners
         if (config.colorHeader) document.documentElement.style.setProperty('--color-header', config.colorHeader);
         if (config.colorAcento) document.documentElement.style.setProperty('--color-acento', config.colorAcento);
         if (config.colorBanner) document.documentElement.style.setProperty('--color-banner', config.colorBanner);
         if (config.colorFooterBg) document.documentElement.style.setProperty('--color-footer-bg', config.colorFooterBg);
         if (config.colorFooterText) document.documentElement.style.setProperty('--color-footer-text', config.colorFooterText);
 
+        // 2. Tipografía y Tamaño
         if (config.fontFamily) document.documentElement.style.setProperty('--font-family-tv', config.fontFamily);
         if (config.fontSizeScale) document.documentElement.style.setProperty('--font-scale-tv', config.fontSizeScale);
 
+        // 3. Tarjetas
+        if (config.colorCardBg) document.documentElement.style.setProperty('--color-card-bg', config.colorCardBg);
+        if (config.colorCardText) document.documentElement.style.setProperty('--color-card-text', config.colorCardText);
+
+        // 4. Logo Personalizado (Base64 / URL)
         if (config.logoUrl && tvCustomLogo) {
           tvCustomLogo.src = config.logoUrl;
           tvCustomLogo.style.display = 'inline-block';
@@ -458,6 +475,7 @@
           tvCustomLogo.style.display = 'none';
         }
 
+        // 5. Posición del Video (Invertir Columnas)
         if (config.posicionVideo === 'derecha' && tvLayoutMain) {
           tvLayoutMain.style.gridTemplateColumns = '1fr 2fr';
           document.getElementById('zona-video').style.order = '2';
@@ -468,6 +486,7 @@
           document.getElementById('zona-listas').style.order = '2';
         }
 
+        // 6. Mostrar/Ocultar Paneles
         if (panelUltimos) panelUltimos.style.display = config.mostrarUltimos === false ? 'none' : 'flex';
         if (panelEspera) panelEspera.style.display = config.mostrarEspera === false ? 'none' : 'flex';
       });
