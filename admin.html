@@ -1,355 +1,267 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Estado de Pacientes</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel de Administración - Configuración TV</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      padding: 0;
-      background-color: #f4f6f9;
-      color: #1e293b;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 18px;
-      background-color: #3d0a11;
-      color: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    .header-title {
-      font-weight: 700;
-      font-size: 16px;
-    }
-
-    nav {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    nav a, nav button {
-      color: #fff;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 14px;
-      padding: 6px 12px;
-      border-radius: 4px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: background-color 0.2s;
-    }
-
-    nav a:hover, nav button:hover, nav a.active, nav button.active {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    main {
-      padding: 18px;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .seccion {
-      background: #ffffff;
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      border: 1px solid #e0e0e0;
+      background-color: #0f172a;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .admin-card {
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid #334155;
     }
 
     h2 {
       margin-top: 0;
-      color: #3d0a11;
-      font-size: 20px;
-      border-bottom: 2px solid #e0e0e0;
+      color: #38bdf8;
+      border-bottom: 2px solid #0284c7;
       padding-bottom: 8px;
     }
 
-    /* ESTILOS PARA LISTA Y BOTONES DE SEDES */
-    #listaSedes {
-      list-style: none;
-      padding: 0;
-      margin-top: 15px;
+    .form-section {
+      margin-bottom: 20px;
     }
 
-    #listaSedes li {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .form-section h3 {
+      font-size: 16px;
+      color: #94a3b8;
+      margin-bottom: 12px;
     }
 
-    .sede-nombre {
-      font-weight: bold;
-      color: #1e293b;
-      font-size: 15px;
-    }
-
-    .sede-actions button, .user-actions button {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 15px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      transition: background 0.2s;
-    }
-
-    .sede-actions button:hover, .user-actions button:hover {
-      background: #e2e8f0;
-    }
-
-    /* ESTILOS PARA USUARIOS */
-    #listaUsuarios {
-      list-style: none;
-      padding: 0;
-      margin-top: 15px;
-    }
-
-    #listaUsuarios li {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .grid-form-usuario {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
+    .form-group {
       margin-bottom: 15px;
     }
 
-    .grid-form-usuario input, .grid-form-usuario select {
-      padding: 8px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
       font-size: 14px;
+    }
+
+    select, input[type="text"] {
       width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #fff;
+      font-size: 14px;
       box-sizing: border-box;
+    }
+
+    .color-pickers-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .color-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 50px;
+      height: 40px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+    }
+
+    .preview-box {
+      margin-top: 10px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      color: #ffffff;
+      border: 2px solid #38bdf8;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: background 0.3s ease;
+    }
+
+    .btn-guardar {
+      width: 100%;
+      padding: 12px;
+      background-color: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-guardar:hover {
+      background-color: #0369a1;
     }
   </style>
 </head>
 <body>
 
-  <!-- HEADER DE NAVEGACIÓN -->
-  <header>
-    <div class="header-title">Estado de Pacientes — Admin</div>
-    <nav>
-      <a href="#" id="nav-pacientes" class="active" onclick="mostrarSeccion('pacientes')">Pacientes</a>
-      <a href="resumen.html" target="_blank">Resumen</a>
-      <a href="#" id="nav-sedes" onclick="mostrarSeccion('sedes')">Sedes</a>
-      <a href="#" id="nav-usuarios" onclick="mostrarSeccion('usuarios')">Usuarios</a>
-      <button type="button" id="nav-personalizar-tv" onclick="mostrarSeccion('personalizar-tv')">
-        <i class="fas fa-palette"></i> Personalizar Pantallas TV
-      </button>
-    </nav>
-  </header>
+  <div class="admin-card">
+    <h2><i class="fas fa-sliders-h"></i> Personalizar Pantalla TV</h2>
 
-  <main>
-    <!-- SECCIÓN PACIENTES -->
-    <section id="pacientes" class="seccion" style="display:block;">
-      <h2>Pacientes</h2>
-      <p><a href="index.html" target="_blank" style="color:#3d0a11; font-weight:bold;">Abrir módulo Pacientes (index.html)</a></p>
-    </section>
+    <div class="form-group">
+      <label for="select-marca-admin">Seleccionar Marca / Razón Social a Personalizar:</label>
+      <select id="select-marca-admin">
+        <option value="CDI">CDI (Centro de Diagnóstico e Imágenes)</option>
+        <option value="GRUPO_QUITO">GRUPO QUITO (Servicios Médicos Integrales)</option>
+        <option value="RESOTEM">RESOTEM (Resonancia y Tomografía)</option>
+      </select>
+    </div>
 
-    <!-- SECCIÓN SEDES -->
-    <section id="sedes" class="seccion" style="display:none;">
-      <h2>Gestión de Sedes</h2>
+    <div class="form-section">
+      <h3>1. Banners y Colores Institucionales</h3>
       
-      <form id="formSede" style="display:flex; gap:10px; align-items:center; margin-bottom:15px; flex-wrap:wrap;">
-        <input id="sedeNombre" placeholder="Nombre de la sede (Ej. VITARTE 5)" required style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; min-width:250px; font-size:14px;">
-        <button type="submit" style="padding:8px 16px; border-radius:6px; background:#3d0a11; color:white; border:none; cursor:pointer; font-weight:bold;">
-          Guardar Sede
-        </button>
-      </form>
-
-      <ul id="listaSedes"></ul>
-    </section>
-
-    <!-- SECCIÓN USUARIOS -->
-    <section id="usuarios" class="seccion" style="display:none;">
-      <h2>Gestión de Usuarios</h2>
-      <form id="formUsuario">
-        <div class="grid-form-usuario">
-          <input id="usuarioNombres" type="text" placeholder="Nombres" required>
-          <input id="usuarioApellidos" type="text" placeholder="Apellidos" required>
-          <input id="usuarioUsername" type="text" placeholder="Nombre de usuario (Login)" required>
-          <input id="usuarioEmail" type="email" placeholder="correo@ejemplo.com" required>
-          <input id="usuarioClave" type="text" placeholder="Contraseña asignada" required>
-          
-          <select id="usuarioRol" required>
-            <option value="">Seleccione Rol / Permiso</option>
-            <option value="registrador">Registrador (Solo registro de sede)</option>
-            <option value="visualizador">Visualizador (Solo lectura pac. en espera)</option>
-            <option value="llamador">Llamador de Área (Médicos, Lab, Lic, Tech)</option>
-            <option value="estadistica">Estadística / Reportes</option>
-            <option value="admin">Administrador General</option>
-          </select>
-
-          <select id="usuarioSede" required>
-            <option value="">Seleccione Sede</option>
-          </select>
+      <div class="color-pickers-row" style="margin-bottom: 15px;">
+        <div class="color-item">
+          <label>Color Encabezado:</label>
+          <input type="color" id="input-color-header" value="#0284c7">
         </div>
-
-        <button type="submit" style="padding:10px 20px; border-radius:6px; background:#3d0a11; color:white; border:none; cursor:pointer; font-weight:bold; width:100%;">
-          Crear Usuario con Permisos
-        </button>
-      </form>
-
-      <ul id="listaUsuarios"></ul>
-    </section>
-
-    <!-- SECCIÓN PERSONALIZACIÓN REMOTA PANTALLAS TV -->
-    <section id="personalizar-tv" class="seccion" style="display:none;">
-      <h2>🎨 Control Visual Remoto para Pantallas TV</h2>
-      <p style="color: #64748b; margin-bottom: 20px;">Selecciona una marca comercial y modifica sus colores, tipografía, banners, tarjetas y logo en tiempo real.</p>
-
-      <div style="background: #1e293b; padding: 20px; border-radius: 10px; max-width: 700px; color: white;">
-        
-        <label style="display:block; margin-bottom: 8px; font-weight: bold; color: #38bdf8;">Seleccionar Marca / Razón Social a Personalizar:</label>
-        <select id="cfg-tv-marca" style="width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 15px;">
-          <option value="CDI">CDI (Centro de Diagnóstico e Imágenes)</option>
-          <option value="GRUPO_QUITO">GRUPO QUITO (Servicios Médicos Integrales)</option>
-          <option value="RESOTEM">RESOTEM (Resonancia y Tomografía)</option>
-        </select>
-
-        <!-- SECCIÓN 1: COLORES PRINCIPALES Y BANNERS -->
-        <h4 style="color: #38bdf8; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 6px;">1. Banners y Colores Institucionales</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Color Header/Encabezado:</label>
-            <input type="color" id="cfg-color-header" value="#3d0a11" style="width: 100%; height: 40px; cursor: pointer;">
-          </div>
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Color Reloj / Acento:</label>
-            <input type="color" id="cfg-color-acento" value="#f59e0b" style="width: 100%; height: 40px; cursor: pointer;">
-          </div>
+        <div class="color-item">
+          <label>Color Reloj / Acento:</label>
+          <input type="color" id="input-color-acento" value="#38bdf8">
         </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display:block; margin-bottom: 4px; font-size: 13px;">Gradiente Banner Llamado (CSS):</label>
-          <input type="text" id="cfg-color-banner" value="linear-gradient(135deg, #0284c7, #0369a1)" style="width: 100%; padding: 8px; border-radius: 6px; box-sizing: border-box;">
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Fondo Banner Pie (Ticker):</label>
-            <input type="color" id="cfg-color-footer-bg" value="#0f172a" style="width: 100%; height: 40px; cursor: pointer;">
-          </div>
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Texto Banner Pie (Ticker):</label>
-            <input type="color" id="cfg-color-footer-text" value="#ffffff" style="width: 100%; height: 40px; cursor: pointer;">
-          </div>
-        </div>
-
-        <!-- SECCIÓN 2: TIPOGRAFÍA Y ESCALADO DE TEXTO -->
-        <h4 style="color: #38bdf8; margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 6px;">2. Tipografía y Tamaño de Fuentes</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Fuente / Tipografía:</label>
-            <select id="cfg-font-family" style="width: 100%; padding: 8px; border-radius: 6px;">
-              <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Segoe UI (Estándar)</option>
-              <option value="'Roboto', sans-serif">Roboto</option>
-              <option value="'Montserrat', sans-serif">Montserrat (Moderna)</option>
-              <option value="'Poppins', sans-serif">Poppins</option>
-              <option value="Arial, Helvetica, sans-serif">Arial</option>
-            </select>
-          </div>
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Escala de Texto TV:</label>
-            <select id="cfg-font-size-scale" style="width: 100%; padding: 8px; border-radius: 6px;">
-              <option value="90%">Pequeño (90%)</option>
-              <option value="100%" selected>Normal (100%)</option>
-              <option value="110%">Grande (110%)</option>
-              <option value="120%">Muy Grande (120%)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- SECCIÓN 3: ESTILOS DE TARJETAS Y PANELES -->
-        <h4 style="color: #38bdf8; margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 6px;">3. Tarjetas de Pacientes y Listas</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Fondo Tarjetas Pacientes:</label>
-            <input type="color" id="cfg-color-card-bg" value="#ffffff" style="width: 100%; height: 40px; cursor: pointer;">
-          </div>
-          <div>
-            <label style="display:block; margin-bottom: 4px; font-size: 13px;">Texto Tarjetas Pacientes:</label>
-            <input type="color" id="cfg-color-card-text" value="#1e293b" style="width: 100%; height: 40px; cursor: pointer;">
-          </div>
-        </div>
-
-        <!-- SECCIÓN 4: LOGO Y DISPOSICIÓN -->
-        <h4 style="color: #38bdf8; margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 6px;">4. Logo y Disposición General</h4>
-        <div style="margin-bottom: 15px;">
-          <label style="display:block; margin-bottom: 6px; font-weight: bold; font-size: 13px;">Cargar Logo Institucional (Imagen PNG/JPG):</label>
-          <input type="file" id="cfg-logo-file" accept="image/*" style="width: 100%; padding: 8px; background: #334155; border-radius: 6px; color: white; cursor: pointer; box-sizing: border-box;">
-          <div style="margin-top: 10px; text-align: center;">
-            <img id="preview-logo-img" src="" alt="Vista previa de logo" style="max-height: 60px; max-width: 100%; display: none; margin: 0 auto; border: 1px dashed #38bdf8; padding: 4px; border-radius: 6px;">
-          </div>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display:block; margin-bottom: 4px; font-size: 13px;">Posición del Video:</label>
-          <select id="cfg-pos-video" style="width: 100%; padding: 8px; border-radius: 6px;">
-            <option value="izquierda">Video a la Izquierda (Predeterminado)</option>
-            <option value="derecha">Video a la Derecha</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 6px; font-size: 14px;"><input type="checkbox" id="cfg-chk-ultimos" checked> Mostrar "Últimos Llamados"</label>
-          <label style="display: block; font-size: 14px;"><input type="checkbox" id="cfg-chk-espera" checked> Mostrar "En Espera"</label>
-        </div>
-
-        <button type="button" id="btn-guardar-cfg-tv" style="width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px;">
-          💾 Guardar y Aplicar Cambios en Vivo
-        </button>
       </div>
-    </section>
-  </main>
 
-  <!-- SCRIPT DE ADMIN IMPORTADO COMO MÓDULO JS -->
-  <script type="module" src="admin.js"></script>
+      <div class="form-group">
+        <label>Gradiente Banner Llamado (Selección Visual):</label>
+        <div class="color-pickers-row">
+          <div class="color-item">
+            <small style="color: #94a3b8;">Color Inicial</small>
+            <input type="color" id="input-gradiente-1" value="#0284c7">
+          </div>
+          <i class="fas fa-arrow-right" style="color: #94a3b8; margin-top: 18px;"></i>
+          <div class="color-item">
+            <small style="color: #94a3b8;">Color Final</small>
+            <input type="color" id="input-gradiente-2" value="#0369a1">
+          </div>
+        </div>
 
-  <!-- LÓGICA UNIFICADA DE CAMBIO DE PESTAÑAS (SPA) -->
-  <script>
-    function mostrarSeccion(idSeccion) {
-      document.querySelectorAll('.seccion').forEach(sec => sec.style.display = 'none');
-      document.querySelectorAll('nav a, nav button').forEach(el => el.classList.remove('active'));
+        <small style="display: block; margin-top: 10px; color: #94a3b8;">Vista Previa en Vivo del Banner:</small>
+        <div id="preview-banner-live" class="preview-box">
+          🔔 PACIENTE EN ATENCIÓN (EJEMPLO)
+        </div>
+      </div>
+    </div>
 
-      const seccionActiva = document.getElementById(idSeccion);
-      if (seccionActiva) {
-        seccionActiva.style.display = 'block';
-      }
+    <div class="form-section">
+      <h3>2. Pie de Página (Ticker)</h3>
+      <div class="color-pickers-row" style="margin-bottom: 10px;">
+        <div class="color-item">
+          <label>Fondo Pie:</label>
+          <input type="color" id="input-color-footer-bg" value="#0f172a">
+        </div>
+        <div class="color-item">
+          <label>Texto Pie:</label>
+          <input type="color" id="input-color-footer-text" value="#ffffff">
+        </div>
+      </div>
+    </div>
 
-      const navActivo = document.getElementById('nav-' + idSeccion);
-      if (navActivo) {
-        navActivo.classList.add('active');
-      }
+    <button id="btn-guardar-config" class="btn-guardar"><i class="fas fa-save"></i> Guardar Configuración</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const firebaseConfig = {
+      databaseURL: "https://estado-pacientes-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const selectMarca = document.getElementById('select-marca-admin');
+    const inputColorHeader = document.getElementById('input-color-header');
+    const inputColorAcento = document.getElementById('input-color-acento');
+    const inputGradiente1 = document.getElementById('input-gradiente-1');
+    const inputGradiente2 = document.getElementById('input-gradiente-2');
+    const previewBanner = document.getElementById('preview-banner-live');
+    const inputFooterBg = document.getElementById('input-color-footer-bg');
+    const inputFooterText = document.getElementById('input-color-footer-text');
+    const btnGuardar = document.getElementById('btn-guardar-config');
+
+    function actualizarVistaPrevia() {
+      const g1 = inputGradiente1.value;
+      const g2 = inputGradiente2.value;
+      const gradienteCSS = `linear-gradient(135deg, ${g1}, ${g2})`;
+      previewBanner.style.background = gradienteCSS;
+      previewBanner.style.borderColor = inputColorAcento.value;
     }
+
+    inputGradiente1.addEventListener('input', actualizarVistaPrevia);
+    inputGradiente2.addEventListener('input', actualizarVistaPrevia);
+    inputColorAcento.addEventListener('input', actualizarVistaPrevia);
+
+    function cargarConfiguracionMarca(marcaKey) {
+      onValue(ref(db, `configuracion_tv/${marcaKey}`), snapshot => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        if (data.colorHeader) inputColorHeader.value = data.colorHeader;
+        if (data.colorAcento) inputColorAcento.value = data.colorAcento;
+        if (data.colorFooterBg) inputFooterBg.value = data.colorFooterBg;
+        if (data.colorFooterText) inputFooterText.value = data.colorFooterText;
+
+        if (data.colorBanner && data.colorBanner.includes('linear-gradient')) {
+          const matches = data.colorBanner.match(/#[a-fA-F0-9]{6}/g);
+          if (matches && matches.length >= 2) {
+            inputGradiente1.value = matches[0];
+            inputGradiente2.value = matches[1];
+          }
+        }
+        actualizarVistaPrevia();
+      }, { onlyOnce: true });
+    }
+
+    selectMarca.addEventListener('change', () => cargarConfiguracionMarca(selectMarca.value));
+    cargarConfiguracionMarca(selectMarca.value);
+
+    btnGuardar.addEventListener('click', () => {
+      const marcaKey = selectMarca.value;
+      const gradienteCSS = `linear-gradient(135deg, ${inputGradiente1.value}, ${inputGradiente2.value})`;
+
+      set(ref(db, `configuracion_tv/${marcaKey}`), {
+        colorHeader: inputColorHeader.value,
+        colorAcento: inputColorAcento.value,
+        colorBanner: gradienteCSS,
+        colorFooterBg: inputFooterBg.value,
+        colorFooterText: inputFooterText.value
+      }).then(() => {
+        alert('✅ Configuración guardada exitosamente');
+      }).catch(err => {
+        alert('❌ Error al guardar: ' + err.message);
+      });
+    });
   </script>
 </body>
 </html>
