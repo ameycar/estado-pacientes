@@ -31,7 +31,7 @@
     .tv-header {
       grid-column: 1 / -1;
       background: #3d0a11;
-      padding: 12px 24px;
+      padding: 10px 24px;
       border-radius: 10px;
       display: flex;
       justify-content: space-between;
@@ -47,13 +47,16 @@
     }
 
     .tv-logo-custom {
-      max-height: 45px;
-      max-width: 180px;
+      height: 50px;
+      max-width: 220px;
       object-fit: contain;
       display: none;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 6px;
     }
 
-    .tv-header h2 { margin: 0; font-size: 26px; color: #ffffff; }
+    .tv-header h2 { margin: 0; font-size: 24px; color: #ffffff; }
     .tv-clock { font-size: 26px; font-weight: bold; color: #f59e0b; }
 
     /* Columna Izquierda (Video + Banner Animado) */
@@ -242,7 +245,7 @@
   <div class="tv-container" id="tv-layout-main">
     <div class="tv-header" id="tv-header-elem">
       <div class="tv-header-info">
-        <img id="tv-custom-logo" class="tv-logo-custom" alt="Logo" />
+        <img id="tv-custom-logo" class="tv-logo-custom" alt="Logo Institucional" />
         <h2 id="tv-titulo-sede"><i class="fas fa-hospital-user"></i> Centro Médico - Turnos</h2>
       </div>
       <div id="tv-reloj" class="tv-clock">00:00:00 PM</div>
@@ -383,7 +386,7 @@
     function aplicarMarca(claveMarca, nombreSede) {
       marcaActual = MARCAS_CONFIG[claveMarca] || MARCAS_CONFIG["CDI"];
 
-      if (tvTituloSede) tvTituloSede.innerHTML = `<i class="fas fa-hospital-user"></i> ${marcaActual.razonSocial} - Sede: ${nombreSede}`;
+      if (tvTituloSede) tvTituloSede.innerHTML = `${marcaActual.razonSocial} - Sede: ${nombreSede}`;
       if (fallbackRazonSocial) fallbackRazonSocial.textContent = marcaActual.razonSocial;
 
       if (tvHeader) tvHeader.style.backgroundColor = marcaActual.colorPrincipal;
@@ -397,9 +400,16 @@
       indiceVideoActual = 0;
     }
 
+    function normalizarClaveMarca(clave) {
+      if (!clave) return 'CDI';
+      return String(clave).replace(/\s+/g, '_').toUpperCase();
+    }
+
     // LISTENER EN TIEMPO REAL: Escuchar cambios de diseño desde Firebase por Marca Comercial
     function escucharConfiguracionRemota(claveMarca) {
-      onValue(ref(db, `configuracion_tv/${claveMarca}`), snapshot => {
+      const marcaKey = normalizarClaveMarca(claveMarca);
+      
+      onValue(ref(db, `configuracion_tv/${marcaKey}`), snapshot => {
         const config = snapshot.val();
         if (!config) return;
 
@@ -411,10 +421,10 @@
           if (config.colorAcento) bannerLlamado.style.borderColor = config.colorAcento;
         }
 
-        // 2. Logo Personalizado (Soporta Base64)
+        // 2. Logo Personalizado (Base64 / URL)
         if (config.logoUrl && tvCustomLogo) {
           tvCustomLogo.src = config.logoUrl;
-          tvCustomLogo.style.display = 'block';
+          tvCustomLogo.style.display = 'inline-block';
         }
 
         // 3. Posición del Video (Invertir Columnas)
