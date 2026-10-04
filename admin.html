@@ -224,15 +224,14 @@
     <!-- SECCIÓN PERSONALIZACIÓN REMOTA PANTALLAS TV -->
     <section id="personalizar-tv" class="seccion" style="display:none;">
       <h2>🎨 Control Visual Remoto para Pantallas TV</h2>
-      <p style="color: #64748b; margin-bottom: 20px;">Selecciona una sede y modifica sus colores, logo o posición en tiempo real sin ir al local.</p>
+      <p style="color: #64748b; margin-bottom: 20px;">Selecciona una marca comercial y modifica sus colores, logo o posición en tiempo real sin ir al local.</p>
 
       <div style="background: #1e293b; padding: 20px; border-radius: 10px; max-width: 600px; color: white;">
-        <label style="display:block; margin-bottom: 8px; font-weight: bold;">Seleccionar Sede a Personalizar:</label>
-        <select id="cfg-tv-sede" style="width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 15px;">
-          <option value="GRAU CENTRAL">GRAU CENTRAL</option>
-          <option value="EL Agustino">EL Agustino</option>
-          <option value="San Isidro">San Isidro</option>
-          <option value="Surco">Surco</option>
+        <label style="display:block; margin-bottom: 8px; font-weight: bold;">Seleccionar Marca / Razón Social a Personalizar:</label>
+        <select id="cfg-tv-marca" style="width: 100%; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 15px;">
+          <option value="CDI">CDI (Centro de Diagnóstico e Imágenes)</option>
+          <option value="GRUPO_QUITO">GRUPO QUITO (Servicios Médicos Integrales)</option>
+          <option value="RESOTEM">RESOTEM (Resonancia y Tomografía)</option>
         </select>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -251,9 +250,13 @@
           <input type="text" id="cfg-color-banner" value="linear-gradient(135deg, #0284c7, #0369a1)" style="width: 100%; padding: 8px; border-radius: 6px;">
         </div>
 
+        <!-- CARGADOR / BUSCADOR DE IMAGEN PARA LOGO INSTITUCIONAL -->
         <div style="margin-bottom: 15px;">
-          <label style="display:block; margin-bottom: 4px;">URL del Logo Institucional (PNG/JPG):</label>
-          <input type="url" id="cfg-logo-url" placeholder="https://ejemplo.com/logo.png" style="width: 100%; padding: 8px; border-radius: 6px;">
+          <label style="display:block; margin-bottom: 6px; font-weight: bold;">Cargar Logo Institucional (Imagen PNG/JPG):</label>
+          <input type="file" id="cfg-logo-file" accept="image/*" style="width: 100%; padding: 8px; background: #334155; border-radius: 6px; color: white; cursor: pointer;">
+          <div style="margin-top: 10px; text-align: center;">
+            <img id="preview-logo-img" src="" alt="Vista previa de logo" style="max-height: 60px; max-width: 100%; display: none; margin: 0 auto; border: 1px dashed #38bdf8; padding: 4px; border-radius: 6px;">
+          </div>
         </div>
 
         <div style="margin-bottom: 15px;">
@@ -282,19 +285,14 @@
   <!-- LÓGICA UNIFICADA DE CAMBIO DE PESTAÑAS (SPA) -->
   <script>
     function mostrarSeccion(idSeccion) {
-      // Ocultar todas las secciones
       document.querySelectorAll('.seccion').forEach(sec => sec.style.display = 'none');
-      
-      // Remover clase 'active' de todos los enlaces/botones del nav
       document.querySelectorAll('nav a, nav button').forEach(el => el.classList.remove('active'));
 
-      // Mostrar la sección seleccionada
       const seccionActiva = document.getElementById(idSeccion);
       if (seccionActiva) {
         seccionActiva.style.display = 'block';
       }
 
-      // Resaltar el botón o enlace en la barra superior
       const navActivo = document.getElementById('nav-' + idSeccion);
       if (navActivo) {
         navActivo.classList.add('active');
