@@ -2,21 +2,209 @@
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Login - Estado de Pacientes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iniciar Sesión - Estado de Pacientes</title>
   <link rel="stylesheet" href="style.css"/>
+  <!-- Librería de Íconos FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #2b070c 0%, #3d0a11 50%, #1a0306 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .login-header {
+      margin-bottom: 25px;
+    }
+
+    .login-header .icon-badge {
+      width: 60px;
+      height: 60px;
+      background-color: #fdf2f3;
+      color: #3d0a11;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 12px;
+    }
+
+    .login-header h2 {
+      margin: 0;
+      color: #3d0a11;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .login-header p {
+      margin: 6px 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper i.field-icon {
+      position: absolute;
+      left: 14px;
+      color: #888;
+      font-size: 15px;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 12px 40px 12px 40px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .input-wrapper input:focus {
+      border-color: #3d0a11;
+      box-shadow: 0 0 0 3px rgba(61, 10, 17, 0.15);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 14px;
+      cursor: pointer;
+      color: #888;
+      font-size: 15px;
+      user-select: none;
+      transition: color 0.2s ease;
+    }
+
+    .toggle-password:hover {
+      color: #3d0a11;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      background-color: #3d0a11;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover {
+      background-color: #580f19;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.99);
+    }
+
+    #loginMsg {
+      margin-top: 15px;
+      font-size: 13px;
+      font-weight: 600;
+      min-height: 18px;
+    }
+
+    .footer-credits {
+      margin-top: 25px;
+      font-size: 12px;
+      color: #888;
+      border-top: 1px solid #eee;
+      padding-top: 15px;
+    }
+  </style>
 </head>
 <body>
-  <main style="max-width:420px;margin:60px auto;">
-    <h2>Iniciar sesión</h2>
+
+  <main class="login-card">
+    <div class="login-header">
+      <div class="icon-badge">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <h2>Iniciar Sesión</h2>
+      <p>Gestión de Pacientes y Turnos</p>
+    </div>
+
     <form id="loginForm">
-      <input id="loginUser" placeholder="Usuario" required style="width:100%;padding:8px;margin:8px 0"/>
-      <input id="loginPass" placeholder="Contraseña" type="password" required style="width:100%;padding:8px;margin:8px 0"/>
-      <button type="submit" style="padding:8px 12px;">Entrar</button>
+      <!-- Usuario / Correo -->
+      <div class="input-group">
+        <label for="loginUser">Usuario / Correo</label>
+        <div class="input-wrapper">
+          <i class="fas fa-user field-icon"></i>
+          <input id="loginUser" type="text" placeholder="Ingrese su usuario" required autocomplete="username" />
+        </div>
+      </div>
+
+      <!-- Contraseña con Botón de Ojito -->
+      <div class="input-group">
+        <label for="loginPass">Contraseña</label>
+        <div class="input-wrapper">
+          <i class="fas fa-lock field-icon"></i>
+          <input id="loginPass" type="password" placeholder="••••••••" required autocomplete="current-password" />
+          <i class="fas fa-eye toggle-password" id="btnTogglePass" title="Mostrar/Ocultar contraseña"></i>
+        </div>
+      </div>
+
+      <!-- Botón Submit -->
+      <button type="submit" class="btn-submit">
+        <span>Ingresar al Sistema</span>
+        <i class="fas fa-arrow-right"></i>
+      </button>
     </form>
-    <p id="loginMsg" style="color:#b00"></p>
+
+    <p id="loginMsg"></p>
+
+    <div class="footer-credits">
+      <i class="fas fa-hospital"></i> Plataforma Unificada
+    </div>
   </main>
 
+  <!-- Script del módulo para lógica de autenticación y conmutador de la contraseña -->
   <script type="module" src="./login.js"></script>
 </body>
 </html>
