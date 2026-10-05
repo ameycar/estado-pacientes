@@ -10,19 +10,26 @@ let usuarios = [];
 // Escuchar los usuarios registrados en Firebase Realtime Database
 onValue(ref(db, 'usuarios'), snap => {
   usuarios = [];
-  if (!snap.exists()) return;
+  if (!snap.exists()) {
+    console.warn("No se encontraron registros en la tabla de usuarios.");
+    return;
+  }
   
   snap.forEach(c => { 
-    const u = c.val(); 
-    u.key = c.key; 
+    const u = c.val() || {}; 
+    u.key = c.key; // Clave única en Firebase (por ejemplo: 'prueba', 'cacosta', 'admin')
     usuarios.push(u); 
   });
+  console.log("Usuarios cargados desde Firebase:", usuarios.length);
 });
 
 if (form) {
   form.addEventListener('submit', e => {
     e.preventDefault();
-    if (msg) msg.textContent = '';
+    if (msg) {
+      msg.textContent = '';
+      msg.style.color = '#ef4444';
+    }
 
     const inputUser = document.getElementById('loginUser').value.trim().toLowerCase();
     const inputPass = document.getElementById('loginPass').value.trim();
@@ -32,11 +39,27 @@ if (form) {
       return;
     }
 
-    // Buscar coincidencia soportando ambas variantes de nombres de variables (password/clave, role/rol)
+    if (usuarios.length === 0) {
+      if (msg) msg.textContent = 'Cargando datos de la base de datos... Reintente en un momento.';
+      return;
+    }
+
+    // Buscar coincidencia en múltiples campos posibles (retrocompatible con registros antiguos y nuevos)
     const found = usuarios.find(x => {
-      const dbUser = (x.username || x.user || x.key || '').toString().toLowerCase();
-      const dbPass = (x.password || x.clave || '').toString();
-      return dbUser === inputUser && dbPass === inputPass;
+      // 1. Extraer nombre de usuario / correo registrado
+      const dbUsername = (x.username || x.user || '').toString().trim().toLowerCase();
+      const dbKey = (x.key || '').toString().trim().toLowerCase();
+      const dbEmail = (x.email || x.correo || '').toString().trim().toLowerCase();
+
+      // Coincide si el nombre ingresado equivale al username, a la clave del nodo o al correo
+      const matchesUser = (dbUsername === inputUser) || (dbKey === inputUser) || (dbEmail === inputUser);
+
+      // 2. Extraer contraseña registrada
+      const dbPass = (x.password || x.clave || x.contrasena || x.passwordHash || '').toString().trim();
+
+      const matchesPass = (dbPass === inputPass);
+
+      return matchesUser && matchesPass;
     });
 
     if (!found) {
@@ -44,19 +67,19 @@ if (form) {
       return;
     }
 
-    // Verificar si el usuario ha sido inhabilitado por el administrador
-    if (found.activo === false) {
+    // Verificar si el usuario ha sido inhabilitado
+    if (found.activo === false || found.estado === 'inactivo' || found.estado === 'inhabilitado') {
       if (msg) msg.textContent = 'Este usuario se encuentra inhabilitado';
       return;
     }
 
-    // Determinar el rol (normalizado a minúsculas)
+    // Determinar el rol normalizado
     const userRole = (found.role || found.rol || 'registrador').toString().toLowerCase();
 
-    // Guardar la sesión en localStorage
+    // Construir objeto de sesión para localStorage
     const userObj = {
-      username: found.username || inputUser,
-      displayName: found.displayName || `${found.nombres || ''} ${found.apellidos || ''}`.trim() || found.username || inputUser,
+      username: found.username || found.key || inputUser,
+      displayName: found.displayName || `${found.nombres || ''} ${found.apellidos || ''}`.trim() || found.username || found.key || inputUser,
       role: userRole,
       rol: userRole,
       sede: found.sede || found.sedeId || ''
@@ -64,8 +87,8 @@ if (form) {
 
     localStorage.setItem('user', JSON.stringify(userObj));
 
-    // Redireccionar según el permiso del usuario
-    if (userRole === 'admin') {
+    // Redireccionar según rol de usuario
+    if (userRole === 'admin' || userRole === 'operador') {
       window.location.href = 'admin.html';
     } else {
       window.location.href = 'index.html';
