@@ -17,9 +17,11 @@
 </head>
 <body>
   <script>
-    // Control simple de sesión
-    const usuario = localStorage.getItem("user");
-    // if (!usuario) { window.location.href = 'login.html'; }
+    // Control de sesión activo
+    const usuarioSession = localStorage.getItem("user");
+    if (!usuarioSession) {
+      window.location.href = 'login.html';
+    }
   </script>
 
   <!-- Navegación Superior (SPA) -->
@@ -351,7 +353,7 @@
     </div>
   </div>
 
-  <!-- script principal (modular) -->
+  <!-- Script Principal Integrado -->
   <script type="module" src="./script.js"></script>
 
   <script>
