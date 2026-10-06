@@ -4,6 +4,19 @@ import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase
 
 const form = document.getElementById('loginForm');
 const msg = document.getElementById('loginMsg');
+const togglePassBtn = document.getElementById('btnTogglePass');
+const passInput = document.getElementById('loginPass');
+
+// Lógica para mostrar/ocultar la contraseña con el ojito 👁️
+if (togglePassBtn && passInput) {
+  togglePassBtn.addEventListener('click', () => {
+    const isPassword = passInput.getAttribute('type') === 'password';
+    passInput.setAttribute('type', isPassword ? 'text' : 'password');
+    
+    togglePassBtn.classList.toggle('fa-eye', !isPassword);
+    togglePassBtn.classList.toggle('fa-eye-slash', isPassword);
+  });
+}
 
 let usuarios = [];
 
