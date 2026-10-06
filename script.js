@@ -76,6 +76,96 @@ function keyify(s) {
   return String(s).replace(/[^\w]/g, '_').toLowerCase();
 }
 
+// =============================================================
+// ---------- CONTROL Y APLICACIÓN DE ROLES Y PERMISOS ----------
+// =============================================================
+function aplicarPermisosSegunRol() {
+  if (!currentUser) return;
+
+  const rol = (currentUser.role || currentUser.rol || "registrador").toString().toLowerCase();
+  const sedeUsuario = currentUser.sede || currentUser.sedeId || "";
+
+  const selectSede = document.getElementById("sede");
+  const seccionQR = document.getElementById("seccion-qr");
+  const navBtnPacientes = document.querySelector("button[onclick*='vista-pacientes']");
+  const navBtnReportes = document.querySelector("button[onclick*='vista-reportes']");
+
+  // 1. Bloqueo forzado de Sede para usuarios con sede asignada (excepto Admin y Estadística)
+  if (rol !== "admin" && rol !== "operador" && rol !== "estadistica" && rol !== "reportes") {
+    if (sedeUsuario) {
+      if (selectSede) {
+        selectSede.value = sedeUsuario;
+        selectSede.disabled = true; // No puede cambiar la sede
+      }
+      if (filtroSede) {
+        filtroSede.value = sedeUsuario;
+        filtroSede.readOnly = true; // Se bloquea el filtro por otra sede
+      }
+    }
+  }
+
+  // 2. Rol: ESTADÍSTICA / REPORTES (Ve todas las sedes, solo entra a estadísticas)
+  if (rol === "estadistica" || rol === "reportes") {
+    if (formulario) formulario.style.display = "none";
+    if (seccionQR) seccionQR.style.display = "none";
+    if (navBtnPacientes) navBtnPacientes.style.display = "none";
+
+    // Ocultar acciones en tablas
+    inyectarEstilosOcultamientoAcciones(true, true);
+
+    // Redirigir de inmediato a la sección de reportes/estadísticas
+    setTimeout(() => {
+      mostrarSeccion("vista-reportes");
+      mostrarSubPestana("sub-estadisticas");
+    }, 100);
+    return;
+  }
+
+  // 3. Rol: REGISTRADOR (Puede registrar y usar QR en su sede, pero NO modifica estado ni ve reportes)
+  if (rol === "registrador") {
+    if (navBtnReportes) navBtnReportes.style.display = "none";
+    if (seccionQR) seccionQR.style.display = "block"; // Preserva el Lector QR para el registrador
+    inyectarEstilosOcultamientoAcciones(true, false); // Bloquea cambiar estado
+    return;
+  }
+
+  // 4. Rol: VISUALIZADOR (Solo lectura de pacientes de su sede)
+  if (rol === "visualizador") {
+    if (formulario) formulario.style.display = "none";
+    if (seccionQR) seccionQR.style.display = "none";
+    if (navBtnReportes) navBtnReportes.style.display = "none";
+    inyectarEstilosOcultamientoAcciones(true, true);
+    return;
+  }
+
+  // 5. Rol: LLAMADOR (Atiende llamados en su sede, no registra nuevos pacientes)
+  if (rol === "llamador") {
+    if (formulario) formulario.style.display = "none";
+    if (seccionQR) seccionQR.style.display = "none";
+    if (navBtnReportes) navBtnReportes.style.display = "none";
+    return;
+  }
+}
+
+// Inyección dinámica de CSS para ocultar/deshabilitar elementos según permisos
+function inyectarEstilosOcultamientoAcciones(ocultarModificacionEstado, ocultarTodoAccion) {
+  let styleEl = document.getElementById("css-rbac-rules");
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "css-rbac-rules";
+    document.head.appendChild(styleEl);
+  }
+
+  let css = "";
+  if (ocultarTodoAccion) {
+    css += ` .btn-eliminar-paciente, .btn-atender, select[onchange*='cambiarEstado'] { pointer-events: none; opacity: 0.6; } `;
+  } else if (ocultarModificacionEstado) {
+    css += ` select[onchange*='cambiarEstado'] { pointer-events: none; background-color: #f3f4f6; } `;
+  }
+
+  styleEl.innerHTML = css;
+}
+
 // ---------- Navegación en la misma página (SPA) ----------
 function mostrarSeccion(idSeccion) {
   document.querySelectorAll('.seccion-modulo').forEach(sec => {
@@ -165,11 +255,11 @@ function ejecutarConsultaNL(queryText) {
     filtroEstado = ['Programado'];
   }
 
-  let filtroSede = null;
-  if (q.includes('grau')) filtroSede = 'grau';
-  else if (q.includes('san isidro')) filtroSede = 'san isidro';
-  else if (q.includes('miraflores')) filtroSede = 'miraflores';
-  else if (q.includes('central')) filtroSede = 'central';
+  let filtroSedeNL = null;
+  if (q.includes('grau')) filtroSedeNL = 'grau';
+  else if (q.includes('san isidro')) filtroSedeNL = 'san isidro';
+  else if (q.includes('miraflores')) filtroSedeNL = 'miraflores';
+  else if (q.includes('central')) filtroSedeNL = 'central';
 
   let filtroServicio = null;
   if (q.includes('ecografia') || q.includes('ecografía') || q.includes('eco')) filtroServicio = 'eco';
@@ -205,9 +295,9 @@ function ejecutarConsultaNL(queryText) {
     }
 
     // Filtro por Sede
-    if (cumple && filtroSede) {
+    if (cumple && filtroSedeNL) {
       const sedeNorm = (p.sede || '').toLowerCase();
-      cumple = sedeNorm.includes(filtroSede);
+      cumple = sedeNorm.includes(filtroSedeNL);
     }
 
     // Filtro por Estudio/Servicio
@@ -220,7 +310,7 @@ function ejecutarConsultaNL(queryText) {
   });
 
   // 3. Renderizar vista de resultados
-  mostrarResultadosNL(q, resultados, { filtroSede, filtroServicio, filtroFecha, filtroEstado });
+  mostrarResultadosNL(q, resultados, { filtroSede: filtroSedeNL, filtroServicio, filtroFecha, filtroEstado });
 }
 
 function mostrarResultadosNL(query, lista, filtros) {
@@ -237,7 +327,7 @@ function mostrarResultadosNL(query, lista, filtros) {
 
   const totalRecaudado = lista.reduce((acc, curr) => acc + (parseFloat(curr.precio) || 0), 0);
 
-  textResp.innerHTML = `Se encontraron <span style="color: var(--accent); font-size: 22px;">${lista.length}</span> paciente(s) en la búsqueda.`;
+  if (textResp) textResp.innerHTML = `Se encontraron <span style="color: var(--accent); font-size: 22px;">${lista.length}</span> paciente(s) en la búsqueda.`;
   if (statTotal) statTotal.textContent = lista.length;
   if (statRecaudacion) statRecaudacion.textContent = `S/ ${totalRecaudado.toFixed(2)}`;
   
@@ -248,20 +338,22 @@ function mostrarResultadosNL(query, lista, filtros) {
   }
 
   // Renderizar Tabla
-  tableBody.innerHTML = '';
-  if (lista.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--muted);">No hay registros que coincidan con la búsqueda.</td></tr>`;
-  } else {
-    lista.forEach(p => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td style="padding: 6px 8px;"><strong>${p.apellidos || ''} ${p.nombres || ''}</strong></td>
-        <td style="padding: 6px 8px;">${p.sede || '-'}</td>
-        <td style="padding: 6px 8px;">${p.estudios || '-'}</td>
-        <td style="padding: 6px 8px;">${p.estado || '-'}</td>
-      `;
-      tableBody.appendChild(row);
-    });
+  if (tableBody) {
+    tableBody.innerHTML = '';
+    if (lista.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--muted);">No hay registros que coincidan con la búsqueda.</td></tr>`;
+    } else {
+      lista.forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="padding: 6px 8px;"><strong>${p.apellidos || ''} ${p.nombres || ''}</strong></td>
+          <td style="padding: 6px 8px;">${p.sede || '-'}</td>
+          <td style="padding: 6px 8px;">${p.estudios || '-'}</td>
+          <td style="padding: 6px 8px;">${p.estado || '-'}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
   }
 
   // Determinar Agrupación para el Gráfico
@@ -415,7 +507,7 @@ function loadSedesToSelect() {
       select.appendChild(opt);
     });
 
-    if (currentUser && currentUser.role && currentUser.role !== 'admin') {
+    if (currentUser && currentUser.role && currentUser.role !== 'admin' && currentUser.role !== 'operador') {
       select.value = currentUser.sede || select.value;
       select.disabled = true;
     } else {
@@ -440,7 +532,7 @@ if (formulario) {
     e.preventDefault();
 
     const sedeEl = document.getElementById('sede');
-    const sede = (currentUser && currentUser.role !== 'admin') ? (currentUser.sede || sedeEl.value) : (sedeEl.value || '').trim();
+    const sede = (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'operador') ? (currentUser.sede || sedeEl.value) : (sedeEl.value || '').trim();
 
     const apellidos = document.getElementById('apellidos').value.trim();
     const nombres = document.getElementById('nombres').value.trim();
@@ -483,16 +575,23 @@ if (formulario) {
 function cargarPacientes() {
   onValue(ref(db, 'pacientes'), snapshot => {
     const pacientes = [];
+    const rol = currentUser ? (currentUser.role || currentUser.rol || '').toLowerCase() : '';
+    const userSede = currentUser ? (currentUser.sede || '') : '';
+
     snapshot.forEach(childSnapshot => {
       const paciente = childSnapshot.val();
       paciente.key = childSnapshot.key;
       
-      if (currentUser && currentUser.role === 'sede') {
-        if (paciente.sede === currentUser.sede) pacientes.push(paciente);
+      // Filtrar por sede si no es Admin ni Estadística
+      if (rol !== 'admin' && rol !== 'operador' && rol !== 'estadistica' && rol !== 'reportes') {
+        if (userSede && paciente.sede === userSede) {
+          pacientes.push(paciente);
+        }
       } else {
         pacientes.push(paciente);
       }
     });
+
     datosPacientes = pacientes;
     actualizarKPIsProcesamiento();
     aplicarFiltros();
@@ -619,9 +718,9 @@ function mostrarPacientes(pacientes) {
       <div style="font-size:10px; margin-top:2px; color:var(--muted);">${p.fechaModificacion || ''}</div>
     `;
 
-    const accionEliminar = `<button class="btn small danger" onclick="confirmarEliminar('${p.key}')" title="Eliminar">🗑️</button>`;
+    const accionEliminar = `<button class="btn small danger btn-eliminar-paciente" onclick="confirmarEliminar('${p.key}')" title="Eliminar">🗑️</button>`;
     const llamarOtraVez = (p.estado === 'En atención')
-      ? `<button class="btn small primary" onclick="llamarOtraVez('${p.key}')" title="Llamar">🔔</button>` : '';
+      ? `<button class="btn small primary btn-atender" onclick="llamarOtraVez('${p.key}')" title="Llamar">🔔</button>` : '';
     
     // Botón para Ficha Histórica del Paciente
     const verFicha = `<button class="btn small" onclick="verFichaPaciente('${p.key}')" title="Ver Historial Clínico">🔍 Ficha</button>`;
@@ -1069,5 +1168,8 @@ window.cerrarModalFicha = cerrarModalFicha;
 window.filtrarPorEstadoRapido = filtrarPorEstadoRapido;
 
 // ---------- Iniciar ----------
-loadSedesToSelect();
-cargarPacientes();
+document.addEventListener("DOMContentLoaded", () => {
+  loadSedesToSelect();
+  cargarPacientes();
+  aplicarPermisosSegunRol();
+});
