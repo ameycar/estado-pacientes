@@ -4,19 +4,24 @@ import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase
 
 const form = document.getElementById('loginForm');
 const msg = document.getElementById('loginMsg');
-const togglePassBtn = document.getElementById('btnTogglePass');
-const passInput = document.getElementById('loginPass');
 
-// Lógica para mostrar/ocultar la contraseña con el ojito 👁️
-if (togglePassBtn && passInput) {
-  togglePassBtn.addEventListener('click', () => {
-    const isPassword = passInput.getAttribute('type') === 'password';
-    passInput.setAttribute('type', isPassword ? 'text' : 'password');
-    
-    togglePassBtn.classList.toggle('fa-eye', !isPassword);
-    togglePassBtn.classList.toggle('fa-eye-slash', isPassword);
-  });
-}
+// Asignación de evento para mostrar/ocultar contraseña (Ojito 👁️)
+document.addEventListener('DOMContentLoaded', () => {
+  const togglePassBtn = document.getElementById('btnTogglePass');
+  const passInput = document.getElementById('loginPass');
+
+  if (togglePassBtn && passInput) {
+    togglePassBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isPassword = passInput.type === 'password';
+      passInput.type = isPassword ? 'text' : 'password';
+      
+      togglePassBtn.classList.toggle('fa-eye', !isPassword);
+      togglePassBtn.classList.toggle('fa-eye-slash', isPassword);
+    });
+  }
+});
 
 let usuarios = [];
 
@@ -30,7 +35,7 @@ onValue(ref(db, 'usuarios'), snap => {
   
   snap.forEach(c => { 
     const u = c.val() || {}; 
-    u.key = c.key; // Clave única en Firebase (por ejemplo: 'prueba', 'cacosta', 'admin')
+    u.key = c.key;
     usuarios.push(u); 
   });
   console.log("Usuarios cargados desde Firebase:", usuarios.length);
@@ -57,22 +62,15 @@ if (form) {
       return;
     }
 
-    // Buscar coincidencia en múltiples campos posibles (retrocompatible con registros antiguos y nuevos)
     const found = usuarios.find(x => {
-      // 1. Extraer nombre de usuario / correo registrado
       const dbUsername = (x.username || x.user || '').toString().trim().toLowerCase();
       const dbKey = (x.key || '').toString().trim().toLowerCase();
       const dbEmail = (x.email || x.correo || '').toString().trim().toLowerCase();
 
-      // Coincide si el nombre ingresado equivale al username, a la clave del nodo o al correo
       const matchesUser = (dbUsername === inputUser) || (dbKey === inputUser) || (dbEmail === inputUser);
-
-      // 2. Extraer contraseña registrada
       const dbPass = (x.password || x.clave || x.contrasena || x.passwordHash || '').toString().trim();
 
-      const matchesPass = (dbPass === inputPass);
-
-      return matchesUser && matchesPass;
+      return matchesUser && (dbPass === inputPass);
     });
 
     if (!found) {
@@ -80,16 +78,13 @@ if (form) {
       return;
     }
 
-    // Verificar si el usuario ha sido inhabilitado
     if (found.activo === false || found.estado === 'inactivo' || found.estado === 'inhabilitado') {
       if (msg) msg.textContent = 'Este usuario se encuentra inhabilitado';
       return;
     }
 
-    // Determinar el rol normalizado
     const userRole = (found.role || found.rol || 'registrador').toString().toLowerCase();
 
-    // Construir objeto de sesión para localStorage
     const userObj = {
       username: found.username || found.key || inputUser,
       displayName: found.displayName || `${found.nombres || ''} ${found.apellidos || ''}`.trim() || found.username || found.key || inputUser,
@@ -100,7 +95,6 @@ if (form) {
 
     localStorage.setItem('user', JSON.stringify(userObj));
 
-    // Redireccionar según rol de usuario
     if (userRole === 'admin' || userRole === 'operador') {
       window.location.href = 'admin.html';
     } else {
