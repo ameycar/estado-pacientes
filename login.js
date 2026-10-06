@@ -5,6 +5,14 @@ import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase
 const form = document.getElementById('loginForm');
 const msg = document.getElementById('loginMsg');
 
+// Función SHA-256 idéntica a admin.js para encriptar la clave al comparar
+async function hashPassword(password) {
+  const msgUint8 = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Asignación de evento para mostrar/ocultar contraseña (Ojito 👁️)
 document.addEventListener('DOMContentLoaded', () => {
   const togglePassBtn = document.getElementById('btnTogglePass');
@@ -42,7 +50,7 @@ onValue(ref(db, 'usuarios'), snap => {
 });
 
 if (form) {
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     if (msg) {
       msg.textContent = '';
@@ -62,15 +70,24 @@ if (form) {
       return;
     }
 
+    // Convertir la contraseña ingresada a Hash SHA-256
+    const inputHash = await hashPassword(inputPass);
+
     const found = usuarios.find(x => {
+      // 1. Validar nombre de usuario, clave de nodo o correo
       const dbUsername = (x.username || x.user || '').toString().trim().toLowerCase();
       const dbKey = (x.key || '').toString().trim().toLowerCase();
       const dbEmail = (x.email || x.correo || '').toString().trim().toLowerCase();
 
       const matchesUser = (dbUsername === inputUser) || (dbKey === inputUser) || (dbEmail === inputUser);
-      const dbPass = (x.password || x.clave || x.contrasena || x.passwordHash || '').toString().trim();
 
-      return matchesUser && (dbPass === inputPass);
+      // 2. Extraer Hash o contraseña guardada en la BD
+      const dbHash = (x.passwordHash || x.password || x.clave || x.contrasena || '').toString().trim();
+
+      // Coincide si el Hash coincide O si la contraseña antigua estaba en texto plano
+      const matchesPass = (dbHash === inputHash) || (dbHash === inputPass);
+
+      return matchesUser && matchesPass;
     });
 
     if (!found) {
@@ -95,6 +112,7 @@ if (form) {
 
     localStorage.setItem('user', JSON.stringify(userObj));
 
+    // Redirección según rol de usuario
     if (userRole === 'admin' || userRole === 'operador') {
       window.location.href = 'admin.html';
     } else {
